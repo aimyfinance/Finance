@@ -15,12 +15,13 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js" crossorigin></script>
 <style>
   html, body { margin: 0; height: 100%; background: #0A0C10; }
   #root { min-height: 100%; }
-  #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-          color: #8B93A3; font-family: system-ui, sans-serif; font-size: 14px; z-index: 0; }
+  #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #8B93A3; font-family: system-ui, sans-serif; font-size: 14px; z-index: 0; }
+  input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
 </head>
@@ -31,9 +32,7 @@
 
 var _boot = document.getElementById("boot");
 var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo, useCallback = React.useCallback;
-
-// Inline Lucide icons (no external dependency)
-var LI = {"LayoutDashboard":[["rect",{"width":7,"height":9,"x":3,"y":3,"rx":1}],["rect",{"width":7,"height":5,"x":14,"y":3,"rx":1}],["rect",{"width":7,"height":9,"x":14,"y":12,"rx":1}],["rect",{"width":7,"height":5,"x":3,"y":16,"rx":1}]],"Wallet":[["path",{"d":"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"}],["path",{"d":"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"}]],"History":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}],["path",{"d":"M12 7v5l4 2"}]],"Tags":[["path",{"d":"M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"}],["path",{"d":"M6 9.01V9"}],["path",{"d":"m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"}]],"Banknote":[["rect",{"width":20,"height":12,"x":2,"y":6,"rx":2}],["circle",{"cx":12,"cy":12,"r":2}],["path",{"d":"M6 12h.01M18 12h.01"}]],"Settings":[["path",{"d":"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"}],["circle",{"cx":12,"cy":12,"r":3}]],"Plus":[["path",{"d":"M5 12h14"}],["path",{"d":"M12 5v14"}]],"Minus":[["path",{"d":"M5 12h14"}]],"ArrowLeftRight":[["path",{"d":"M8 3 4 7l4 4"}],["path",{"d":"M4 7h16"}],["path",{"d":"m16 21 4-4-4-4"}],["path",{"d":"M20 17H4"}]],"RefreshCw":[["path",{"d":"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"}],["path",{"d":"M21 3v5h-5"}],["path",{"d":"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"}],["path",{"d":"M8 16H3v5"}]],"Sun":[["circle",{"cx":12,"cy":12,"r":4}],["path",{"d":"M12 2v2"}],["path",{"d":"M12 20v2"}],["path",{"d":"m4.93 4.93 1.41 1.41"}],["path",{"d":"m17.66 17.66 1.41 1.41"}],["path",{"d":"M2 12h2"}],["path",{"d":"M20 12h2"}],["path",{"d":"m6.34 17.66-1.41 1.41"}],["path",{"d":"m19.07 4.93-1.41 1.41"}]],"Moon":[["path",{"d":"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"}]],"X":[["path",{"d":"M18 6 6 18"}],["path",{"d":"m6 6 12 12"}]],"Trash2":[["path",{"d":"M3 6h18"}],["path",{"d":"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"}],["path",{"d":"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"}],["line",{"x1":10,"x2":10,"y1":11,"y2":17}],["line",{"x1":14,"x2":14,"y1":11,"y2":17}]],"Edit3":[["path",{"d":"M12 20h9"}],["path",{"d":"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"}]],"Search":[["circle",{"cx":11,"cy":11,"r":8}],["path",{"d":"m21 21-4.3-4.3"}]],"ShoppingCart":[["circle",{"cx":8,"cy":21,"r":1}],["circle",{"cx":19,"cy":21,"r":1}],["path",{"d":"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"}]],"Utensils":[["path",{"d":"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"}],["path",{"d":"M7 2v20"}],["path",{"d":"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"}]],"Bus":[["path",{"d":"M8 6v6"}],["path",{"d":"M15 6v6"}],["path",{"d":"M2 12h19.6"}],["path",{"d":"M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"}],["circle",{"cx":7,"cy":18,"r":2}],["path",{"d":"M9 18h5"}],["circle",{"cx":16,"cy":18,"r":2}]],"Plane":[["path",{"d":"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"}]],"Fuel":[["line",{"x1":3,"x2":15,"y1":22,"y2":22}],["line",{"x1":4,"x2":14,"y1":9,"y2":9}],["path",{"d":"M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"}],["path",{"d":"M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"}]],"Car":[["path",{"d":"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"}],["circle",{"cx":7,"cy":17,"r":2}],["path",{"d":"M9 17h6"}],["circle",{"cx":17,"cy":17,"r":2}]],"HeartPulse":[["path",{"d":"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"}],["path",{"d":"M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"}]],"Dumbbell":[["path",{"d":"m6.5 6.5 11 11"}],["path",{"d":"m21 21-1-1"}],["path",{"d":"m3 3 1 1"}],["path",{"d":"m18 22 4-4"}],["path",{"d":"m2 6 4-4"}],["path",{"d":"m3 10 7-7"}],["path",{"d":"m14 21 7-7"}]],"Shirt":[["path",{"d":"M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"}]],"GraduationCap":[["path",{"d":"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"}],["path",{"d":"M22 10v6"}],["path",{"d":"M6 12.5V16a6 3 0 0 0 12 0v-3.5"}]],"PartyPopper":[["path",{"d":"M5.8 11.3 2 22l10.7-3.79"}],["path",{"d":"M4 3h.01"}],["path",{"d":"M22 8h.01"}],["path",{"d":"M15 2h.01"}],["path",{"d":"M22 20h.01"}],["path",{"d":"m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L12 10"}],["path",{"d":"m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"}],["path",{"d":"m11 2 .33.82c.34.86-.2 1.82-1.11 1.98-.7.11-1.22.72-1.22 1.43V7"}],["path",{"d":"M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"}]],"Gift":[["rect",{"x":3,"y":8,"width":18,"height":4,"rx":1}],["path",{"d":"M12 8v13"}],["path",{"d":"M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"}],["path",{"d":"M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"}]],"Home":[["path",{"d":"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"}],["polyline",{"points":"9 22 9 12 15 12 15 22"}]],"Zap":[["path",{"d":"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"}]],"MoreHorizontal":[["circle",{"cx":12,"cy":12,"r":1}],["circle",{"cx":19,"cy":12,"r":1}],["circle",{"cx":5,"cy":12,"r":1}]],"Briefcase":[["path",{"d":"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"}],["rect",{"width":20,"height":14,"x":2,"y":6,"rx":2}]],"Building2":[["path",{"d":"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"}],["path",{"d":"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"}],["path",{"d":"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"}],["path",{"d":"M10 6h4"}],["path",{"d":"M10 10h4"}],["path",{"d":"M10 14h4"}],["path",{"d":"M10 18h4"}]],"TrendingUp":[["polyline",{"points":"22 7 13.5 15.5 8.5 10.5 2 17"}],["polyline",{"points":"16 7 22 7 22 13"}]],"TrendingDown":[["polyline",{"points":"22 17 13.5 8.5 8.5 13.5 2 7"}],["polyline",{"points":"16 17 22 17 22 11"}]],"RotateCcw":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}]],"Users":[["path",{"d":"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"}],["circle",{"cx":9,"cy":7,"r":4}],["path",{"d":"M22 21v-2a4 4 0 0 0-3-3.87"}],["path",{"d":"M16 3.13a4 4 0 0 1 0 7.75"}]],"AlertTriangle":[["path",{"d":"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"}],["path",{"d":"M12 9v4"}],["path",{"d":"M12 17h.01"}]],"CreditCard":[["rect",{"width":20,"height":14,"x":2,"y":5,"rx":2}],["line",{"x1":2,"x2":22,"y1":10,"y2":10}]],"Landmark":[["line",{"x1":3,"x2":21,"y1":22,"y2":22}],["line",{"x1":6,"x2":6,"y1":18,"y2":11}],["line",{"x1":10,"x2":10,"y1":18,"y2":11}],["line",{"x1":14,"x2":14,"y1":18,"y2":11}],["line",{"x1":18,"x2":18,"y1":18,"y2":11}],["polygon",{"points":"12 2 20 7 4 7"}]],"PiggyBank":[["path",{"d":"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"}],["path",{"d":"M2 9v1c0 1.1.9 2 2 2h1"}],["path",{"d":"M16 11h.01"}]],"LineChart":[["path",{"d":"M3 3v16a2 2 0 0 0 2 2h16"}],["path",{"d":"m19 9-5 5-4-4-3 3"}]],"ChevronRight":[["path",{"d":"m9 18 6-6-6-6"}]],"ChevronDown":[["path",{"d":"m6 9 6 6 6-6"}]],"Check":[["path",{"d":"M20 6 9 17l-5-5"}]],"Archive":[["rect",{"width":20,"height":5,"x":2,"y":3,"rx":1}],["path",{"d":"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"}],["path",{"d":"M10 12h4"}]],"Calendar":[["rect",{"width":18,"height":18,"x":3,"y":4,"rx":2}],["path",{"d":"M3 10h18"}],["path",{"d":"M8 2v4"}],["path",{"d":"M16 2v4"}]],"Filter":[["polygon",{"points":"22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"}]],"ArrowUpRight":[["path",{"d":"M7 7h10v10"}],["path",{"d":"M7 17 17 7"}]],"ArrowDownRight":[["path",{"d":"m7 7 10 10"}],["path",{"d":"M17 7v10H7"}]],"Coins":[["circle",{"cx":8,"cy":8,"r":6}],["path",{"d":"M18.09 10.37A6 6 0 1 1 10.34 18"}],["path",{"d":"M7 6h1v4"}],["path",{"d":"m16.71 13.88.7.71-2.82 2.82"}]]};
+var LI = {"LayoutDashboard":[["rect",{"width":7,"height":9,"x":3,"y":3,"rx":1}],["rect",{"width":7,"height":5,"x":14,"y":3,"rx":1}],["rect",{"width":7,"height":9,"x":14,"y":12,"rx":1}],["rect",{"width":7,"height":5,"x":3,"y":16,"rx":1}]],"Wallet":[["path",{"d":"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"}],["path",{"d":"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"}]],"History":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}],["path",{"d":"M12 7v5l4 2"}]],"Tags":[["path",{"d":"M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"}],["path",{"d":"M6 9.01V9"}],["path",{"d":"m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"}]],"Banknote":[["rect",{"width":20,"height":12,"x":2,"y":6,"rx":2}],["circle",{"cx":12,"cy":12,"r":2}],["path",{"d":"M6 12h.01M18 12h.01"}]],"Settings":[["path",{"d":"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"}],["circle",{"cx":12,"cy":12,"r":3}]],"Plus":[["path",{"d":"M5 12h14"}],["path",{"d":"M12 5v14"}]],"Minus":[["path",{"d":"M5 12h14"}]],"ArrowLeftRight":[["path",{"d":"M8 3 4 7l4 4"}],["path",{"d":"M4 7h16"}],["path",{"d":"m16 21 4-4-4-4"}],["path",{"d":"M20 17H4"}]],"RefreshCw":[["path",{"d":"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"}],["path",{"d":"M21 3v5h-5"}],["path",{"d":"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"}],["path",{"d":"M8 16H3v5"}]],"Sun":[["circle",{"cx":12,"cy":12,"r":4}],["path",{"d":"M12 2v2"}],["path",{"d":"M12 20v2"}],["path",{"d":"m4.93 4.93 1.41 1.41"}],["path",{"d":"m17.66 17.66 1.41 1.41"}],["path",{"d":"M2 12h2"}],["path",{"d":"M20 12h2"}],["path",{"d":"m6.34 17.66-1.41 1.41"}],["path",{"d":"m19.07 4.93-1.41 1.41"}]],"Moon":[["path",{"d":"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"}]],"X":[["path",{"d":"M18 6 6 18"}],["path",{"d":"m6 6 12 12"}]],"Trash2":[["path",{"d":"M3 6h18"}],["path",{"d":"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"}],["path",{"d":"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"}],["line",{"x1":10,"x2":10,"y1":11,"y2":17}],["line",{"x1":14,"x2":14,"y1":11,"y2":17}]],"Edit3":[["path",{"d":"M12 20h9"}],["path",{"d":"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"}]],"Search":[["circle",{"cx":11,"cy":11,"r":8}],["path",{"d":"m21 21-4.3-4.3"}]],"ShoppingCart":[["circle",{"cx":8,"cy":21,"r":1}],["circle",{"cx":19,"cy":21,"r":1}],["path",{"d":"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"}]],"Utensils":[["path",{"d":"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"}],["path",{"d":"M7 2v20"}],["path",{"d":"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"}]],"Bus":[["path",{"d":"M8 6v6"}],["path",{"d":"M15 6v6"}],["path",{"d":"M2 12h19.6"}],["path",{"d":"M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"}],["circle",{"cx":7,"cy":18,"r":2}],["path",{"d":"M9 18h5"}],["circle",{"cx":16,"cy":18,"r":2}]],"Plane":[["path",{"d":"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"}]],"Fuel":[["line",{"x1":3,"x2":15,"y1":22,"y2":22}],["line",{"x1":4,"x2":14,"y1":9,"y2":9}],["path",{"d":"M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"}],["path",{"d":"M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"}]],"Car":[["path",{"d":"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"}],["circle",{"cx":7,"cy":17,"r":2}],["path",{"d":"M9 17h6"}],["circle",{"cx":17,"cy":17,"r":2}]],"HeartPulse":[["path",{"d":"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"}],["path",{"d":"M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"}]],"Dumbbell":[["path",{"d":"m6.5 6.5 11 11"}],["path",{"d":"m21 21-1-1"}],["path",{"d":"m3 3 1 1"}],["path",{"d":"m18 22 4-4"}],["path",{"d":"m2 6 4-4"}],["path",{"d":"m3 10 7-7"}],["path",{"d":"m14 21 7-7"}]],"Shirt":[["path",{"d":"M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"}]],"GraduationCap":[["path",{"d":"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"}],["path",{"d":"M22 10v6"}],["path",{"d":"M6 12.5V16a6 3 0 0 0 12 0v-3.5"}]],"PartyPopper":[["path",{"d":"M5.8 11.3 2 22l10.7-3.79"}],["path",{"d":"M4 3h.01"}],["path",{"d":"M22 8h.01"}],["path",{"d":"M15 2h.01"}],["path",{"d":"M22 20h.01"}],["path",{"d":"m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L12 10"}],["path",{"d":"m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"}],["path",{"d":"m11 2 .33.82c.34.86-.2 1.82-1.11 1.98-.7.11-1.22.72-1.22 1.43V7"}],["path",{"d":"M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"}]],"Gift":[["rect",{"x":3,"y":8,"width":18,"height":4,"rx":1}],["path",{"d":"M12 8v13"}],["path",{"d":"M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"}],["path",{"d":"M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"}]],"Home":[["path",{"d":"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"}],["polyline",{"points":"9 22 9 12 15 12 15 22"}]],"Zap":[["path",{"d":"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"}]],"MoreHorizontal":[["circle",{"cx":12,"cy":12,"r":1}],["circle",{"cx":19,"cy":12,"r":1}],["circle",{"cx":5,"cy":12,"r":1}]],"Briefcase":[["path",{"d":"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"}],["rect",{"width":20,"height":14,"x":2,"y":6,"rx":2}]],"Building2":[["path",{"d":"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"}],["path",{"d":"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"}],["path",{"d":"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"}],["path",{"d":"M10 6h4"}],["path",{"d":"M10 10h4"}],["path",{"d":"M10 14h4"}],["path",{"d":"M10 18h4"}]],"TrendingUp":[["polyline",{"points":"22 7 13.5 15.5 8.5 10.5 2 17"}],["polyline",{"points":"16 7 22 7 22 13"}]],"TrendingDown":[["polyline",{"points":"22 17 13.5 8.5 8.5 13.5 2 7"}],["polyline",{"points":"16 17 22 17 22 11"}]],"RotateCcw":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}]],"Users":[["path",{"d":"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"}],["circle",{"cx":9,"cy":7,"r":4}],["path",{"d":"M22 21v-2a4 4 0 0 0-3-3.87"}],["path",{"d":"M16 3.13a4 4 0 0 1 0 7.75"}]],"AlertTriangle":[["path",{"d":"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"}],["path",{"d":"M12 9v4"}],["path",{"d":"M12 17h.01"}]],"CreditCard":[["rect",{"width":20,"height":14,"x":2,"y":5,"rx":2}],["line",{"x1":2,"x2":22,"y1":10,"y2":10}]],"Landmark":[["line",{"x1":3,"x2":21,"y1":22,"y2":22}],["line",{"x1":6,"x2":6,"y1":18,"y2":11}],["line",{"x1":10,"x2":10,"y1":18,"y2":11}],["line",{"x1":14,"x2":14,"y1":18,"y2":11}],["line",{"x1":18,"x2":18,"y1":18,"y2":11}],["polygon",{"points":"12 2 20 7 4 7"}]],"PiggyBank":[["path",{"d":"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"}],["path",{"d":"M2 9v1c0 1.1.9 2 2 2h1"}],["path",{"d":"M16 11h.01"}]],"LineChart":[["path",{"d":"M3 3v16a2 2 0 0 0 2 2h16"}],["path",{"d":"m19 9-5 5-4-4-3 3"}]],"ChevronRight":[["path",{"d":"m9 18 6-6-6-6"}]],"ChevronDown":[["path",{"d":"m6 9 6 6 6-6"}]],"Check":[["path",{"d":"M20 6 9 17l-5-5"}]],"Archive":[["rect",{"width":20,"height":5,"x":2,"y":3,"rx":1}],["path",{"d":"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"}],["path",{"d":"M10 12h4"}]],"Calendar":[["rect",{"width":18,"height":18,"x":3,"y":4,"rx":2}],["path",{"d":"M3 10h18"}],["path",{"d":"M8 2v4"}],["path",{"d":"M16 2v4"}]],"Filter":[["polygon",{"points":"22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"}]],"ArrowUpRight":[["path",{"d":"M7 7h10v10"}],["path",{"d":"M7 17 17 7"}]],"ArrowDownRight":[["path",{"d":"m7 7 10 10"}],["path",{"d":"M17 7v10H7"}]],"Coins":[["circle",{"cx":8,"cy":8,"r":6}],["path",{"d":"M18.09 10.37A6 6 0 1 1 10.34 18"}],["path",{"d":"M7 6h1v4"}],["path",{"d":"m16.71 13.88.7.71-2.82 2.82"}]],"Bell":[["path",{"d":"M10.268 21a2 2 0 0 0 3.464 0"}],["path",{"d":"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"}]],"GripVertical":[["circle",{"cx":9,"cy":12,"r":1}],["circle",{"cx":9,"cy":5,"r":1}],["circle",{"cx":9,"cy":19,"r":1}],["circle",{"cx":15,"cy":12,"r":1}],["circle",{"cx":15,"cy":5,"r":1}],["circle",{"cx":15,"cy":19,"r":1}]],"Lock":[["rect",{"width":18,"height":11,"x":3,"y":11,"rx":2,"ry":2}],["path",{"d":"M7 11V7a5 5 0 0 1 10 0v4"}]]};
 var _iconMap = {};
 Object.keys(LI).forEach(function (k) { _iconMap[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = LI[k]; });
 var _fallbackNode = [["circle", { "cx": 12, "cy": 12, "r": 9 }]];
@@ -41,22 +40,15 @@ function _mkIcon(node) {
   var n = Array.isArray(node) ? node : _fallbackNode;
   return function (props) {
     props = props || {};
-    var size = props.size || 24;
-    var color = props.color || 'currentColor';
+    var size = props.size || 24; var color = props.color || 'currentColor';
     var rest = {};
     Object.keys(props).forEach(function (p) { if (p !== 'size' && p !== 'color') rest[p] = props[p]; });
-    var attrs = Object.assign({
-      xmlns: 'http://www.w3.org/2000/svg', width: size, height: size, viewBox: '0 0 24 24',
-      fill: 'none', stroke: color, strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round'
-    }, rest);
+    var attrs = Object.assign({ xmlns: 'http://www.w3.org/2000/svg', width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }, rest);
     attrs.className = ('lucide ' + (rest.className || '')).trim();
-    return React.createElement('svg', attrs, n.map(function (c, i) {
-      return React.createElement(c[0], Object.assign({ key: i }, c[1]));
-    }));
+    return React.createElement('svg', attrs, n.map(function (c, i) { return React.createElement(c[0], Object.assign({ key: i }, c[1])); }));
   };
 }
 function _icon(name) { return _mkIcon(_iconMap[name.toLowerCase().replace(/[^a-z0-9]/g, '')]); }
-
 var LayoutDashboard = _icon('LayoutDashboard');
 var Wallet = _icon('Wallet');
 var HistoryIcon = _icon('History');
@@ -108,6 +100,9 @@ var Filter = _icon('Filter');
 var ArrowUpRight = _icon('ArrowUpRight');
 var ArrowDownRight = _icon('ArrowDownRight');
 var Coins = _icon('Coins');
+var Bell = _icon('Bell');
+var GripVertical = _icon('GripVertical');
+var Lock = _icon('Lock');
 
 
 
@@ -282,7 +277,12 @@ function buildDemoData() {
   const loans = [loan1, loan2];
   const rates = { UAH: 1, USD: 41.5, EUR: 45, GBP: 53, PLN: 10.5, CHF: 48 };
 
-  return { accounts, pockets, categories: [...expenseCats, ...incomeCats], transactions, loans, rates, baseCurrency: "UAH" };
+  const reminders = [
+    { id: uid("rem"), title: "Оплатити прибиральницю", date: iso(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2)), amount: 500, currency: "UAH", note: "", done: false },
+    { id: uid("rem"), title: "Заплатити за інтернет", date: iso(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5)), amount: 250, currency: "UAH", note: "", done: false },
+  ];
+
+  return { accounts, pockets, categories: [...expenseCats, ...incomeCats], transactions, loans, rates, baseCurrency: "UAH", reminders };
 }
 
 /* ============================== PERSISTENCE ============================== */
@@ -298,6 +298,39 @@ function loadState() {
 }
 function saveState(state) {
   try { if (window.localStorage) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+}
+
+/* PIN is stored on the device only (not synced) */
+const PIN_KEY = "ft_pin";
+function loadPin() { try { return window.localStorage ? window.localStorage.getItem(PIN_KEY) : null; } catch (e) { return null; } }
+function savePin(v) { try { if (window.localStorage) { if (v) window.localStorage.setItem(PIN_KEY, v); else window.localStorage.removeItem(PIN_KEY); } } catch (e) {} }
+
+/* ============================== CLOUD SYNC (Supabase) ============================== *//*
+  Встав свої два значення зі Supabase (Project Settings → API).
+  Якщо лишити порожніми — застосунок працює лише локально, без хмари.
+*/
+const SUPABASE_URL = "";        // ← Project URL, напр. https://xxxx.supabase.co
+const SUPABASE_ANON_KEY = "";   // ← anon public key
+
+const SB = (typeof supabase !== "undefined" && SUPABASE_URL && SUPABASE_ANON_KEY)
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+async function cloudPull(userId) {
+  if (!SB || !userId) return null;
+  const { data, error } = await SB.from("app_state").select("data").eq("user_id", userId).maybeSingle();
+  if (error) { console.warn("cloudPull:", error.message); return null; }
+  return data ? data.data : null;
+}
+
+let _pushTimer = null;
+function cloudPush(userId, state) {
+  if (!SB || !userId) return;
+  clearTimeout(_pushTimer);
+  _pushTimer = setTimeout(async () => {
+    const { error } = await SB.from("app_state").upsert({ user_id: userId, data: state, updated_at: new Date().toISOString() });
+    if (error) console.warn("cloudPush:", error.message);
+  }, 800);
 }
 
 /* ============================== THEME TOKENS ============================== */
@@ -351,10 +384,12 @@ function Field({ label, error, children }) {
 function inputStyle() { return { background: "var(--surface2)", borderColor: "var(--border)", color: "var(--text)" }; }
 
 function Input(props) {
-  return <input {...props} style={inputStyle()} className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${props.className || ""}`} />;
+  const dateLike = props.type === "date" || props.type === "time" || props.type === "datetime-local" || props.type === "month";
+  const st = dateLike ? { ...inputStyle(), WebkitAppearance: "none", appearance: "none" } : inputStyle();
+  return <input {...props} style={st} className={`w-full min-w-0 max-w-full box-border rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${props.className || ""}`} />;
 }
 function Select({ children, ...props }) {
-  return <select {...props} style={inputStyle()} className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition">{children}</select>;
+  return <select {...props} style={inputStyle()} className={`w-full min-w-0 max-w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${props.className || ""}`}>{children}</select>;
 }
 function Textarea(props) {
   return <textarea {...props} style={inputStyle()} className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition resize-none" />;
@@ -378,16 +413,120 @@ function Badge({ children, color }) {
   return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: `${color}22`, color }}>{children}</span>;
 }
 
-/* ============================== MAIN APP ============================== */
+// Swipe a row left (on touch) to reveal action buttons on the right.
+function SwipeRow({ children, actions }) {
+  const [open, setOpen] = useState(false);
+  const sx = React.useRef(0), sy = React.useRef(0);
+  const w = actions.length * 66;
+  const onTouchStart = (e) => { const t = e.touches[0]; sx.current = t.clientX; sy.current = t.clientY; };
+  const onTouchEnd = (e) => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx.current, dy = t.clientY - sy.current;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) setOpen(dx < 0);
+  };
+  return (
+    <div className="relative overflow-hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="absolute inset-y-0 right-0 flex">
+        {actions.map((a, i) => {
+          const Ic = a.icon;
+          return (
+            <button key={i} onClick={() => { a.onClick(); setOpen(false); }} className="flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium" style={{ width: 66, background: a.bg, color: a.fg || "#fff" }}>
+              <Ic size={16} />{a.label}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ transform: `translateX(${open ? -w : 0}px)`, transition: "transform .2s ease", position: "relative" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
+// PIN lock screen shown on app open when a PIN is set
+function LockScreen({ pin, onUnlock }) {
+  const [entry, setEntry] = useState("");
+  const [err, setErr] = useState(false);
+  const press = (d) => {
+    if (entry.length >= pin.length) return;
+    const nx = entry + d;
+    setErr(false);
+    setEntry(nx);
+    if (nx.length === pin.length) {
+      if (nx === pin) { setTimeout(onUnlock, 120); }
+      else { setErr(true); setTimeout(() => setEntry(""), 450); }
+    }
+  };
+  const del = () => setEntry((e) => e.slice(0, -1));
+  const dots = pin.split("").map((_, i) => i);
+  return (
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-8" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: "var(--accent)" }}><Lock size={26} color="#08110D" /></div>
+      <p className="text-sm mb-6" style={{ color: err ? "var(--danger)" : "var(--text-dim)" }}>{err ? "Невірний код, спробуйте ще" : "Введіть PIN-код"}</p>
+      <div className="flex gap-3 mb-9">
+        {dots.map((i) => (
+          <div key={i} className="w-3 h-3 rounded-full transition" style={{ background: i < entry.length ? (err ? "var(--danger)" : "var(--accent)") : "var(--surface2)" }} />
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+          <button key={n} onClick={() => press(String(n))} className="w-16 h-16 rounded-full text-xl font-semibold active:scale-95 transition" style={{ background: "var(--surface2)", color: "var(--text)" }}>{n}</button>
+        ))}
+        <span />
+        <button onClick={() => press("0")} className="w-16 h-16 rounded-full text-xl font-semibold active:scale-95 transition" style={{ background: "var(--surface2)", color: "var(--text)" }}>0</button>
+        <button onClick={del} className="w-16 h-16 rounded-full flex items-center justify-center active:scale-95 transition" style={{ color: "var(--text-dim)" }}><X size={22} /></button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== MAIN APP ============================== */
 function FinanceTracker() {
   const [state, setState] = useState(() => loadState() || buildDemoData());
   const [theme, setTheme] = useState(() => (loadState() && loadState().theme) || "dark");
   const [view, setView] = useState("dashboard");
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
+  const [session, setSession] = useState(null);
+  const [pin, setPinState] = useState(() => loadPin());
+  const [locked, setLocked] = useState(() => !!loadPin());
 
-  useEffect(() => { saveState({ ...state, theme }); }, [state, theme]);
+  const stateRef = React.useRef(state);
+  useEffect(() => { stateRef.current = { ...state, theme }; }, [state, theme]);
+
+  // save locally + push to cloud (when signed in)
+  useEffect(() => {
+    const full = { ...state, theme };
+    saveState(full);
+    if (session) cloudPush(session.user.id, full);
+  }, [state, theme, session]);
+
+  // track auth session
+  useEffect(() => {
+    if (!SB) return;
+    SB.auth.getSession().then(({ data }) => setSession(data.session || null));
+    const { data: sub } = SB.auth.onAuthStateChange((_e, s) => setSession(s || null));
+    return () => { if (sub && sub.subscription) sub.subscription.unsubscribe(); };
+  }, []);
+
+  // on sign-in: pull cloud state, or seed cloud from this device if empty
+  useEffect(() => {
+    if (!SB || !session) return;
+    let cancelled = false;
+    cloudPull(session.user.id).then((cloud) => {
+      if (cancelled) return;
+      if (cloud && cloud.accounts) {
+        setState({ accounts: cloud.accounts, pockets: cloud.pockets, categories: cloud.categories, transactions: cloud.transactions, loans: cloud.loans, rates: cloud.rates, baseCurrency: cloud.baseCurrency, reminders: cloud.reminders || [] });
+        if (cloud.theme) setTheme(cloud.theme);
+        setToast("Дані завантажено з хмари");
+      } else {
+        cloudPush(session.user.id, stateRef.current);
+        setToast("Дані збережено в хмару");
+      }
+    });
+    return () => { cancelled = true; };
+  }, [session]);
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 2600);
@@ -395,6 +534,7 @@ function FinanceTracker() {
   }, [toast]);
 
   const { accounts, pockets, categories, transactions, loans, rates, baseCurrency } = state;
+  const reminders = state.reminders || [];
   const update = (patch) => setState((s) => ({ ...s, ...patch }));
   const notify = (msg) => setToast(msg);
 
@@ -432,7 +572,7 @@ function FinanceTracker() {
 
   const pocketLabel = (pocketId) => {
     const p = getPocket(pocketId);
-    if (!p) return "—";
+    if (!p) return "Видалений рахунок";
     return `${p.account?.name || "Рахунок"} · ${p.currency}`;
   };
 
@@ -498,6 +638,22 @@ function FinanceTracker() {
   };
   const editAccount = (id, patch) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)) });
   const archiveAccount = (id) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, archived: !a.archived } : a)) });
+  // Delete account + its pockets, but KEEP transactions (they remain in history, labelled "Видалений рахунок")
+  const deleteAccount = (id) => {
+    update({ accounts: accounts.filter((a) => a.id !== id), pockets: pockets.filter((p) => p.accountId !== id) });
+    notify("Рахунок видалено (операції збережено)");
+  };
+  // Move account "fromId" to the position of "toId" in the accounts array
+  const reorderAccounts = (fromId, toId) => {
+    if (fromId === toId) return;
+    const arr = [...accounts];
+    const from = arr.findIndex((a) => a.id === fromId);
+    const to = arr.findIndex((a) => a.id === toId);
+    if (from < 0 || to < 0) return;
+    const moved = arr.splice(from, 1)[0];
+    arr.splice(to, 0, moved);
+    update({ accounts: arr });
+  };
 
   const addPocket = (accountId, currency, initialBalance) => {
     update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, archived: false }] });
@@ -505,6 +661,19 @@ function FinanceTracker() {
   };
   const editPocket = (id, patch) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
   const archivePocket = (id) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, archived: !p.archived } : p)) });
+  // Delete a single currency card, keeping its transactions in history
+  const deletePocket = (id) => { update({ pockets: pockets.filter((p) => p.id !== id) }); notify("Картку видалено (операції збережено)"); };
+  // Reorder cards: swap a pocket with its nearest active neighbour in the given direction (-1 left, +1 right)
+  const movePocket = (id, dir) => {
+    const arr = [...pockets];
+    const idx = arr.findIndex((p) => p.id === id);
+    if (idx < 0) return;
+    let j = idx + dir;
+    while (j >= 0 && j < arr.length && arr[j].archived) j += dir;
+    if (j < 0 || j >= arr.length) return;
+    const tmp = arr[idx]; arr[idx] = arr[j]; arr[j] = tmp;
+    update({ pockets: arr });
+  };
 
   const addCategory = (data) => update({ categories: [...categories, { id: uid("cat"), archived: false, parentId: null, ...data }] });
   const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
@@ -534,6 +703,48 @@ function FinanceTracker() {
       transactions: [{ id: uid("tx"), type: "loan_return", date, amount: amt, currency, pocketId: returnPocketId, loanId, note: note || `Повернення позики: ${loan.borrower}` }, ...transactions],
     });
     notify(newStatus === "returned" ? "Позику повністю повернено" : "Часткове повернення зареєстровано");
+  };
+
+  const editLoan = (id, patch) => update({ loans: loans.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
+  const archiveLoan = (id) => { update({ loans: loans.map((l) => (l.id === id ? { ...l, archived: !l.archived } : l)) }); };
+  // Delete the loan record but keep its transactions in history (balances stay intact)
+  const deleteLoan = (id) => { update({ loans: loans.filter((l) => l.id !== id) }); notify("Позику видалено (операції збережено)"); };
+
+  const addReminder = (data) => { update({ reminders: [{ id: uid("rem"), done: false, ...data }, ...reminders] }); notify("Нагадування створено"); };
+  const editReminder = (id, patch) => update({ reminders: reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
+  const deleteReminder = (id) => { update({ reminders: reminders.filter((r) => r.id !== id) }); notify("Нагадування видалено"); };
+  const toggleReminderDone = (id) => update({ reminders: reminders.map((r) => (r.id === id ? { ...r, done: !r.done } : r)) });
+
+  const overdueReminders = reminders.filter((r) => !r.done && new Date(r.date) < new Date(new Date().setHours(0, 0, 0, 0)));
+
+  const applyPin = (v) => { savePin(v); setPinState(v); };
+
+  const exportBackup = () => {
+    try {
+      const payload = { ...state, theme, _app: "AiMyFinance", _v: 2, _exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "finance-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      notify("Резервну копію збережено");
+    } catch (e) { notify("Не вдалося створити копію"); }
+  };
+
+  const importBackup = (file) => {
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        const obj = JSON.parse(reader.result);
+        if (!obj || !obj.accounts || !obj.pockets) { notify("Файл не схожий на резервну копію"); return; }
+        setState({ accounts: obj.accounts, pockets: obj.pockets, categories: obj.categories || [], transactions: obj.transactions || [], loans: obj.loans || [], rates: obj.rates || rates, baseCurrency: obj.baseCurrency || baseCurrency, reminders: obj.reminders || [] });
+        if (obj.theme) setTheme(obj.theme);
+        notify("Дані відновлено з копії");
+      } catch (e) { notify("Не вдалося прочитати файл"); }
+    };
+    reader.readAsText(file);
   };
 
   /* ============================== NAV ============================== */
@@ -593,6 +804,15 @@ function FinanceTracker() {
               );
             })}
           </nav>
+          <button onClick={() => setModal({ type: "reminders" })} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium" style={{ color: "var(--text-dim)" }}>
+            <span className="relative flex items-center">
+              <Bell size={18} />
+              {overdueReminders.length > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none" style={{ background: "var(--danger)", color: "#fff" }}>{overdueReminders.length}</span>
+              )}
+            </span>
+            Нагадування
+          </button>
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium" style={{ color: "var(--text-dim)" }}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}{theme === "dark" ? "Світла тема" : "Темна тема"}
           </button>
@@ -604,16 +824,24 @@ function FinanceTracker() {
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "var(--accent)" }}><Coins size={15} color="#08110D" /></div>
               <span className="font-display font-bold">Фінанси</span>
             </div>
-            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="p-2 rounded-lg" style={{ color: "var(--text-dim)" }}>
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setModal({ type: "reminders" })} className="p-2 rounded-lg relative" style={{ color: "var(--text-dim)" }}>
+                <Bell size={18} />
+                {overdueReminders.length > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center text-[9px] font-bold leading-none" style={{ background: "var(--danger)", color: "#fff" }}>{overdueReminders.length}</span>
+                )}
+              </button>
+              <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="p-2 rounded-lg" style={{ color: "var(--text-dim)" }}>
+                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            </div>
           </div>
 
           <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
             {view === "dashboard" && (
               <Dashboard
-                accounts={accounts} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
-                totalInBase={totalInBase} baseCurrency={baseCurrency} byCurrencyTotals={byCurrencyTotals}
+                accounts={accounts} pockets={pockets} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
+                totalInBase={totalInBase} baseCurrency={baseCurrency} rates={rates} byCurrencyTotals={byCurrencyTotals}
                 monthIncome={monthIncome} monthExpense={monthExpense} categoryBreakdown={categoryBreakdown} monthlySeries={monthlySeries}
                 transactions={transactions} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
                 setModal={setModal} setView={setView} totalLoanedOut={totalLoanedOut} overdueTotal={overdueTotal} upcomingLoans={upcomingLoans} activeLoans={activeLoans}
@@ -621,20 +849,20 @@ function FinanceTracker() {
             )}
             {view === "accounts" && (
               <AccountsView accounts={accounts} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
-                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} />
+                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} />
             )}
             {view === "history" && (
               <HistoryView transactions={transactions} pockets={pockets} accounts={accounts} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
                 deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} setModal={setModal} />
             )}
             {view === "loans" && (
-              <LoansView loans={loans} pockets={pockets} getPocket={getPocket} setModal={setModal} loanRemaining={loanRemaining} />
+              <LoansView loans={loans} pockets={pockets} getPocket={getPocket} setModal={setModal} loanRemaining={loanRemaining} archiveLoan={archiveLoan} deleteLoan={deleteLoan} />
             )}
             {view === "categories" && (
               <CategoriesView categories={categories} setModal={setModal} archiveCategory={archiveCategory} />
             )}
             {view === "settings" && (
-              <SettingsView baseCurrency={baseCurrency} rates={rates} update={update} />
+              <SettingsView baseCurrency={baseCurrency} rates={rates} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} exportBackup={exportBackup} importBackup={importBackup} />
             )}
           </div>
         </main>
@@ -672,12 +900,16 @@ function FinanceTracker() {
         <ModalRouter
           modal={modal} setModal={setModal} accounts={accounts} pockets={pockets} categories={categories} rates={rates} baseCurrency={baseCurrency}
           addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} addPocket={addPocket} editPocket={editPocket} archivePocket={archivePocket}
+          deleteAccount={deleteAccount} deletePocket={deletePocket} movePocket={movePocket}
           addCategory={addCategory} editCategory={editCategory}
-          addTransaction={addTransaction} editTransaction={editTransaction} addLoan={addLoan} registerLoanReturn={registerLoanReturn}
+          addTransaction={addTransaction} editTransaction={editTransaction} addLoan={addLoan} registerLoanReturn={registerLoanReturn} editLoan={editLoan}
           loans={loans} loanRemaining={loanRemaining} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel}
           transactions={transactions} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction}
+          reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone}
         />
       )}
+
+      {locked && pin && <LockScreen pin={pin} onUnlock={() => setLocked(false)} />}
     </div>
   );
 }
@@ -754,19 +986,66 @@ function MiniBars({ data, height = 190 }) {
 
 /* ============================== DASHBOARD ============================== */
 
-function Dashboard({ accounts, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans }) {
+function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans }) {
   const net = monthIncome - monthExpense;
   const recent = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
   const activeAccounts = accounts.filter((a) => !a.archived);
-  const allPocketCards = activeAccounts.flatMap((acc) => accountPockets(acc.id).map((p) => ({ ...p, account: acc })));
+  const allPocketCards = activeAccounts.flatMap((acc) => pockets.filter((p) => p.accountId === acc.id && !p.archived).map((p) => ({ ...p, account: acc })));
+
+  /* ---- period selector for the income/expense/net widget ---- */
+  const [period, setPeriod] = useState("month");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const nowD = new Date();
+  const isoD = (d) => d.toISOString().slice(0, 10);
+  let pStart = "", pEnd = "";
+  if (period === "day") { pStart = isoD(nowD); pEnd = isoD(nowD); }
+  else if (period === "month") { pStart = isoD(new Date(nowD.getFullYear(), nowD.getMonth(), 1)); pEnd = isoD(new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0)); }
+  else if (period === "year") { pStart = isoD(new Date(nowD.getFullYear(), 0, 1)); pEnd = isoD(new Date(nowD.getFullYear(), 11, 31)); }
+  else { pStart = customFrom; pEnd = customTo; }
+  const inRange = (d) => (!pStart || d >= pStart) && (!pEnd || d <= pEnd);
+  const periodTx = transactions.filter((t) => (t.type === "income" || t.type === "expense") && inRange(t.date));
+  const periodIncome = periodTx.filter((t) => t.type === "income").reduce((s, t) => s + convert(t.amount, t.currency, baseCurrency, rates), 0);
+  const periodExpense = periodTx.filter((t) => t.type === "expense").reduce((s, t) => s + convert(t.amount, t.currency, baseCurrency, rates), 0);
+  const periodNet = periodIncome - periodExpense;
+  const periodLabel = period === "day" ? "за сьогодні" : period === "month" ? "за місяць" : period === "year" ? "за рік" : "за період";
+  const periodBreakdown = (() => {
+    const m = {};
+    periodTx.filter((t) => t.type === "expense").forEach((t) => {
+      const cat = categories.find((c) => c.id === t.categoryId);
+      const key = cat ? cat.name : "Інше";
+      m[key] = (m[key] || 0) + convert(t.amount, t.currency, baseCurrency, rates);
+    });
+    return Object.entries(m).map(([name, value]) => ({ name, value, color: (categories.find((c) => c.name === name) || {}).color || "#8B93A3" })).sort((a, b) => b.value - a.value);
+  })();
+
+  const [hideTotal, setHideTotal] = useState(() => {
+    try { return window.localStorage && window.localStorage.getItem("ft_hideTotal") === "1"; } catch (e) { return false; }
+  });
+  const _lastTap = React.useRef(0);
+  const toggleHide = () => {
+    const now = Date.now();
+    if (now - _lastTap.current < 320) {
+      setHideTotal((h) => {
+        const nv = !h;
+        try { window.localStorage.setItem("ft_hideTotal", nv ? "1" : "0"); } catch (e) {}
+        return nv;
+      });
+      _lastTap.current = 0;
+    } else {
+      _lastTap.current = now;
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in">
       <div>
         <p className="text-sm mb-1" style={{ color: "var(--text-dim)" }}>Загальний капітал</p>
-        <h1 className="font-display font-extrabold text-4xl md:text-5xl tabular" style={{ color: "var(--text)" }}>{fmtMoney(totalInBase, baseCurrency)}</h1>
+        <h1 onClick={toggleHide} className="font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none" style={{ color: "var(--text)", WebkitUserSelect: "none" }} title="Подвійний тап, щоб приховати">
+          {hideTotal ? "$$$$$$$" : fmtMoney(totalInBase, baseCurrency)}
+        </h1>
         <div className="flex flex-wrap gap-2 mt-3">
-          {Object.entries(byCurrencyTotals).map(([cur, val]) => <Badge key={cur} color="var(--accent2)">{fmtMoney(val, cur)}</Badge>)}
+          {Object.entries(byCurrencyTotals).map(([cur, val]) => <Badge key={cur} color="var(--accent2)">{hideTotal ? "••••" : fmtMoney(val, cur)}</Badge>)}
         </div>
       </div>
 
@@ -784,7 +1063,7 @@ function Dashboard({ accounts, accountPockets, pocketBalance, accountTotalBase, 
         </div>
         <div className="flex gap-3 overflow-x-auto snap-x pb-2 -mx-1 px-1">
           {allPocketCards.map((p) => (
-            <PocketCard key={p.id} pocket={p} balance={pocketBalance(p.id)} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} className="w-64 shrink-0 snap-card" />
+            <PocketCard key={p.id} pocket={p} balance={pocketBalance(p.id)} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} onLongPress={() => setModal({ type: "cardMenu", payload: p.id })} className="w-64 shrink-0 snap-card" />
           ))}
           <button onClick={() => setModal({ type: "account" })} className="snap-card shrink-0 w-64 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 text-sm font-medium" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
             <Plus size={16} /> Новий рахунок
@@ -792,22 +1071,41 @@ function Dashboard({ accounts, accountPockets, pocketBalance, accountTotalBase, 
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="p-4"><p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>Дохід за місяць</p><p className="font-display font-bold tabular" style={{ color: "var(--accent)" }}>{fmtMoney(monthIncome, baseCurrency)}</p></Card>
-        <Card className="p-4"><p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>Витрати за місяць</p><p className="font-display font-bold tabular" style={{ color: "var(--danger)" }}>{fmtMoney(monthExpense, baseCurrency)}</p></Card>
-        <Card className="p-4"><p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>Чистий результат</p><p className="font-display font-bold tabular" style={{ color: net >= 0 ? "var(--accent)" : "var(--danger)" }}>{fmtMoney(net, baseCurrency)}</p></Card>
+      <div>
+        <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+          {[["day", "День"], ["month", "Місяць"], ["year", "Рік"], ["custom", "Свій період"]].map(([id, label]) => (
+            <button key={id} onClick={() => setPeriod(id)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition" style={{ background: period === id ? "var(--accent)" : "var(--surface2)", color: period === id ? "#08110D" : "var(--text-dim)", border: "1px solid var(--border)" }}>{label}</button>
+          ))}
+        </div>
+        {period === "custom" && (
+          <Card className="p-3 mb-3 space-y-3">
+            <label className="block min-w-0">
+              <span className="text-[11px] font-medium mb-1.5 flex items-center gap-1" style={{ color: "var(--text-dim)" }}><Calendar size={12} /> Від</span>
+              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+            </label>
+            <label className="block min-w-0">
+              <span className="text-[11px] font-medium mb-1.5 flex items-center gap-1" style={{ color: "var(--text-dim)" }}><Calendar size={12} /> До</span>
+              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+            </label>
+          </Card>
+        )}
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>Дохід {periodLabel}</p><p className="font-display font-bold tabular" style={{ color: "var(--accent)" }}>{fmtMoney(periodIncome, baseCurrency)}</p></Card>
+          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>Витрати {periodLabel}</p><p className="font-display font-bold tabular" style={{ color: "var(--danger)" }}>{fmtMoney(periodExpense, baseCurrency)}</p></Card>
+          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>Чистий результат</p><p className="font-display font-bold tabular" style={{ color: periodNet >= 0 ? "var(--accent)" : "var(--danger)" }}>{fmtMoney(periodNet, baseCurrency)}</p></Card>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="p-4">
-          <h3 className="font-display font-semibold mb-3 text-sm">Витрати за категоріями (цей місяць)</h3>
-          {categoryBreakdown.length === 0 ? (
-            <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>Немає витрат цього місяця</p>
+          <h3 className="font-display font-semibold mb-3 text-sm">Витрати за категоріями ({periodLabel})</h3>
+          {periodBreakdown.length === 0 ? (
+            <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>Немає витрат за цей період</p>
           ) : (
             <div className="flex items-center gap-4">
-              <DonutChart data={categoryBreakdown} />
+              <DonutChart data={periodBreakdown} />
               <div className="space-y-1.5 flex-1 min-w-0">
-                {categoryBreakdown.slice(0, 5).map((c, i) => (
+                {periodBreakdown.slice(0, 5).map((c, i) => (
                   <div key={i} className="flex items-center justify-between text-xs gap-2">
                     <span className="flex items-center gap-1.5 truncate"><span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />{c.name}</span>
                     <span className="tabular shrink-0" style={{ color: "var(--text-dim)" }}>{fmtMoney(c.value, baseCurrency)}</span>
@@ -873,12 +1171,33 @@ function QuickAction({ icon: Ic, label, onClick }) {
   );
 }
 
-function PocketCard({ pocket, balance, onClick, className = "" }) {
+function PocketCard({ pocket, balance, onClick, onLongPress, className = "" }) {
   const acc = pocket.account;
   const typeInfo = ACCOUNT_TYPES.find((t) => t.id === acc.type);
   const masked = `•••• ${pocket.id.slice(-4).toUpperCase()}`;
+
+  const pressTimer = React.useRef(null);
+  const longFired = React.useRef(false);
+  const startPress = () => {
+    if (!onLongPress) return;
+    longFired.current = false;
+    pressTimer.current = setTimeout(() => { longFired.current = true; onLongPress(); }, 500);
+  };
+  const clearPress = () => { if (pressTimer.current) clearTimeout(pressTimer.current); };
+  const handleClick = () => {
+    if (longFired.current) { longFired.current = false; return; }
+    if (onClick) onClick();
+  };
+
   return (
-    <div onClick={onClick} className={`bank-card ${onClick ? "cursor-pointer active:scale-[0.98] transition-transform" : ""} ${className}`} style={{ "--card-accent": acc.color }}>
+    <div
+      onClick={handleClick}
+      onContextMenu={(e) => { if (onLongPress) { e.preventDefault(); onLongPress(); } }}
+      onTouchStart={startPress} onTouchEnd={clearPress} onTouchMove={clearPress}
+      onMouseDown={startPress} onMouseUp={clearPress} onMouseLeave={clearPress}
+      className={`bank-card ${onClick ? "cursor-pointer active:scale-[0.98] transition-transform" : ""} ${className}`}
+      style={{ "--card-accent": acc.color, WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
+    >
       <div className="bank-card-glow" />
       <div className="flex items-center justify-between gap-2 mb-8">
         <span className="flex items-center gap-1.5 text-[11px] font-medium min-w-0" style={{ color: "rgba(255,255,255,0.55)" }}>
@@ -918,12 +1237,50 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
 
 /* ============================== ACCOUNTS VIEW ============================== */
 
-function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket }) {
+function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts }) {
   const [showArchived, setShowArchived] = useState(false);
   const [expanded, setExpanded] = useState({});
+  const [confirmDel, setConfirmDel] = useState(null);
+  const [dragId, setDragId] = useState(null);
+  const dragIdRef = React.useRef(null);
+  const lastOverRef = React.useRef(null);
+  const listRef = React.useRef(null);
+  const reorderRef = React.useRef(reorderAccounts);
+  reorderRef.current = reorderAccounts;
   const list = accounts.filter((a) => (showArchived ? a.archived : !a.archived));
 
   const toggle = (id) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
+
+  const beginDrag = (id) => { dragIdRef.current = id; lastOverRef.current = id; setDragId(id); };
+  const endDrag = () => { dragIdRef.current = null; lastOverRef.current = null; setDragId(null); };
+  const considerOver = (overId) => {
+    const from = dragIdRef.current;
+    if (!from || !overId || overId === from || lastOverRef.current === overId) return;
+    lastOverRef.current = overId;
+    reorderRef.current(from, overId);
+  };
+
+  React.useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const onMove = (e) => {
+      if (!dragIdRef.current) return;
+      e.preventDefault();
+      const t = e.touches ? e.touches[0] : e;
+      const target = document.elementFromPoint(t.clientX, t.clientY);
+      const row = target && target.closest ? target.closest("[data-acc-row]") : null;
+      if (row) considerOver(row.getAttribute("data-acc-row"));
+    };
+    const onEnd = () => { if (dragIdRef.current) endDrag(); };
+    el.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
+    window.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
 
   return (
     <div className="space-y-5 animate-in">
@@ -935,30 +1292,61 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
         <button onClick={() => setShowArchived(false)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: !showArchived ? "var(--surface2)" : "transparent", color: !showArchived ? "var(--text)" : "var(--text-dim)" }}>Активні</button>
         <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>Архів</button>
       </div>
-      <div className="grid lg:grid-cols-2 gap-4">
+      {!showArchived && list.length > 1 && (
+        <p className="text-xs" style={{ color: "var(--text-dim)" }}>Перетягни за ручку <span style={{ verticalAlign: "middle" }}>⠿</span>, щоб змінити порядок рахунків.</p>
+      )}
+      <div ref={listRef} className="space-y-4">
         {list.map((acc) => {
           const pks = accountPockets(acc.id, true).filter((p) => showArchived ? true : true);
           const isOpen = expanded[acc.id] ?? true;
           return (
-            <Card key={acc.id} className="p-5">
-              <button onClick={() => toggle(acc.id)} className="w-full flex items-start justify-between mb-1">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${acc.color}22` }}>
-                    <Icon name={ACCOUNT_TYPES.find((t) => t.id === acc.type)?.icon} size={18} style={{ color: acc.color }} />
+            <div
+              key={acc.id}
+              data-acc-row={acc.id}
+              onDragOver={(e) => { if (dragIdRef.current) { e.preventDefault(); considerOver(acc.id); } }}
+              onDragEnd={endDrag}
+              style={{ opacity: dragId === acc.id ? 0.4 : 1, transition: "opacity .15s" }}
+            >
+            <Card className="p-5" style={dragId === acc.id ? { borderColor: "var(--accent)" } : {}}>
+              <div className="flex items-start gap-2">
+                {!showArchived && (
+                  <span
+                    draggable
+                    onDragStart={(e) => { beginDrag(acc.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; }}
+                    onTouchStart={(e) => { e.stopPropagation(); beginDrag(acc.id); }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1 -ml-1 mt-1 shrink-0 cursor-grab active:cursor-grabbing"
+                    style={{ color: "var(--text-dim)", touchAction: "none" }}
+                    title="Перетягнути"
+                  ><GripVertical size={16} /></span>
+                )}
+                <button onClick={() => toggle(acc.id)} className="flex-1 min-w-0 flex items-start justify-between mb-1">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${acc.color}22` }}>
+                      <Icon name={ACCOUNT_TYPES.find((t) => t.id === acc.type)?.icon} size={18} style={{ color: acc.color }} />
+                    </div>
+                    <div className="text-left min-w-0">
+                      <p className="text-sm font-semibold truncate">{acc.name}</p>
+                      <p className="text-xs" style={{ color: "var(--text-dim)" }}>{ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label} · {pks.filter(p=>!p.archived).length} валют{pks.filter(p=>!p.archived).length===1?"а":""}</p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold">{acc.name}</p>
-                    <p className="text-xs" style={{ color: "var(--text-dim)" }}>{ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label} · {pks.filter(p=>!p.archived).length} валют{pks.filter(p=>!p.archived).length===1?"а":""}</p>
+                  <div className="flex items-center gap-2 shrink-0 pl-2">
+                    <p className="font-display font-bold text-base tabular">{fmtMoney(accountTotalBase(acc.id), baseCurrency)}</p>
+                    <ChevronDown size={16} style={{ color: "var(--text-dim)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="font-display font-bold text-base tabular">{fmtMoney(accountTotalBase(acc.id), baseCurrency)}</p>
-                  <ChevronDown size={16} style={{ color: "var(--text-dim)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
-                </div>
-              </button>
-              <div className="flex gap-1 mb-3">
+                </button>
+              </div>
+              <div className="flex items-center gap-1 mb-3">
                 <button onClick={() => setModal({ type: "account", payload: acc })} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
                 <button onClick={() => archiveAccount(acc.id)} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Archive size={14} /></button>
+                <button onClick={() => setConfirmDel(confirmDel === acc.id ? null : acc.id)} className="p-1.5 rounded-lg" style={{ color: "var(--danger)" }}><Trash2 size={14} /></button>
+                {confirmDel === acc.id && (
+                  <div className="flex items-center gap-2 ml-1">
+                    <span className="text-xs" style={{ color: "var(--text-dim)" }}>Видалити рахунок?</span>
+                    <button onClick={() => { deleteAccount(acc.id); setConfirmDel(null); }} className="text-xs font-semibold px-2 py-1 rounded-md" style={{ background: "var(--danger)", color: "#fff" }}>Так</button>
+                    <button onClick={() => setConfirmDel(null)} className="text-xs font-medium px-2 py-1 rounded-md" style={{ background: "var(--surface2)", color: "var(--text)" }}>Ні</button>
+                  </div>
+                )}
               </div>
               {isOpen && (
                 <div className="space-y-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
@@ -982,9 +1370,10 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                 </div>
               )}
             </Card>
+            </div>
           );
         })}
-        {list.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>Немає рахунків у цій категорії</p>}
+        {list.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>Немає рахунків у цій категорії</p>}
       </div>
     </div>
   );
@@ -1071,18 +1460,26 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
       )}
 
       <Card className="divide-y" style={{ borderColor: "var(--border)" }}>
-        {filtered.map((tx) => (
-          <div key={tx.id} className="group flex items-center">
-            <div className="flex-1 min-w-0"><TxRow tx={tx} categories={categories} pocketLabel={pocketLabel} /></div>
-            <div className="hidden group-hover:flex items-center gap-2 pr-4 shrink-0">
-              {(tx.type === "income" || tx.type === "expense") && (
-                <button onClick={() => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } })} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
-              )}
-              <button onClick={() => duplicateTransaction(tx)} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Plus size={14} /></button>
-              <button onClick={() => deleteTransaction(tx.id)} className="p-1.5 rounded-lg" style={{ color: "var(--danger)" }}><Trash2 size={14} /></button>
-            </div>
-          </div>
-        ))}
+        {filtered.map((tx) => {
+          const acts = [];
+          if (tx.type === "income" || tx.type === "expense") acts.push({ icon: Edit3, label: "Ред.", bg: "var(--accent2)", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } }) });
+          acts.push({ icon: Plus, label: "Копія", bg: "var(--surface2)", fg: "var(--text)", onClick: () => duplicateTransaction(tx) });
+          acts.push({ icon: Trash2, label: "Видал.", bg: "var(--danger)", onClick: () => deleteTransaction(tx.id) });
+          return (
+            <SwipeRow key={tx.id} actions={acts}>
+              <div className="group flex items-center" style={{ background: "var(--surface)" }}>
+                <div className="flex-1 min-w-0"><TxRow tx={tx} categories={categories} pocketLabel={pocketLabel} /></div>
+                <div className="hidden group-hover:flex items-center gap-2 pr-4 shrink-0">
+                  {(tx.type === "income" || tx.type === "expense") && (
+                    <button onClick={() => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } })} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
+                  )}
+                  <button onClick={() => duplicateTransaction(tx)} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Plus size={14} /></button>
+                  <button onClick={() => deleteTransaction(tx.id)} className="p-1.5 rounded-lg" style={{ color: "var(--danger)" }}><Trash2 size={14} /></button>
+                </div>
+              </div>
+            </SwipeRow>
+          );
+        })}
         {filtered.length === 0 && <p className="text-sm py-10 text-center" style={{ color: "var(--text-dim)" }}>Немає операцій за заданими фільтрами</p>}
       </Card>
     </div>
@@ -1091,10 +1488,10 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
 
 /* ============================== LOANS VIEW ============================== */
 
-function LoansView({ loans, pockets, getPocket, setModal, loanRemaining }) {
+function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archiveLoan, deleteLoan }) {
   const [showArchived, setShowArchived] = useState(false);
-  const active = loans.filter((l) => l.status !== "returned");
-  const done = loans.filter((l) => l.status === "returned");
+  const active = loans.filter((l) => l.status !== "returned" && !l.archived);
+  const done = loans.filter((l) => l.status === "returned" || l.archived);
   const overdueCount = active.filter((l) => new Date(l.dueDate) < new Date()).length;
   const list = showArchived ? done : active;
 
@@ -1130,8 +1527,14 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining }) {
           const remaining = loanRemaining(loan);
           const days = daysBetween(new Date(), loan.dueDate);
           const pk = getPocket(loan.pocketId);
+          const loanActs = [
+            { icon: Edit3, label: "Ред.", bg: "var(--accent2)", onClick: () => setModal({ type: "loanEdit", payload: loan }) },
+            { icon: Archive, label: loan.archived ? "Актив." : "Архів", bg: "var(--surface2)", fg: "var(--text)", onClick: () => archiveLoan(loan.id) },
+            { icon: Trash2, label: "Видал.", bg: "var(--danger)", onClick: () => deleteLoan(loan.id) },
+          ];
           return (
-            <Card key={loan.id} className="p-5">
+            <SwipeRow key={loan.id} actions={loanActs}>
+            <Card className="p-5" style={{ background: "var(--surface)" }}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "var(--surface2)" }}><Users size={16} style={{ color: "var(--text-dim)" }} /></div>
@@ -1156,6 +1559,7 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining }) {
                 <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "loanReturn", payload: loan })}>Зареєструвати повернення</Button>
               )}
             </Card>
+            </SwipeRow>
           );
         })}
         {list.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>Немає позик у цій категорії</p>}
@@ -1195,21 +1599,122 @@ function CategoriesView({ categories, setModal, archiveCategory }) {
 
 /* ============================== SETTINGS VIEW ============================== */
 
-function SettingsView({ baseCurrency, rates, update }) {
-  const [localRates, setLocalRates] = useState(rates);
+function SettingsView({ baseCurrency, rates, update, session, setToast, pin, applyPin, exportBackup, importBackup }) {
+  const [localRates, setLocalRates] = useState(() => {
+    const o = {};
+    Object.keys(rates).forEach((k) => { o[k] = String(rates[k]); });
+    return o;
+  });
   const [base, setBase] = useState(baseCurrency);
-  const save = () => update({ rates: localRates, baseCurrency: base });
+  const save = () => {
+    const parsed = { UAH: 1 };
+    Object.keys(localRates).forEach((k) => { if (k !== "UAH") parsed[k] = parseFloat(localRates[k]) || 0; });
+    update({ rates: parsed, baseCurrency: base });
+    setToast && setToast("Налаштування збережено");
+  };
+
+  const [pinMode, setPinMode] = useState(false);
+  const [pin1, setPin1] = useState("");
+  const [pin2, setPin2] = useState("");
+  const [pinErr, setPinErr] = useState("");
+  const savePinCode = () => {
+    if (!/^\d{4,6}$/.test(pin1)) return setPinErr("PIN має містити 4–6 цифр");
+    if (pin1 !== pin2) return setPinErr("Коди не збігаються");
+    applyPin(pin1);
+    setPinMode(false); setPin1(""); setPin2(""); setPinErr("");
+    setToast && setToast("PIN-код увімкнено");
+  };
+  const removePin = () => { applyPin(null); setToast && setToast("PIN-код вимкнено"); };
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authErr, setAuthErr] = useState("");
+
+  const signIn = async () => {
+    setAuthErr(""); setAuthBusy(true);
+    const { error } = await SB.auth.signInWithPassword({ email: email.trim(), password });
+    setAuthBusy(false);
+    if (error) setAuthErr(error.message); else { setPassword(""); }
+  };
+  const signUp = async () => {
+    setAuthErr(""); setAuthBusy(true);
+    const { error } = await SB.auth.signUp({ email: email.trim(), password });
+    setAuthBusy(false);
+    if (error) setAuthErr(error.message); else { setPassword(""); setToast("Акаунт створено"); }
+  };
+  const signOut = async () => { await SB.auth.signOut(); setToast("Ви вийшли з акаунта"); };
+
   return (
     <div className="space-y-5 animate-in max-w-xl">
       <h1 className="font-display font-bold text-2xl">Налаштування</h1>
+
       <Card className="p-5">
-        <Field label="Базова валюта (для загального балансу)">
-          <Select value={base} onChange={(e) => setBase(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
-        </Field>
+        <h3 className="font-display font-semibold text-sm mb-1">Синхронізація між пристроями</h3>
+        {!SB ? (
+          <p className="text-xs" style={{ color: "var(--text-dim)" }}>Хмарну синхронізацію не налаштовано. Додайте ключі Supabase у код застосунку, щоб увімкнути вхід і збереження в хмару.</p>
+        ) : session ? (
+          <div>
+            <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>Ви увійшли як <strong style={{ color: "var(--text)" }}>{session.user.email}</strong>. Дані зберігаються в хмару автоматично.</p>
+            <Button variant="secondary" onClick={signOut}>Вийти з акаунта</Button>
+          </div>
+        ) : (
+          <div>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Увійдіть, щоб синхронізувати дані між своїми пристроями. На новому пристрої увійдіть тим самим акаунтом — дані підтягнуться.</p>
+            <Field label="Email"><Input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setAuthErr(""); }} placeholder="you@example.com" /></Field>
+            <Field label="Пароль" error={authErr}><Input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setAuthErr(""); }} placeholder="мінімум 6 символів" /></Field>
+            <div className="flex gap-2">
+              <Button onClick={signIn} disabled={authBusy} className="flex-1">Увійти</Button>
+              <Button variant="secondary" onClick={signUp} disabled={authBusy} className="flex-1">Створити акаунт</Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-display font-semibold text-sm mb-1">PIN-код</h3>
+        {pin && !pinMode ? (
+          <div>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Увімкнено. Застосунок запитуватиме код при кожному відкритті.</p>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => { setPinMode(true); setPin1(""); setPin2(""); setPinErr(""); }}>Змінити</Button>
+              <Button variant="secondary" onClick={removePin}>Вимкнути</Button>
+            </div>
+          </div>
+        ) : pinMode ? (
+          <div>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Придумайте код із 4–6 цифр.</p>
+            <Field label="Новий PIN"><Input type="password" inputMode="numeric" maxLength={6} value={pin1} onChange={(e) => { setPin1(e.target.value.replace(/\D/g, "")); setPinErr(""); }} placeholder="••••" /></Field>
+            <Field label="Повторіть PIN" error={pinErr}><Input type="password" inputMode="numeric" maxLength={6} value={pin2} onChange={(e) => { setPin2(e.target.value.replace(/\D/g, "")); setPinErr(""); }} placeholder="••••" /></Field>
+            <div className="flex gap-2">
+              <Button onClick={savePinCode} className="flex-1">Зберегти</Button>
+              <Button variant="secondary" onClick={() => { setPinMode(false); setPinErr(""); }}>Скасувати</Button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Захистіть застосунок кодом на вході. Код зберігається лише на цьому пристрої.</p>
+            <Button onClick={() => { setPinMode(true); setPin1(""); setPin2(""); setPinErr(""); }}>Встановити PIN</Button>
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-display font-semibold text-sm mb-1">Резервна копія</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Збережіть файл-копію на iPhone або відновіть дані з файлу. Хмарна копія — у блоці «Синхронізація» вище.</p>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="secondary" onClick={exportBackup}><ArrowDownRight size={15} /> Зберегти копію</Button>
+          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer" style={{ background: "var(--surface2)", color: "var(--text)", border: "1px solid var(--border)" }}>
+            <ArrowUpRight size={15} /> Відновити з файлу
+            <input type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) importBackup(f); e.target.value = ""; }} />
+          </label>
+        </div>
+        <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>Відновлення замінить поточні дані на цьому пристрої.</p>
+      </Card>
         <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Курси валют (скільки UAH за 1 одиницю)</p>
         <div className="grid grid-cols-2 gap-3">
           {CURRENCIES.filter((c) => c !== "UAH").map((c) => (
-            <Field key={c} label={`1 ${c} =`}><Input type="number" step="0.01" value={localRates[c]} onChange={(e) => setLocalRates({ ...localRates, [c]: parseFloat(e.target.value) || 0 })} /></Field>
+            <Field key={c} label={`1 ${c} =`}><Input type="number" step="0.01" inputMode="decimal" value={localRates[c] ?? ""} onChange={(e) => setLocalRates({ ...localRates, [c]: e.target.value })} placeholder="0" /></Field>
           ))}
         </div>
         <Button onClick={save} className="mt-2">Зберегти налаштування</Button>
@@ -1220,18 +1725,112 @@ function SettingsView({ baseCurrency, rates, update }) {
 
 /* ============================== MODAL ROUTER ============================== */
 
-function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction }) {
+function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone }) {
   const close = () => setModal(null);
   if (modal.type === "account") return <AccountModal onClose={close} existing={modal.payload} addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} />;
   if (modal.type === "pocket") return <PocketModal onClose={close} accountId={modal.payload.accountId} existing={modal.payload.existing} accounts={accounts} pockets={pockets} addPocket={addPocket} editPocket={editPocket} />;
+  if (modal.type === "cardMenu") return <CardMenuModal onClose={close} pocketId={modal.payload} pockets={pockets} getPocket={getPocket} setModal={setModal} archivePocket={archivePocket} deletePocket={deletePocket} movePocket={movePocket} />;
   if (modal.type === "category") return <CategoryModal onClose={close} existing={modal.payload} addCategory={addCategory} editCategory={editCategory} />;
   if (modal.type === "transaction") return <TransactionModal onClose={close} kind={modal.payload.kind} editing={modal.payload.editing} presetPocketId={modal.payload.presetPocketId} accounts={accounts} pockets={pockets} categories={categories} addTransaction={addTransaction} editTransaction={editTransaction} />;
   if (modal.type === "transfer") return <TransferExchangeModal onClose={close} mode="transfer" presetFromPocketId={modal.payload?.presetPocketId} accounts={accounts} pockets={pockets} rates={rates} addTransaction={addTransaction} />;
   if (modal.type === "exchange") return <TransferExchangeModal onClose={close} mode="exchange" presetFromPocketId={modal.payload?.presetPocketId} accounts={accounts} pockets={pockets} rates={rates} addTransaction={addTransaction} />;
   if (modal.type === "loan") return <LoanModal onClose={close} accounts={accounts} pockets={pockets} addLoan={addLoan} />;
   if (modal.type === "loanReturn") return <LoanReturnModal onClose={close} loan={modal.payload} accounts={accounts} pockets={pockets} registerLoanReturn={registerLoanReturn} loanRemaining={loanRemaining} />;
+  if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
   if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
+  if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} />;
   return null;
+}
+
+/* ---------- Reminders (bell) ---------- */
+function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone }) {
+  const [editing, setEditing] = useState(null); // null | "new" | reminder object
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("UAH");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+
+  const openNew = () => { setEditing("new"); setTitle(""); setDate(new Date().toISOString().slice(0, 10)); setAmount(""); setCurrency("UAH"); setNote(""); setError(""); };
+  const openEdit = (r) => { setEditing(r); setTitle(r.title); setDate(r.date); setAmount(r.amount != null ? String(r.amount) : ""); setCurrency(r.currency || "UAH"); setNote(r.note || ""); setError(""); };
+  const cancel = () => setEditing(null);
+
+  const submit = () => {
+    if (!title.trim()) return setError("Введіть назву нагадування");
+    if (!date) return setError("Оберіть дату");
+    const data = { title: title.trim(), date, amount: amount === "" ? null : parseFloat(amount) || 0, currency, note: note.trim() };
+    if (editing === "new") addReminder(data); else editReminder(editing.id, data);
+    setEditing(null);
+  };
+
+  const today = new Date(new Date().setHours(0, 0, 0, 0));
+  const sorted = [...reminders].sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return new Date(a.date) - new Date(b.date);
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto animate-in" style={{ background: "var(--bg)" }}>
+      <div className="sticky top-0 z-10 flex items-center justify-between px-5 border-b" style={{ background: "var(--bg)", borderColor: "var(--border)", paddingTop: "calc(1rem + env(safe-area-inset-top))", paddingBottom: "1rem" }}>
+        <h1 className="font-display font-bold text-xl flex items-center gap-2"><Bell size={20} /> Нагадування</h1>
+        <button onClick={onClose} className="p-2 rounded-lg" style={{ color: "var(--text-dim)" }}><X size={20} /></button>
+      </div>
+
+      <div className="px-5 py-5 max-w-xl mx-auto space-y-4">
+        {editing ? (
+          <Card className="p-5">
+            <h3 className="font-display font-semibold text-sm mb-3">{editing === "new" ? "Нове нагадування" : "Редагувати нагадування"}</h3>
+            <Field label="Що зробити" error={error}><Input value={title} onChange={(e) => { setTitle(e.target.value); setError(""); }} placeholder="Напр. Оплатити прибиральницю" /></Field>
+            <Field label="Дата"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+            <Field label="Сума (необов'язково)">
+              <div className="flex gap-2">
+                <div className="flex-1 min-w-0"><Input type="number" step="0.01" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
+                <div className="w-20 shrink-0"><Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}</Select></div>
+              </div>
+            </Field>
+            <Field label="Коментар"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
+            <div className="flex gap-2 mt-1">
+              <Button onClick={submit} className="flex-1">{editing === "new" ? "Створити" : "Зберегти"}</Button>
+              <Button variant="secondary" onClick={cancel}>Скасувати</Button>
+            </div>
+          </Card>
+        ) : (
+          <Button onClick={openNew} className="w-full"><Plus size={16} /> Нове нагадування</Button>
+        )}
+
+        <div className="space-y-2">
+          {sorted.map((r) => {
+            const days = daysBetween(new Date(), r.date);
+            const overdue = !r.done && new Date(r.date) < today;
+            return (
+              <Card key={r.id} className={`p-4 ${r.done ? "opacity-50" : ""}`} style={overdue ? { borderColor: "var(--danger)" } : {}}>
+                <div className="flex items-start gap-3">
+                  <button onClick={() => toggleReminderDone(r.id)} className="mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center shrink-0" style={{ borderColor: r.done ? "var(--accent)" : "var(--border)", background: r.done ? "var(--accent)" : "transparent" }}>
+                    {r.done && <Check size={12} color="#08110D" />}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${r.done ? "line-through" : ""}`} style={{ color: "var(--text)" }}>{r.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: overdue ? "var(--danger)" : "var(--text-dim)" }}>
+                      {fmtDate(r.date)}
+                      {r.amount != null ? ` · ${fmtMoney(r.amount, r.currency)}` : ""}
+                      {!r.done ? ` · ${days === 0 ? "сьогодні" : days > 0 ? `через ${days} дн.` : `прострочено на ${Math.abs(days)} дн.`}` : ""}
+                    </p>
+                    {r.note ? <p className="text-xs mt-1" style={{ color: "var(--text-dim)" }}>{r.note}</p> : null}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
+                    <button onClick={() => deleteReminder(r.id)} className="p-1.5 rounded-lg" style={{ color: "var(--danger)" }}><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+          {sorted.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>Немає нагадувань</p>}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ---------- Pocket Detail (full-screen account view, Monobank-style) ---------- */
@@ -1258,7 +1857,7 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto animate-in" style={{ background: "var(--bg)" }}>
-      <div className="relative px-5 pt-6 pb-10" style={{ background: `linear-gradient(160deg, ${acc.color}, ${acc.color}66 65%, var(--bg))` }}>
+      <div className="relative px-5 pb-8" style={{ background: `linear-gradient(160deg, ${acc.color}, ${acc.color}66 78%, var(--bg))`, paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
         <button onClick={onClose} className="p-2 rounded-full mb-6" style={{ background: "rgba(0,0,0,0.18)" }}><X size={18} color="#fff" /></button>
         <p className="text-sm mb-1" style={{ color: "rgba(8,17,13,0.75)" }}>{acc.name} · {ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label}</p>
         <h1 className="font-display font-extrabold text-4xl tabular" style={{ color: "#08110D" }}>{fmtMoney(balance, pocket.currency)}</h1>
@@ -1268,7 +1867,7 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
         </div>
       </div>
 
-      <div className="px-5 -mt-5">
+      <div className="px-5 pt-6">
         <div className="grid grid-cols-4 gap-2 mb-6">
           <RoundAction icon={Plus} label="Дохід" onClick={() => setModal({ type: "transaction", payload: { kind: "income", presetPocketId: pocketId } })} />
           <RoundAction icon={Minus} label="Витрата" onClick={() => setModal({ type: "transaction", payload: { kind: "expense", presetPocketId: pocketId } })} />
@@ -1300,6 +1899,47 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
         </button>
       </div>
     </div>
+  );
+}
+
+/* ---------- Card long-press menu ---------- */
+function CardMenuModal({ onClose, pocketId, pockets, getPocket, setModal, archivePocket, deletePocket, movePocket }) {
+  const pk = getPocket(pocketId);
+  const [confirmDel, setConfirmDel] = useState(false);
+  if (!pk || !pk.account) return null;
+  const acc = pk.account;
+  const active = pockets.filter((p) => !p.archived);
+  const idx = active.findIndex((p) => p.id === pocketId);
+  const canLeft = idx > 0;
+  const canRight = idx >= 0 && idx < active.length - 1;
+
+  const Row = ({ icon: Ic, label, onClick, danger, disabled }) => (
+    <button onClick={onClick} disabled={disabled} className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium disabled:opacity-30" style={{ color: danger ? "var(--danger)" : "var(--text)", background: "transparent" }}>
+      <Ic size={18} style={{ color: danger ? "var(--danger)" : "var(--text-dim)" }} />
+      {label}
+    </button>
+  );
+
+  return (
+    <Modal title={`${acc.name} · ${pk.currency}`} onClose={onClose}>
+      <div className="space-y-0.5">
+        <Row icon={ChevronRight} label="Відкрити рахунок" onClick={() => setModal({ type: "pocketDetail", payload: pocketId })} />
+        <Row icon={Edit3} label="Редагувати рахунок (назва, колір, тип)" onClick={() => setModal({ type: "account", payload: acc })} />
+        <Row icon={Coins} label="Змінити валюту / баланс" onClick={() => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk } })} />
+        <Row icon={Archive} label="Архівувати картку" onClick={() => { archivePocket(pocketId); onClose(); }} />
+        {!confirmDel ? (
+          <Row icon={Trash2} label="Видалити картку" danger onClick={() => setConfirmDel(true)} />
+        ) : (
+          <div className="px-1 py-1">
+            <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>Картку буде видалено. Операції залишаться в історії.</p>
+            <div className="flex gap-2">
+              <Button variant="danger" className="flex-1" onClick={() => { deletePocket(pocketId); onClose(); }}>Видалити</Button>
+              <Button variant="secondary" onClick={() => setConfirmDel(false)}>Скасувати</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
 
@@ -1350,12 +1990,13 @@ function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocke
   const usedCurrencies = pockets.filter((p) => p.accountId === accountId && p.id !== existing?.id).map((p) => p.currency);
   const availableCurrencies = CURRENCIES.filter((c) => !usedCurrencies.includes(c) || c === existing?.currency);
   const [currency, setCurrency] = useState(existing?.currency || availableCurrencies[0] || "UAH");
-  const [balance, setBalance] = useState(existing ? existing.initialBalance : 0);
+  const [balance, setBalance] = useState(existing ? String(existing.initialBalance) : "0");
   const [error, setError] = useState("");
+  const currencyChanged = existing && currency !== existing.currency;
 
   const submit = () => {
     if (!currency) return setError("Оберіть валюту");
-    if (existing) editPocket(existing.id, { initialBalance: parseFloat(balance) || 0 });
+    if (existing) editPocket(existing.id, { currency, initialBalance: parseFloat(balance) || 0 });
     else addPocket(accountId, currency, balance);
     onClose();
   };
@@ -1363,12 +2004,13 @@ function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocke
   return (
     <Modal title={existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`} onClose={onClose}>
       <Field label="Валюта" error={error}>
-        <Select value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={!!existing}>
-          {(existing ? [existing.currency] : availableCurrencies).map((c) => <option key={c} value={c}>{c}</option>)}
+        <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          {availableCurrencies.map((c) => <option key={c} value={c}>{c}</option>)}
         </Select>
       </Field>
+      {currencyChanged && <p className="text-xs mb-3" style={{ color: "var(--warn)" }}>Зміна валюти не конвертує вже наявні операції — вони залишаться у своїх сумах.</p>}
       <Field label={existing ? "Початковий баланс (без транзакцій)" : "Початковий баланс"}>
-        <Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} />
+        <Input type="number" step="0.01" inputMode="decimal" value={balance} onChange={(e) => setBalance(e.target.value)} placeholder="0" />
       </Field>
       {availableCurrencies.length === 0 && !existing && <p className="text-xs mb-3" style={{ color: "var(--danger)" }}>Усі доступні валюти вже додані до цього рахунку.</p>}
       <Button className="w-full mt-2" onClick={submit} disabled={!existing && availableCurrencies.length === 0}>{existing ? "Зберегти зміни" : "Додати субрахунок"}</Button>
@@ -1584,6 +2226,29 @@ function LoanModal({ onClose, accounts, pockets, addLoan }) {
       <Field label="Очікувана дата повернення"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
       <Field label="Коментар / домовленість"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
       <Button className="w-full mt-2" onClick={submit}>Надати позику</Button>
+    </Modal>
+  );
+}
+
+/* ---------- Loan Edit Modal ---------- */
+function LoanEditModal({ onClose, loan, editLoan }) {
+  const [borrower, setBorrower] = useState(loan.borrower);
+  const [dueDate, setDueDate] = useState(loan.dueDate);
+  const [note, setNote] = useState(loan.note || "");
+  const [error, setError] = useState("");
+  const submit = () => {
+    if (!borrower.trim()) return setError("Введіть імʼя позичальника");
+    if (!dueDate) return setError("Оберіть дату повернення");
+    editLoan(loan.id, { borrower: borrower.trim(), dueDate, note: note.trim() });
+    onClose();
+  };
+  return (
+    <Modal title="Редагувати позику" onClose={onClose}>
+      <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Суму, валюту й рахунок змінити не можна (вони пов'язані з операцією видачі). Можна відкоригувати позичальника, дату й коментар.</p>
+      <Field label="Кому позичено" error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} /></Field>
+      <Field label="Дата повернення"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
+      <Field label="Коментар / домовленість"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
+      <Button className="w-full mt-2" onClick={submit}>Зберегти</Button>
     </Modal>
   );
 }
