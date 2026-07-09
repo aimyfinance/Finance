@@ -1711,6 +1711,11 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
         </div>
         <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>Відновлення замінить поточні дані на цьому пристрої.</p>
       </Card>
+
+      <Card className="p-5">
+        <Field label="Базова валюта (для загального балансу)">
+          <Select value={base} onChange={(e) => setBase(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
+        </Field>
         <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Курси валют (скільки UAH за 1 одиницю)</p>
         <div className="grid grid-cols-2 gap-3">
           {CURRENCIES.filter((c) => c !== "UAH").map((c) => (
