@@ -418,7 +418,7 @@ function Wordmark({ size = 20, sub = false, onDark = false }) {
   return (
     <div className="leading-none">
       <span className="font-display font-bold tracking-tight" style={{ fontSize: size, color: kColor }}>
-        K<sup style={{ color: "var(--accent)", fontSize: "0.62em", fontWeight: 700, marginLeft: 1, top: "-0.05em" }}>3</sup>
+        K<sup style={{ color: "var(--accent)", fontSize: "0.6em", fontWeight: 700, marginLeft: 1, position: "relative", top: "-0.5em" }}>3</sup>
       </span>
       {sub && <div className="font-display font-semibold uppercase" style={{ fontSize: Math.max(9, size * 0.34), letterSpacing: "0.22em", color: subColor, marginTop: 4 }}>Finance</div>}
     </div>
@@ -1738,7 +1738,10 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
       <h1 className="font-display font-bold text-2xl">Налаштування</h1>
 
       <Card className="p-5 flex items-center justify-between" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)", border: "1px solid var(--border)" }}>
-        <BrandLogo iconSize={42} textSize={24} sub={true} onDark={true} />
+        <span className="font-display font-bold tracking-tight" style={{ fontSize: 26, color: "#F3F0E8" }}>
+          K<sup style={{ color: "#C9A362", fontSize: "0.6em", fontWeight: 700, position: "relative", top: "-0.5em" }}>3</sup>
+          <span style={{ fontWeight: 600, marginLeft: 8 }}>Finance</span>
+        </span>
         <span className="font-display uppercase text-right" style={{ fontSize: 10, letterSpacing: "0.24em", color: "#C9A362" }}>Premium<br />Wealth</span>
       </Card>
 
