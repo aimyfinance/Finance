@@ -122,6 +122,11 @@ var Lock = _icon('Lock');
 /* ============================== CONSTANTS ============================== */
 
 const CURRENCIES = ["UAH", "USD", "EUR", "GBP", "PLN", "CHF"];
+// Full pool the user can add from (rates are stored relative to UAH)
+const ALL_CURRENCIES = ["UAH", "USD", "EUR", "GBP", "PLN", "CHF", "JPY", "CAD", "AUD", "CNY", "CZK", "SEK", "NOK", "DKK", "TRY", "HUF", "RON", "AED", "GEL", "KZT"];
+// Set this to the address where user feedback should arrive (opens the mail app)
+const FEEDBACK_EMAIL = "hello@k3.finance";
+const APP_VERSION = "1.0";
 const CURRENCY_SYMBOLS = { UAH: "₴", USD: "$", EUR: "€", GBP: "£", PLN: "zł", CHF: "CHF" };
 
 const ACCOUNT_TYPES = [
@@ -317,6 +322,11 @@ function saveState(state) {
 const PIN_KEY = "ft_pin";
 function loadPin() { try { return window.localStorage ? window.localStorage.getItem(PIN_KEY) : null; } catch (e) { return null; } }
 function savePin(v) { try { if (window.localStorage) { if (v) window.localStorage.setItem(PIN_KEY, v); else window.localStorage.removeItem(PIN_KEY); } } catch (e) {} }
+
+/* First-run consent (stored on device) */
+const CONSENT_KEY = "ft_consent";
+function loadConsent() { try { return window.localStorage ? window.localStorage.getItem(CONSENT_KEY) === "1" : false; } catch (e) { return false; } }
+function saveConsent() { try { if (window.localStorage) window.localStorage.setItem(CONSENT_KEY, "1"); } catch (e) {} }
 
 /* ============================== CLOUD SYNC (Supabase) ============================== *//*
   Встав свої два значення зі Supabase (Project Settings → API).
@@ -559,6 +569,40 @@ function LockScreen({ pin, onUnlock }) {
   );
 }
 
+/* Shared agreement copy (used in Settings and the first-run consent) */
+function AgreementText() {
+  return (
+    <div className="space-y-2.5 text-xs leading-relaxed" style={{ color: "var(--text-dim)" }}>
+      <p>K³ Finance — персональний застосунок для обліку особистих фінансів. Користуючись ним, ви погоджуєтесь із умовами нижче.</p>
+      <p><b style={{ color: "var(--text)" }}>Ваші дані.</b> Усі записи зберігаються локально на вашому пристрої. Якщо ви увімкнули хмарну синхронізацію, дані також зберігаються у вашому обліковому записі синхронізації. Ми не продаємо й не передаємо ваші дані третім сторонам.</p>
+      <p><b style={{ color: "var(--text)" }}>Призначення.</b> Застосунок не є банком, фінансовою установою чи фінансовим радником і не надає інвестиційних порад. Усі фінансові рішення ви приймаєте самостійно.</p>
+      <p><b style={{ color: "var(--text)" }}>Відповідальність.</b> Розробник не гарантує безперебійної роботи чи абсолютної точності розрахунків і не несе відповідальності за можливу втрату даних. Регулярно робіть резервні копії у розділі «Резервна копія».</p>
+      <p><b style={{ color: "var(--text)" }}>Безпека.</b> Ви відповідаєте за збереження свого PIN-коду та доступу до пристрою.</p>
+      <p style={{ color: "var(--text-dim)", opacity: 0.7 }}>Версія {APP_VERSION}</p>
+    </div>
+  );
+}
+
+/* First-run consent gate */
+function ConsentScreen({ onAccept }) {
+  return (
+    <div className="fixed inset-0 z-[120] flex flex-col" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="flex-1 overflow-y-auto px-6 pt-8 pb-4 w-full max-w-lg mx-auto">
+        <div className="flex flex-col items-center text-center mb-6">
+          <AppIcon size={66} />
+          <h1 className="font-display font-bold text-2xl mt-4">Ласкаво просимо до K³</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>Угода користувача та конфіденційність</p>
+        </div>
+        <AgreementText />
+      </div>
+      <div className="px-6 pb-6 pt-3 w-full max-w-lg mx-auto" style={{ borderTop: "1px solid var(--border)" }}>
+        <Button className="w-full" onClick={onAccept}>Погоджуюсь і продовжити</Button>
+        <p className="text-[11px] text-center mt-2" style={{ color: "var(--text-dim)" }}>Натискаючи кнопку, ви приймаєте умови застосунку.</p>
+      </div>
+    </div>
+  );
+}
+
 /* ============================== MAIN APP ============================== */
 function FinanceTracker() {
   const [state, setState] = useState(() => loadState() || buildDemoData());
@@ -570,7 +614,20 @@ function FinanceTracker() {
   const [pin, setPinState] = useState(() => loadPin());
   const [locked, setLocked] = useState(() => !!loadPin());
   const [splash, setSplash] = useState(() => !loadState());
+  const [consented, setConsented] = useState(() => loadConsent());
+  const acceptConsent = () => { saveConsent(); setConsented(true); };
   useEffect(() => { if (splash) { const t = setTimeout(() => setSplash(false), 1300); return () => clearTimeout(t); } }, []);
+  // Re-lock as soon as the app is backgrounded / hidden (so PIN is required on return, not only on a full restart)
+  useEffect(() => {
+    if (!pin) return;
+    const relock = () => { if (document.visibilityState === "hidden") setLocked(true); };
+    document.addEventListener("visibilitychange", relock);
+    window.addEventListener("pagehide", relock);
+    return () => {
+      document.removeEventListener("visibilitychange", relock);
+      window.removeEventListener("pagehide", relock);
+    };
+  }, [pin]);
 
   const stateRef = React.useRef(state);
   useEffect(() => { stateRef.current = { ...state, theme }; }, [state, theme]);
@@ -615,6 +672,7 @@ function FinanceTracker() {
   }, [toast]);
 
   const { accounts, pockets, categories, transactions, loans, rates, baseCurrency } = state;
+  const currencyList = ["UAH"].concat(Object.keys(rates).filter((c) => c !== "UAH"));
   const reminders = state.reminders || [];
   const update = (patch) => setState((s) => ({ ...s, ...patch }));
   const notify = (msg) => setToast(msg);
@@ -930,7 +988,7 @@ function FinanceTracker() {
             )}
             {view === "history" && (
               <HistoryView transactions={transactions} pockets={pockets} accounts={accounts} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
-                deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} setModal={setModal} />
+                deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} setModal={setModal} currencies={currencyList} />
             )}
             {view === "loans" && (
               <LoansView loans={loans} pockets={pockets} getPocket={getPocket} setModal={setModal} loanRemaining={loanRemaining} archiveLoan={archiveLoan} deleteLoan={deleteLoan} />
@@ -939,7 +997,7 @@ function FinanceTracker() {
               <CategoriesView categories={categories} setModal={setModal} archiveCategory={archiveCategory} />
             )}
             {view === "settings" && (
-              <SettingsView baseCurrency={baseCurrency} rates={rates} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} exportBackup={exportBackup} importBackup={importBackup} />
+              <SettingsView baseCurrency={baseCurrency} rates={rates} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} exportBackup={exportBackup} importBackup={importBackup} setView={setView} />
             )}
           </div>
         </main>
@@ -975,7 +1033,7 @@ function FinanceTracker() {
 
       {modal && (
         <ModalRouter
-          modal={modal} setModal={setModal} accounts={accounts} pockets={pockets} categories={categories} rates={rates} baseCurrency={baseCurrency}
+          modal={modal} setModal={setModal} accounts={accounts} pockets={pockets} categories={categories} rates={rates} baseCurrency={baseCurrency} currencies={currencyList}
           addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} addPocket={addPocket} editPocket={editPocket} archivePocket={archivePocket}
           deleteAccount={deleteAccount} deletePocket={deletePocket} movePocket={movePocket}
           addCategory={addCategory} editCategory={editCategory}
@@ -993,6 +1051,8 @@ function FinanceTracker() {
           <SplashLogo />
         </div>
       )}
+
+      {!consented && <ConsentScreen onAccept={acceptConsent} />}
     </div>
   );
 }
@@ -1469,7 +1529,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
 
 /* ============================== HISTORY VIEW ============================== */
 
-function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal }) {
+function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies }) {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterPocket, setFilterPocket] = useState("all");
@@ -1539,7 +1599,7 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
           <Field label="Валюта">
             <Select value={filterCurrency} onChange={(e) => setFilterCurrency(e.target.value)}>
               <option value="all">Усі валюти</option>
-              {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              {(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}
             </Select>
           </Field>
           <Field label="Період від"><Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></Field>
@@ -1687,17 +1747,30 @@ function CategoriesView({ categories, setModal, archiveCategory }) {
 
 /* ============================== SETTINGS VIEW ============================== */
 
-function SettingsView({ baseCurrency, rates, update, session, setToast, pin, applyPin, exportBackup, importBackup }) {
+function SettingsView({ baseCurrency, rates, update, session, setToast, pin, applyPin, exportBackup, importBackup, setView }) {
   const [localRates, setLocalRates] = useState(() => {
     const o = {};
     Object.keys(rates).forEach((k) => { o[k] = String(rates[k]); });
     return o;
   });
   const [base, setBase] = useState(baseCurrency);
+  const [addCur, setAddCur] = useState("");
+  const [crossFrom, setCrossFrom] = useState("USD");
+  const [crossTo, setCrossTo] = useState("EUR");
+  const activeCurs = ["UAH"].concat(Object.keys(localRates).filter((c) => c !== "UAH"));
+  const addableCurs = ALL_CURRENCIES.filter((c) => !(c in localRates));
+  const rateToUAH = (c) => (c === "UAH" ? 1 : (parseFloat(localRates[c]) || 0));
+  const crossRate = (() => {
+    const a = rateToUAH(crossFrom), b = rateToUAH(crossTo);
+    return b > 0 ? a / b : 0;
+  })();
+  const addCurrency = () => { if (addCur && !(addCur in localRates)) { setLocalRates({ ...localRates, [addCur]: "" }); setAddCur(""); } };
+  const removeCurrency = (c) => { const r = { ...localRates }; delete r[c]; setLocalRates(r); if (base === c) setBase("UAH"); if (crossFrom === c) setCrossFrom("UAH"); if (crossTo === c) setCrossTo("UAH"); };
   const save = () => {
     const parsed = { UAH: 1 };
     Object.keys(localRates).forEach((k) => { if (k !== "UAH") parsed[k] = parseFloat(localRates[k]) || 0; });
-    update({ rates: parsed, baseCurrency: base });
+    const finalBase = base === "UAH" || parsed[base] !== undefined ? base : "UAH";
+    update({ rates: parsed, baseCurrency: finalBase });
     setToast && setToast("Налаштування збережено");
   };
 
@@ -1713,6 +1786,16 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
     setToast && setToast("PIN-код увімкнено");
   };
   const removePin = () => { applyPin(null); setToast && setToast("PIN-код вимкнено"); };
+
+  const [feedback, setFeedback] = useState("");
+  const sendFeedback = () => {
+    const subject = encodeURIComponent("K\u00b3 Finance — відгук / побажання");
+    const body = encodeURIComponent(feedback.trim());
+    window.location.href = "mailto:" + FEEDBACK_EMAIL + "?subject=" + subject + "&body=" + body;
+    setFeedback("");
+    setToast && setToast("Відкрито поштовий застосунок");
+  };
+  const [showTerms, setShowTerms] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -1743,6 +1826,12 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
           <span style={{ fontWeight: 600, marginLeft: 8 }}>Finance</span>
         </span>
         <span className="font-display uppercase text-right" style={{ fontSize: 10, letterSpacing: "0.24em", color: "#C9A362" }}>Premium<br />Wealth</span>
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-display font-semibold text-sm mb-1">Категорії</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Додавайте власні категорії витрат і доходів, редагуйте назви, іконки та кольори або ховайте зайві.</p>
+        <Button variant="secondary" onClick={() => setView && setView("categories")}><Tags size={15} /> Керувати категоріями</Button>
       </Card>
 
       <Card className="p-5">
@@ -1810,15 +1899,66 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
 
       <Card className="p-5">
         <Field label="Базова валюта (для загального балансу)">
-          <Select value={base} onChange={(e) => setBase(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
+          <Select value={base} onChange={(e) => setBase(e.target.value)}>{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
         </Field>
-        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Курси валют (скільки UAH за 1 одиницю)</p>
+
+        <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>Курси валют — скільки <b style={{ color: "var(--text)" }}>UAH</b> коштує 1 одиниця валюти. Крос-курси між валютами рахуються автоматично.</p>
         <div className="grid grid-cols-2 gap-3">
-          {CURRENCIES.filter((c) => c !== "UAH").map((c) => (
-            <Field key={c} label={`1 ${c} =`}><Input type="number" step="0.01" inputMode="decimal" value={localRates[c] ?? ""} onChange={(e) => setLocalRates({ ...localRates, [c]: e.target.value })} placeholder="0" /></Field>
+          {activeCurs.filter((c) => c !== "UAH").map((c) => (
+            <div key={c}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>1 {c} =</span>
+                <button onClick={() => removeCurrency(c)} className="text-[11px] font-medium" style={{ color: "var(--danger)" }}>Прибрати</button>
+              </div>
+              <Input type="number" step="0.0001" inputMode="decimal" value={localRates[c] ?? ""} onChange={(e) => setLocalRates({ ...localRates, [c]: e.target.value })} placeholder="0" />
+            </div>
           ))}
         </div>
-        <Button onClick={save} className="mt-2">Зберегти налаштування</Button>
+        {addableCurs.length > 0 && (
+          <div className="flex gap-2 items-end mt-3">
+            <div className="flex-1 min-w-0">
+              <span className="text-[11px] font-medium mb-1 block" style={{ color: "var(--text-dim)" }}>Додати валюту</span>
+              <Select value={addCur} onChange={(e) => setAddCur(e.target.value)}>
+                <option value="">— оберіть валюту —</option>
+                {addableCurs.map((c) => <option key={c} value={c}>{c}</option>)}
+              </Select>
+            </div>
+            <Button variant="secondary" onClick={addCurrency} disabled={!addCur}><Plus size={15} /> Додати</Button>
+          </div>
+        )}
+
+        <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
+          <p className="text-xs font-semibold mb-2" style={{ color: "var(--text)" }}>Крос-курс валют</p>
+          <div className="flex items-center gap-2">
+            <Select value={crossFrom} onChange={(e) => setCrossFrom(e.target.value)} className="flex-1">{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
+            <ArrowUpRight size={16} style={{ color: "var(--text-dim)", transform: "rotate(45deg)" }} />
+            <Select value={crossTo} onChange={(e) => setCrossTo(e.target.value)} className="flex-1">{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
+          </div>
+          <p className="text-sm mt-2 font-semibold tabular" style={{ color: "var(--accent)" }}>
+            {crossRate > 0 ? `1 ${crossFrom} = ${crossRate.toLocaleString("uk-UA", { maximumFractionDigits: 4 })} ${crossTo}` : "Вкажіть курси обох валют, щоб побачити крос-курс"}
+          </p>
+        </div>
+
+        <Button onClick={save} className="mt-4">Зберегти налаштування</Button>
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-display font-semibold text-sm mb-1">Зворотний зв'язок</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Поділіться побажанням, ідеєю чи повідомте про проблему — ми будемо вдячні за ваш відгук.</p>
+        <Textarea rows={3} value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Ваш відгук або побажання…" />
+        <Button className="mt-2" onClick={sendFeedback} disabled={!feedback.trim()}><ArrowUpRight size={15} /> Надіслати відгук</Button>
+      </Card>
+
+      <Card className="p-5">
+        <button onClick={() => setShowTerms(!showTerms)} className="w-full flex items-center justify-between text-left">
+          <span className="font-display font-semibold text-sm">Угода користувача та конфіденційність</span>
+          {showTerms ? <ChevronDown size={18} style={{ color: "var(--text-dim)" }} /> : <ChevronRight size={18} style={{ color: "var(--text-dim)" }} />}
+        </button>
+        {showTerms && (
+          <div className="mt-3">
+            <AgreementText />
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -1826,10 +1966,10 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
 
 /* ============================== MODAL ROUTER ============================== */
 
-function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone }) {
+function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone }) {
   const close = () => setModal(null);
-  if (modal.type === "account") return <AccountModal onClose={close} existing={modal.payload} addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} />;
-  if (modal.type === "pocket") return <PocketModal onClose={close} accountId={modal.payload.accountId} existing={modal.payload.existing} accounts={accounts} pockets={pockets} addPocket={addPocket} editPocket={editPocket} />;
+  if (modal.type === "account") return <AccountModal onClose={close} existing={modal.payload} addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} currencies={currencies} />;
+  if (modal.type === "pocket") return <PocketModal onClose={close} accountId={modal.payload.accountId} existing={modal.payload.existing} accounts={accounts} pockets={pockets} addPocket={addPocket} editPocket={editPocket} currencies={currencies} />;
   if (modal.type === "cardMenu") return <CardMenuModal onClose={close} pocketId={modal.payload} pockets={pockets} getPocket={getPocket} setModal={setModal} archivePocket={archivePocket} deletePocket={deletePocket} movePocket={movePocket} />;
   if (modal.type === "category") return <CategoryModal onClose={close} existing={modal.payload} addCategory={addCategory} editCategory={editCategory} />;
   if (modal.type === "transaction") return <TransactionModal onClose={close} kind={modal.payload.kind} editing={modal.payload.editing} presetPocketId={modal.payload.presetPocketId} accounts={accounts} pockets={pockets} categories={categories} addTransaction={addTransaction} editTransaction={editTransaction} />;
@@ -1839,12 +1979,12 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "loanReturn") return <LoanReturnModal onClose={close} loan={modal.payload} accounts={accounts} pockets={pockets} registerLoanReturn={registerLoanReturn} loanRemaining={loanRemaining} />;
   if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
   if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
-  if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} />;
+  if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} currencies={currencies} />;
   return null;
 }
 
 /* ---------- Reminders (bell) ---------- */
-function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone }) {
+function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, currencies }) {
   const [editing, setEditing] = useState(null); // null | "new" | reminder object
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -1887,7 +2027,7 @@ function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteR
             <Field label="Сума (необов'язково)">
               <div className="flex gap-2">
                 <div className="flex-1 min-w-0"><Input type="number" step="0.01" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
-                <div className="w-20 shrink-0"><Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}</Select></div>
+                <div className="w-20 shrink-0"><Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select></div>
               </div>
             </Field>
             <Field label="Коментар"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
@@ -2045,7 +2185,7 @@ function CardMenuModal({ onClose, pocketId, pockets, getPocket, setModal, archiv
 }
 
 /* ---------- Account Modal (creates account + its first currency pocket) ---------- */
-function AccountModal({ onClose, existing, addAccountWithPocket, editAccount }) {
+function AccountModal({ onClose, existing, addAccountWithPocket, editAccount, currencies }) {
   const [name, setName] = useState(existing?.name || "");
   const [type, setType] = useState(existing?.type || "cash");
   const [color, setColor] = useState(existing?.color || ACCOUNT_COLORS[0]);
@@ -2075,7 +2215,7 @@ function AccountModal({ onClose, existing, addAccountWithPocket, editAccount }) 
         <>
           <p className="text-xs mb-2 mt-1" style={{ color: "var(--text-dim)" }}>Створимо перший валютний субрахунок. Інші валюти можна додати пізніше.</p>
           <Field label="Валюта">
-            <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
+            <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select>
           </Field>
           <Field label="Початковий баланс"><Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} /></Field>
         </>
@@ -2086,10 +2226,11 @@ function AccountModal({ onClose, existing, addAccountWithPocket, editAccount }) 
 }
 
 /* ---------- Pocket Modal (add / edit a currency sub-account) ---------- */
-function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocket, editPocket }) {
+function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocket, editPocket, currencies }) {
   const account = accounts.find((a) => a.id === accountId);
   const usedCurrencies = pockets.filter((p) => p.accountId === accountId && p.id !== existing?.id).map((p) => p.currency);
-  const availableCurrencies = CURRENCIES.filter((c) => !usedCurrencies.includes(c) || c === existing?.currency);
+  const pool = currencies || CURRENCIES;
+  const availableCurrencies = pool.filter((c) => !usedCurrencies.includes(c) || c === existing?.currency);
   const [currency, setCurrency] = useState(existing?.currency || availableCurrencies[0] || "UAH");
   const [balance, setBalance] = useState(existing ? String(existing.initialBalance) : "0");
   const [error, setError] = useState("");
