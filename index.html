@@ -45,7 +45,7 @@
 
 var _boot = document.getElementById("boot");
 var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo, useCallback = React.useCallback;
-var LI = {"LayoutDashboard":[["rect",{"width":7,"height":9,"x":3,"y":3,"rx":1}],["rect",{"width":7,"height":5,"x":14,"y":3,"rx":1}],["rect",{"width":7,"height":9,"x":14,"y":12,"rx":1}],["rect",{"width":7,"height":5,"x":3,"y":16,"rx":1}]],"Wallet":[["path",{"d":"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"}],["path",{"d":"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"}]],"History":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}],["path",{"d":"M12 7v5l4 2"}]],"Tags":[["path",{"d":"M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"}],["path",{"d":"M6 9.01V9"}],["path",{"d":"m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"}]],"Banknote":[["rect",{"width":20,"height":12,"x":2,"y":6,"rx":2}],["circle",{"cx":12,"cy":12,"r":2}],["path",{"d":"M6 12h.01M18 12h.01"}]],"Settings":[["path",{"d":"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"}],["circle",{"cx":12,"cy":12,"r":3}]],"Plus":[["path",{"d":"M5 12h14"}],["path",{"d":"M12 5v14"}]],"Minus":[["path",{"d":"M5 12h14"}]],"ArrowLeftRight":[["path",{"d":"M8 3 4 7l4 4"}],["path",{"d":"M4 7h16"}],["path",{"d":"m16 21 4-4-4-4"}],["path",{"d":"M20 17H4"}]],"RefreshCw":[["path",{"d":"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"}],["path",{"d":"M21 3v5h-5"}],["path",{"d":"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"}],["path",{"d":"M8 16H3v5"}]],"Sun":[["circle",{"cx":12,"cy":12,"r":4}],["path",{"d":"M12 2v2"}],["path",{"d":"M12 20v2"}],["path",{"d":"m4.93 4.93 1.41 1.41"}],["path",{"d":"m17.66 17.66 1.41 1.41"}],["path",{"d":"M2 12h2"}],["path",{"d":"M20 12h2"}],["path",{"d":"m6.34 17.66-1.41 1.41"}],["path",{"d":"m19.07 4.93-1.41 1.41"}]],"Moon":[["path",{"d":"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"}]],"X":[["path",{"d":"M18 6 6 18"}],["path",{"d":"m6 6 12 12"}]],"Trash2":[["path",{"d":"M3 6h18"}],["path",{"d":"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"}],["path",{"d":"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"}],["line",{"x1":10,"x2":10,"y1":11,"y2":17}],["line",{"x1":14,"x2":14,"y1":11,"y2":17}]],"Edit3":[["path",{"d":"M12 20h9"}],["path",{"d":"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"}]],"Search":[["circle",{"cx":11,"cy":11,"r":8}],["path",{"d":"m21 21-4.3-4.3"}]],"ShoppingCart":[["circle",{"cx":8,"cy":21,"r":1}],["circle",{"cx":19,"cy":21,"r":1}],["path",{"d":"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"}]],"Utensils":[["path",{"d":"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"}],["path",{"d":"M7 2v20"}],["path",{"d":"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"}]],"Bus":[["path",{"d":"M8 6v6"}],["path",{"d":"M15 6v6"}],["path",{"d":"M2 12h19.6"}],["path",{"d":"M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"}],["circle",{"cx":7,"cy":18,"r":2}],["path",{"d":"M9 18h5"}],["circle",{"cx":16,"cy":18,"r":2}]],"Plane":[["path",{"d":"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"}]],"Fuel":[["line",{"x1":3,"x2":15,"y1":22,"y2":22}],["line",{"x1":4,"x2":14,"y1":9,"y2":9}],["path",{"d":"M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"}],["path",{"d":"M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"}]],"Car":[["path",{"d":"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"}],["circle",{"cx":7,"cy":17,"r":2}],["path",{"d":"M9 17h6"}],["circle",{"cx":17,"cy":17,"r":2}]],"HeartPulse":[["path",{"d":"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"}],["path",{"d":"M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"}]],"Dumbbell":[["path",{"d":"m6.5 6.5 11 11"}],["path",{"d":"m21 21-1-1"}],["path",{"d":"m3 3 1 1"}],["path",{"d":"m18 22 4-4"}],["path",{"d":"m2 6 4-4"}],["path",{"d":"m3 10 7-7"}],["path",{"d":"m14 21 7-7"}]],"Shirt":[["path",{"d":"M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"}]],"GraduationCap":[["path",{"d":"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"}],["path",{"d":"M22 10v6"}],["path",{"d":"M6 12.5V16a6 3 0 0 0 12 0v-3.5"}]],"PartyPopper":[["path",{"d":"M5.8 11.3 2 22l10.7-3.79"}],["path",{"d":"M4 3h.01"}],["path",{"d":"M22 8h.01"}],["path",{"d":"M15 2h.01"}],["path",{"d":"M22 20h.01"}],["path",{"d":"m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L12 10"}],["path",{"d":"m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"}],["path",{"d":"m11 2 .33.82c.34.86-.2 1.82-1.11 1.98-.7.11-1.22.72-1.22 1.43V7"}],["path",{"d":"M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"}]],"Gift":[["rect",{"x":3,"y":8,"width":18,"height":4,"rx":1}],["path",{"d":"M12 8v13"}],["path",{"d":"M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"}],["path",{"d":"M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"}]],"Home":[["path",{"d":"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"}],["polyline",{"points":"9 22 9 12 15 12 15 22"}]],"Zap":[["path",{"d":"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"}]],"MoreHorizontal":[["circle",{"cx":12,"cy":12,"r":1}],["circle",{"cx":19,"cy":12,"r":1}],["circle",{"cx":5,"cy":12,"r":1}]],"Briefcase":[["path",{"d":"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"}],["rect",{"width":20,"height":14,"x":2,"y":6,"rx":2}]],"Building2":[["path",{"d":"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"}],["path",{"d":"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"}],["path",{"d":"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"}],["path",{"d":"M10 6h4"}],["path",{"d":"M10 10h4"}],["path",{"d":"M10 14h4"}],["path",{"d":"M10 18h4"}]],"TrendingUp":[["polyline",{"points":"22 7 13.5 15.5 8.5 10.5 2 17"}],["polyline",{"points":"16 7 22 7 22 13"}]],"TrendingDown":[["polyline",{"points":"22 17 13.5 8.5 8.5 13.5 2 7"}],["polyline",{"points":"16 17 22 17 22 11"}]],"RotateCcw":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}]],"Users":[["path",{"d":"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"}],["circle",{"cx":9,"cy":7,"r":4}],["path",{"d":"M22 21v-2a4 4 0 0 0-3-3.87"}],["path",{"d":"M16 3.13a4 4 0 0 1 0 7.75"}]],"AlertTriangle":[["path",{"d":"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"}],["path",{"d":"M12 9v4"}],["path",{"d":"M12 17h.01"}]],"CreditCard":[["rect",{"width":20,"height":14,"x":2,"y":5,"rx":2}],["line",{"x1":2,"x2":22,"y1":10,"y2":10}]],"Landmark":[["line",{"x1":3,"x2":21,"y1":22,"y2":22}],["line",{"x1":6,"x2":6,"y1":18,"y2":11}],["line",{"x1":10,"x2":10,"y1":18,"y2":11}],["line",{"x1":14,"x2":14,"y1":18,"y2":11}],["line",{"x1":18,"x2":18,"y1":18,"y2":11}],["polygon",{"points":"12 2 20 7 4 7"}]],"PiggyBank":[["path",{"d":"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"}],["path",{"d":"M2 9v1c0 1.1.9 2 2 2h1"}],["path",{"d":"M16 11h.01"}]],"LineChart":[["path",{"d":"M3 3v16a2 2 0 0 0 2 2h16"}],["path",{"d":"m19 9-5 5-4-4-3 3"}]],"ChevronRight":[["path",{"d":"m9 18 6-6-6-6"}]],"ChevronDown":[["path",{"d":"m6 9 6 6 6-6"}]],"Check":[["path",{"d":"M20 6 9 17l-5-5"}]],"Archive":[["rect",{"width":20,"height":5,"x":2,"y":3,"rx":1}],["path",{"d":"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"}],["path",{"d":"M10 12h4"}]],"Calendar":[["rect",{"width":18,"height":18,"x":3,"y":4,"rx":2}],["path",{"d":"M3 10h18"}],["path",{"d":"M8 2v4"}],["path",{"d":"M16 2v4"}]],"Filter":[["polygon",{"points":"22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"}]],"ArrowUpRight":[["path",{"d":"M7 7h10v10"}],["path",{"d":"M7 17 17 7"}]],"ArrowDownRight":[["path",{"d":"m7 7 10 10"}],["path",{"d":"M17 7v10H7"}]],"Coins":[["circle",{"cx":8,"cy":8,"r":6}],["path",{"d":"M18.09 10.37A6 6 0 1 1 10.34 18"}],["path",{"d":"M7 6h1v4"}],["path",{"d":"m16.71 13.88.7.71-2.82 2.82"}]],"Bell":[["path",{"d":"M10.268 21a2 2 0 0 0 3.464 0"}],["path",{"d":"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"}]],"GripVertical":[["circle",{"cx":9,"cy":12,"r":1}],["circle",{"cx":9,"cy":5,"r":1}],["circle",{"cx":9,"cy":19,"r":1}],["circle",{"cx":15,"cy":12,"r":1}],["circle",{"cx":15,"cy":5,"r":1}],["circle",{"cx":15,"cy":19,"r":1}]],"Lock":[["rect",{"width":18,"height":11,"x":3,"y":11,"rx":2,"ry":2}],["path",{"d":"M7 11V7a5 5 0 0 1 10 0v4"}]]};
+var LI = {"LayoutDashboard":[["rect",{"width":7,"height":9,"x":3,"y":3,"rx":1}],["rect",{"width":7,"height":5,"x":14,"y":3,"rx":1}],["rect",{"width":7,"height":9,"x":14,"y":12,"rx":1}],["rect",{"width":7,"height":5,"x":3,"y":16,"rx":1}]],"Wallet":[["path",{"d":"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"}],["path",{"d":"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"}]],"History":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}],["path",{"d":"M12 7v5l4 2"}]],"Tags":[["path",{"d":"M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"}],["path",{"d":"M6 9.01V9"}],["path",{"d":"m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"}]],"Banknote":[["rect",{"width":20,"height":12,"x":2,"y":6,"rx":2}],["circle",{"cx":12,"cy":12,"r":2}],["path",{"d":"M6 12h.01M18 12h.01"}]],"Settings":[["path",{"d":"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"}],["circle",{"cx":12,"cy":12,"r":3}]],"Plus":[["path",{"d":"M5 12h14"}],["path",{"d":"M12 5v14"}]],"Minus":[["path",{"d":"M5 12h14"}]],"ArrowLeftRight":[["path",{"d":"M8 3 4 7l4 4"}],["path",{"d":"M4 7h16"}],["path",{"d":"m16 21 4-4-4-4"}],["path",{"d":"M20 17H4"}]],"RefreshCw":[["path",{"d":"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"}],["path",{"d":"M21 3v5h-5"}],["path",{"d":"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"}],["path",{"d":"M8 16H3v5"}]],"Sun":[["circle",{"cx":12,"cy":12,"r":4}],["path",{"d":"M12 2v2"}],["path",{"d":"M12 20v2"}],["path",{"d":"m4.93 4.93 1.41 1.41"}],["path",{"d":"m17.66 17.66 1.41 1.41"}],["path",{"d":"M2 12h2"}],["path",{"d":"M20 12h2"}],["path",{"d":"m6.34 17.66-1.41 1.41"}],["path",{"d":"m19.07 4.93-1.41 1.41"}]],"Moon":[["path",{"d":"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"}]],"X":[["path",{"d":"M18 6 6 18"}],["path",{"d":"m6 6 12 12"}]],"Trash2":[["path",{"d":"M3 6h18"}],["path",{"d":"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"}],["path",{"d":"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"}],["line",{"x1":10,"x2":10,"y1":11,"y2":17}],["line",{"x1":14,"x2":14,"y1":11,"y2":17}]],"Edit3":[["path",{"d":"M12 20h9"}],["path",{"d":"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"}]],"Search":[["circle",{"cx":11,"cy":11,"r":8}],["path",{"d":"m21 21-4.3-4.3"}]],"ShoppingCart":[["circle",{"cx":8,"cy":21,"r":1}],["circle",{"cx":19,"cy":21,"r":1}],["path",{"d":"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"}]],"Utensils":[["path",{"d":"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"}],["path",{"d":"M7 2v20"}],["path",{"d":"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"}]],"Bus":[["path",{"d":"M8 6v6"}],["path",{"d":"M15 6v6"}],["path",{"d":"M2 12h19.6"}],["path",{"d":"M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"}],["circle",{"cx":7,"cy":18,"r":2}],["path",{"d":"M9 18h5"}],["circle",{"cx":16,"cy":18,"r":2}]],"Plane":[["path",{"d":"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"}]],"Fuel":[["line",{"x1":3,"x2":15,"y1":22,"y2":22}],["line",{"x1":4,"x2":14,"y1":9,"y2":9}],["path",{"d":"M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"}],["path",{"d":"M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"}]],"Car":[["path",{"d":"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"}],["circle",{"cx":7,"cy":17,"r":2}],["path",{"d":"M9 17h6"}],["circle",{"cx":17,"cy":17,"r":2}]],"HeartPulse":[["path",{"d":"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"}],["path",{"d":"M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"}]],"Dumbbell":[["path",{"d":"m6.5 6.5 11 11"}],["path",{"d":"m21 21-1-1"}],["path",{"d":"m3 3 1 1"}],["path",{"d":"m18 22 4-4"}],["path",{"d":"m2 6 4-4"}],["path",{"d":"m3 10 7-7"}],["path",{"d":"m14 21 7-7"}]],"Shirt":[["path",{"d":"M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"}]],"GraduationCap":[["path",{"d":"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"}],["path",{"d":"M22 10v6"}],["path",{"d":"M6 12.5V16a6 3 0 0 0 12 0v-3.5"}]],"PartyPopper":[["path",{"d":"M5.8 11.3 2 22l10.7-3.79"}],["path",{"d":"M4 3h.01"}],["path",{"d":"M22 8h.01"}],["path",{"d":"M15 2h.01"}],["path",{"d":"M22 20h.01"}],["path",{"d":"m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L12 10"}],["path",{"d":"m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"}],["path",{"d":"m11 2 .33.82c.34.86-.2 1.82-1.11 1.98-.7.11-1.22.72-1.22 1.43V7"}],["path",{"d":"M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"}]],"Gift":[["rect",{"x":3,"y":8,"width":18,"height":4,"rx":1}],["path",{"d":"M12 8v13"}],["path",{"d":"M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"}],["path",{"d":"M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"}]],"Home":[["path",{"d":"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"}],["polyline",{"points":"9 22 9 12 15 12 15 22"}]],"Zap":[["path",{"d":"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"}]],"MoreHorizontal":[["circle",{"cx":12,"cy":12,"r":1}],["circle",{"cx":19,"cy":12,"r":1}],["circle",{"cx":5,"cy":12,"r":1}]],"Briefcase":[["path",{"d":"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"}],["rect",{"width":20,"height":14,"x":2,"y":6,"rx":2}]],"Building2":[["path",{"d":"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"}],["path",{"d":"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"}],["path",{"d":"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"}],["path",{"d":"M10 6h4"}],["path",{"d":"M10 10h4"}],["path",{"d":"M10 14h4"}],["path",{"d":"M10 18h4"}]],"TrendingUp":[["polyline",{"points":"22 7 13.5 15.5 8.5 10.5 2 17"}],["polyline",{"points":"16 7 22 7 22 13"}]],"TrendingDown":[["polyline",{"points":"22 17 13.5 8.5 8.5 13.5 2 7"}],["polyline",{"points":"16 17 22 17 22 11"}]],"RotateCcw":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}]],"Users":[["path",{"d":"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"}],["circle",{"cx":9,"cy":7,"r":4}],["path",{"d":"M22 21v-2a4 4 0 0 0-3-3.87"}],["path",{"d":"M16 3.13a4 4 0 0 1 0 7.75"}]],"AlertTriangle":[["path",{"d":"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"}],["path",{"d":"M12 9v4"}],["path",{"d":"M12 17h.01"}]],"CreditCard":[["rect",{"width":20,"height":14,"x":2,"y":5,"rx":2}],["line",{"x1":2,"x2":22,"y1":10,"y2":10}]],"Landmark":[["line",{"x1":3,"x2":21,"y1":22,"y2":22}],["line",{"x1":6,"x2":6,"y1":18,"y2":11}],["line",{"x1":10,"x2":10,"y1":18,"y2":11}],["line",{"x1":14,"x2":14,"y1":18,"y2":11}],["line",{"x1":18,"x2":18,"y1":18,"y2":11}],["polygon",{"points":"12 2 20 7 4 7"}]],"PiggyBank":[["path",{"d":"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"}],["path",{"d":"M2 9v1c0 1.1.9 2 2 2h1"}],["path",{"d":"M16 11h.01"}]],"LineChart":[["path",{"d":"M3 3v16a2 2 0 0 0 2 2h16"}],["path",{"d":"m19 9-5 5-4-4-3 3"}]],"ChevronRight":[["path",{"d":"m9 18 6-6-6-6"}]],"ChevronDown":[["path",{"d":"m6 9 6 6 6-6"}]],"Check":[["path",{"d":"M20 6 9 17l-5-5"}]],"Archive":[["rect",{"width":20,"height":5,"x":2,"y":3,"rx":1}],["path",{"d":"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"}],["path",{"d":"M10 12h4"}]],"Calendar":[["rect",{"width":18,"height":18,"x":3,"y":4,"rx":2}],["path",{"d":"M3 10h18"}],["path",{"d":"M8 2v4"}],["path",{"d":"M16 2v4"}]],"Filter":[["polygon",{"points":"22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"}]],"ArrowUpRight":[["path",{"d":"M7 7h10v10"}],["path",{"d":"M7 17 17 7"}]],"ArrowDownRight":[["path",{"d":"m7 7 10 10"}],["path",{"d":"M17 7v10H7"}]],"Coins":[["circle",{"cx":8,"cy":8,"r":6}],["path",{"d":"M18.09 10.37A6 6 0 1 1 10.34 18"}],["path",{"d":"M7 6h1v4"}],["path",{"d":"m16.71 13.88.7.71-2.82 2.82"}]],"Bell":[["path",{"d":"M10.268 21a2 2 0 0 0 3.464 0"}],["path",{"d":"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"}]],"GripVertical":[["circle",{"cx":9,"cy":12,"r":1}],["circle",{"cx":9,"cy":5,"r":1}],["circle",{"cx":9,"cy":19,"r":1}],["circle",{"cx":15,"cy":12,"r":1}],["circle",{"cx":15,"cy":5,"r":1}],["circle",{"cx":15,"cy":19,"r":1}]],"Lock":[["rect",{"width":18,"height":11,"x":3,"y":11,"rx":2,"ry":2}],["path",{"d":"M7 11V7a5 5 0 0 1 10 0v4"}]],"HelpCircle":[["circle",{"cx":12,"cy":12,"r":10}],["path",{"d":"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"}],["path",{"d":"M12 17h.01"}]]};
 var _iconMap = {};
 Object.keys(LI).forEach(function (k) { _iconMap[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = LI[k]; });
 var _fallbackNode = [["circle", { "cx": 12, "cy": 12, "r": 9 }]];
@@ -116,6 +116,7 @@ var Coins = _icon('Coins');
 var Bell = _icon('Bell');
 var GripVertical = _icon('GripVertical');
 var Lock = _icon('Lock');
+var HelpCircle = _icon('HelpCircle');
 
 
 
@@ -124,9 +125,35 @@ var Lock = _icon('Lock');
 const CURRENCIES = ["UAH", "USD", "EUR", "GBP", "PLN", "CHF"];
 // Full pool the user can add from (rates are stored relative to UAH)
 const ALL_CURRENCIES = ["UAH", "USD", "EUR", "GBP", "PLN", "CHF", "JPY", "CAD", "AUD", "CNY", "CZK", "SEK", "NOK", "DKK", "TRY", "HUF", "RON", "AED", "GEL", "KZT"];
+// Popular coins (CoinGecko ids) the user can add to their crypto portfolio
+const CRYPTO_COINS = [
+  { id: "bitcoin", symbol: "BTC", name: "Bitcoin" },
+  { id: "ethereum", symbol: "ETH", name: "Ethereum" },
+  { id: "tether", symbol: "USDT", name: "Tether" },
+  { id: "binancecoin", symbol: "BNB", name: "BNB" },
+  { id: "solana", symbol: "SOL", name: "Solana" },
+  { id: "ripple", symbol: "XRP", name: "XRP" },
+  { id: "the-open-network", symbol: "TON", name: "Toncoin" },
+  { id: "cardano", symbol: "ADA", name: "Cardano" },
+  { id: "dogecoin", symbol: "DOGE", name: "Dogecoin" },
+  { id: "usd-coin", symbol: "USDC", name: "USD Coin" },
+  { id: "tron", symbol: "TRX", name: "TRON" },
+  { id: "polkadot", symbol: "DOT", name: "Polkadot" },
+  { id: "matic-network", symbol: "MATIC", name: "Polygon" },
+  { id: "litecoin", symbol: "LTC", name: "Litecoin" },
+  { id: "avalanche-2", symbol: "AVAX", name: "Avalanche" },
+  { id: "chainlink", symbol: "LINK", name: "Chainlink" },
+];
 // Set this to the address where user feedback should arrive (opens the mail app)
 const FEEDBACK_EMAIL = "hello@k3.finance";
 const APP_VERSION = "1.0";
+const TOUR_STEPS = [
+  { sel: '[data-tour="total"]', title: "Загальний капітал", text: "Сума всіх ваших рахунків у базовій валюті. Подвійний тап приховує суму від сторонніх очей." },
+  { sel: '[data-tour="actions"]', title: "Швидкі дії", text: "Додавайте витрати й доходи, робіть перекази між рахунками та обмін валют одним дотиком." },
+  { sel: '[data-tour="accounts"]', title: "Ваші рахунки", text: "Гортайте картки. Кожен рахунок може мати кілька валютних субрахунків із власними назвами та тегом банку." },
+  { sel: '[data-tour="help"]', title: "Довідка поруч", text: "Ця кнопка завжди тут: гайд по функціях, часті запитання та цей огляд." },
+  { sel: '[data-tour="nav"]', title: "Навігація", text: "Огляд, Рахунки, Історія, Позики та борги, і «Ще» — там налаштування, категорії, цілі та курси валют." },
+];
 const CURRENCY_SYMBOLS = { UAH: "₴", USD: "$", EUR: "€", GBP: "£", PLN: "zł", CHF: "CHF" };
 
 const ACCOUNT_TYPES = [
@@ -149,9 +176,9 @@ function uid(prefix = "id") {
 }
 
 const DEFAULT_EXPENSE_CATEGORIES = [
-  { name: "Продукти", icon: "ShoppingCart", color: "#6FA98C" },
-  { name: "Ресторани", icon: "Utensils", color: "#D8A24A" },
-  { name: "Транспорт", icon: "Bus", color: "#6683B4" },
+  { name: "Продукти", icon: "ShoppingCart", color: "#6FA98C", budget: 8000 },
+  { name: "Ресторани", icon: "Utensils", color: "#D8A24A", budget: 4000 },
+  { name: "Транспорт", icon: "Bus", color: "#6683B4", budget: 2000 },
   { name: "Подорожі", icon: "Plane", color: "#4FD1E6" },
   { name: "Паливо", icon: "Fuel", color: "#C77F6E" },
   { name: "Автомобіль", icon: "Car", color: "#9CA3AF" },
@@ -211,6 +238,51 @@ function txToBase(t, base, ratesToUAH) {
   return (t.amount * fx) / (ratesToUAH[base] || 1);
 }
 
+// Save a file letting the user CHOOSE where:
+//   1) desktop Chromium — native "Save As" dialog (File System Access API)
+//   2) iPhone / mobile   — the system share sheet ("Save to Files", AirDrop, apps…)
+//   3) otherwise         — a normal download
+// Returns: "saved" | "shared" | "downloaded" | "cancelled".
+async function saveFile(filename, content, mime) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type: mime });
+  const ext = filename.slice(filename.lastIndexOf("."));
+  const cleanMime = (mime || "application/octet-stream").split(";")[0];
+  if (typeof window !== "undefined" && window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({ suggestedName: filename, types: [{ description: filename, accept: { [cleanMime]: [ext] } }] });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return "saved";
+    } catch (e) {
+      if (e && e.name === "AbortError") return "cancelled";
+    }
+  }
+  try {
+    const file = new File([blob], filename, { type: cleanMime });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: filename });
+      return "shared";
+    }
+  } catch (e) {
+    if (e && e.name === "AbortError") return "cancelled";
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+  return "downloaded";
+}
+
+// Sort transactions newest-first: by date, then by creation time for same-day ties
+function byRecent(a, b) {
+  if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+  const ca = a.createdAt || "", cb = b.createdAt || "";
+  return ca < cb ? 1 : ca > cb ? -1 : 0;
+}
+
 function Icon({ name, size = 18, className = "", style = {} }) {
   const C = ICONS[name] || MoreHorizontal;
   return <C size={size} className={className} style={style} />;
@@ -229,20 +301,20 @@ function buildDemoData() {
   const catByName = (name) => [...expenseCats, ...incomeCats].find((c) => c.name === name);
 
   const accCash = { id: uid("acc"), name: "Готівка", type: "cash", color: ACCOUNT_COLORS[0], archived: false, createdAt: "2026-01-05" };
-  const accCard = { id: uid("acc"), name: "Monobank", type: "card", color: ACCOUNT_COLORS[1], archived: false, createdAt: "2026-01-05" };
-  const accDeposit = { id: uid("acc"), name: "Заощадження", type: "deposit", color: ACCOUNT_COLORS[3], archived: false, createdAt: "2026-01-05" };
+  const accCard = { id: uid("acc"), name: "Чорна картка", type: "card", color: ACCOUNT_COLORS[1], bank: "Монобанк", archived: false, createdAt: "2026-01-05" };
+  const accDeposit = { id: uid("acc"), name: "Депозит", type: "deposit", color: ACCOUNT_COLORS[3], bank: "ПриватБанк", archived: false, createdAt: "2026-01-05" };
   const accounts = [accCash, accCard, accDeposit];
 
-  const pCashUAH = { id: uid("pk"), accountId: accCash.id, currency: "UAH", initialBalance: 3200, archived: false };
-  const pCashUSD = { id: uid("pk"), accountId: accCash.id, currency: "USD", initialBalance: 100, archived: false };
-  const pCardUAH = { id: uid("pk"), accountId: accCard.id, currency: "UAH", initialBalance: 18500, archived: false };
-  const pCardUSD = { id: uid("pk"), accountId: accCard.id, currency: "USD", initialBalance: 950, archived: false };
-  const pDepositEUR = { id: uid("pk"), accountId: accDeposit.id, currency: "EUR", initialBalance: 600, archived: false };
+  const pCashUAH = { id: uid("pk"), accountId: accCash.id, currency: "UAH", initialBalance: 3200, name: "Гаманець", archived: false };
+  const pCashUSD = { id: uid("pk"), accountId: accCash.id, currency: "USD", initialBalance: 100, name: "Заначка", archived: false };
+  const pCardUAH = { id: uid("pk"), accountId: accCard.id, currency: "UAH", initialBalance: 18500, name: "Основний", archived: false };
+  const pCardUSD = { id: uid("pk"), accountId: accCard.id, currency: "USD", initialBalance: 950, name: "Валютний", archived: false };
+  const pDepositEUR = { id: uid("pk"), accountId: accDeposit.id, currency: "EUR", initialBalance: 600, name: "", archived: false };
   const pockets = [pCashUAH, pCashUSD, pCardUAH, pCardUSD, pDepositEUR];
 
   const rand = (min, max) => Math.round((min + Math.random() * (max - min)) * 100) / 100;
   const today = new Date();
-  const iso = (d) => d.toISOString().slice(0, 10);
+  const iso = (d) => (d > today ? today : d).toISOString().slice(0, 10);
 
   const transactions = [];
 
@@ -307,7 +379,15 @@ function buildDemoData() {
     { id: uid("rem"), title: "Заплатити за інтернет", date: iso(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5)), amount: 250, currency: "UAH", note: "", done: false },
   ];
 
-  return { accounts, pockets, categories: [...expenseCats, ...incomeCats], transactions, loans, rates, baseCurrency: "UAH", reminders };
+  return { accounts, pockets, categories: [...expenseCats, ...incomeCats], transactions, loans, rates, baseCurrency: "UAH", reminders, goals: [
+    { id: uid("goal"), name: "Відпустка", target: 40000, currency: "UAH", saved: 12500, note: "Море влітку", archived: false, createdAt: "2026-02-01" },
+    { id: uid("goal"), name: "Новий ноутбук", target: 1500, currency: "USD", saved: 400, note: "", archived: false, createdAt: "2026-03-10" },
+    { id: uid("goal"), name: "Подушка безпеки", target: 100000, currency: "UAH", saved: 63000, note: "6 місяців витрат", archived: false, createdAt: "2026-01-15" },
+  ], crypto: [
+    { id: uid("cx"), coinId: "bitcoin", symbol: "BTC", name: "Bitcoin", amount: 0.15, note: "" },
+    { id: uid("cx"), coinId: "ethereum", symbol: "ETH", name: "Ethereum", amount: 2, note: "" },
+    { id: uid("cx"), coinId: "solana", symbol: "SOL", name: "Solana", amount: 12, note: "" },
+  ], cryptoPrices: { bitcoin: 68000, ethereum: 3500, solana: 150 }, cryptoUpdatedAt: null };
 }
 
 /* ============================== PERSISTENCE ============================== */
@@ -325,12 +405,20 @@ function loadState() {
 // so future rate edits don't retroactively change historical totals.
 function migrateState(s) {
   if (s && Array.isArray(s.transactions) && s.rates) {
+    const todayStr = new Date().toISOString().slice(0, 10);
     s.transactions = s.transactions.map(function (t) {
+      let nt = t;
       if ((t.type === "income" || t.type === "expense") && t.fx == null) {
-        return Object.assign({}, t, { fx: s.rates[t.currency] || 1 });
+        nt = Object.assign({}, nt, { fx: s.rates[t.currency] || 1 });
       }
-      return t;
+      if (nt.date > todayStr) {
+        nt = Object.assign({}, nt, { date: todayStr });
+      }
+      return nt;
     });
+  }
+  if (s && Array.isArray(s.loans)) {
+    s.loans = s.loans.map(function (l) { return l.direction ? l : Object.assign({}, l, { direction: "out" }); });
   }
   return s;
 }
@@ -627,6 +715,115 @@ function ConsentScreen({ onAccept }) {
   );
 }
 
+/* ============================== HELP & GUIDED TOUR ============================== */
+
+function HelpModal({ onClose, startTour }) {
+  const [tab, setTab] = useState("guide");
+  const [open, setOpen] = useState(0);
+  const guide = [
+    { q: "Рахунки та субрахунки", a: "Рахунок — це контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з власними назвами (напр. «Основний», «Заначка»). Додайте тег банку, щоб згрупувати кілька карток одного банку." },
+    { q: "Операції", a: "Додавайте доходи й витрати кнопками на головному екрані. Курс валюти фіксується на момент операції, тож зміна курсу не змінює минулі суми." },
+    { q: "Перекази та обмін валют", a: "«Переказ» — між своїми рахунками. «Обмін валют» — між різними валютами за вашим курсом; баланси перерахуються автоматично." },
+    { q: "Бюджети", a: "У категорії витрат задайте місячний ліміт — на головному зʼявиться прогрес-бар із попередженням при наближенні до межі." },
+    { q: "Цілі накопичень", a: "Створюйте фінансові цілі (Налаштування → «Мої цілі»), поповнюйте їх і стежте за прогресом." },
+    { q: "Позики та борги", a: "Розділ «Позики та борги» має перемикач «Мені винні» / «Я винен». Реєструйте видачу, часткові повернення та погашення." },
+    { q: "Курси валют", a: "Налаштування → курси: додавайте валюти, тримайте курс «Авто» (оновлюється онлайн) або «Вручну». Крос-курси рахуються самі." },
+    { q: "Безпека (PIN)", a: "Увімкніть PIN-код у Налаштуваннях і оберіть, коли запитувати — одразу після згортання чи через хвилину." },
+    { q: "Резервні копії та експорт", a: "Зберігайте копію даних у файл (JSON) або експортуйте операції в CSV для Excel. Дані зберігаються на вашому пристрої." },
+  ];
+  const faq = [
+    { q: "Як додати свою категорію?", a: "Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт." },
+    { q: "Як налаштувати PIN-код?", a: "Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати." },
+    { q: "Як оновити курси валют?", a: "Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними." },
+    { q: "Чому нова операція не зверху?", a: "Операції сортуються за датою. Переконайтесь, що дата — сьогодні; операції одного дня показуються найновішою згори." },
+    { q: "Кілька карток одного банку?", a: "Створіть окремий рахунок для кожної картки й впишіть однаковий «Банк» — вони позначаться тегом банку." },
+    { q: "Чи можна повернути видалене?", a: "Видалення рахунку/категорії зберігає повʼязані операції в історії, але саму позицію відновити не можна — робіть резервні копії." },
+    { q: "Де зберігаються мої дані?", a: "Локально на вашому пристрої. Регулярно робіть резервну копію, щоб не втратити дані." },
+  ];
+  const items = tab === "guide" ? guide : faq;
+  const tabStyle = (on) => ({ background: on ? "var(--surface)" : "transparent", color: on ? "var(--text)" : "var(--text-dim)" });
+  return (
+    <Modal title="Довідка та навчання" onClose={onClose}>
+      <button onClick={startTour} className="w-full flex items-center gap-3 p-3 rounded-xl mb-4" style={{ background: "linear-gradient(135deg, #1A2338, #10192B)" }}>
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}><HelpCircle size={18} color="#131B2B" /></div>
+        <div className="text-left">
+          <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>Інтерактивний огляд</p>
+          <p className="text-[11px]" style={{ color: "#A7B0C4" }}>Швидка екскурсія по головному екрану</p>
+        </div>
+      </button>
+      <div className="flex gap-1.5 mb-3 p-1 rounded-xl" style={{ background: "var(--surface2)" }}>
+        <button onClick={() => { setTab("guide"); setOpen(0); }} className="flex-1 py-2 rounded-lg text-sm font-medium transition" style={tabStyle(tab === "guide")}>Гайд</button>
+        <button onClick={() => { setTab("faq"); setOpen(0); }} className="flex-1 py-2 rounded-lg text-sm font-medium transition" style={tabStyle(tab === "faq")}>Часті запитання</button>
+      </div>
+      <div className="space-y-2">
+        {items.map((it, i) => (
+          <div key={i} className="rounded-xl" style={{ border: "1px solid var(--border)" }}>
+            <button onClick={() => setOpen(open === i ? -1 : i)} className="w-full flex items-center justify-between gap-2 p-3 text-left">
+              <span className="text-sm font-medium">{it.q}</span>
+              <ChevronDown size={16} style={{ color: "var(--text-dim)", transform: open === i ? "rotate(180deg)" : "none", transition: "transform .15s", flexShrink: 0 }} />
+            </button>
+            {open === i && <p className="px-3 pb-3 text-xs leading-relaxed" style={{ color: "var(--text-dim)" }}>{it.a}</p>}
+          </div>
+        ))}
+      </div>
+    </Modal>
+  );
+}
+
+// Coach-mark tour: dims the screen and spotlights one element at a time with a tooltip
+function TourOverlay({ step, setStep, onClose }) {
+  const [rect, setRect] = useState(null);
+  const cur = TOUR_STEPS[step];
+  const last = step >= TOUR_STEPS.length - 1;
+  useEffect(() => {
+    const el = cur && document.querySelector(cur.sel);
+    if (!el) { setRect(null); return; }
+    try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+    };
+    const t = setTimeout(measure, 320);
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => { clearTimeout(t); window.removeEventListener("resize", measure); window.removeEventListener("scroll", measure, true); };
+  }, [step]);
+
+  const pad = 8;
+  const hole = rect ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : null;
+  let vpos = { bottom: 28 };
+  if (hole) {
+    const below = hole.top + hole.height + 14;
+    const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    if (vh - below > 190) vpos = { top: below };
+    else vpos = { bottom: Math.max(16, vh - hole.top + 14) };
+  }
+  return (
+    <div className="fixed inset-0 z-[130]">
+      {hole ? (
+        <div style={{ position: "fixed", top: hole.top, left: hole.left, width: hole.width, height: hole.height, borderRadius: 14, boxShadow: "0 0 0 9999px rgba(6,10,18,0.80)", border: "2px solid var(--accent)", transition: "top .25s ease, left .25s ease, width .25s ease, height .25s ease", pointerEvents: "none" }} />
+      ) : (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(6,10,18,0.80)" }} onClick={onClose} />
+      )}
+      <div className="fixed px-4" style={{ left: 0, right: 0, ...vpos }}>
+        <div className="rounded-2xl p-4 mx-auto" style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow)", maxWidth: 460 }}>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>Крок {step + 1} з {TOUR_STEPS.length}</span>
+            <button onClick={onClose} className="text-[11px] font-medium" style={{ color: "var(--text-dim)" }}>Пропустити</button>
+          </div>
+          <h3 className="font-display font-bold text-base mb-1">{cur.title}</h3>
+          <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>{cur.text}</p>
+          <div className="flex gap-2 justify-end">
+            {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)}>Назад</Button>}
+            <Button onClick={() => (last ? onClose() : setStep(step + 1))}>{last ? "Готово" : "Далі"}</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ============================== MAIN APP ============================== */
 function FinanceTracker() {
   const [state, setState] = useState(() => loadState() || buildDemoData());
@@ -664,6 +861,8 @@ function FinanceTracker() {
   const [splash, setSplash] = useState(() => !loadState());
   const [consented, setConsented] = useState(() => loadConsent());
   const acceptConsent = () => { saveConsent(); setConsented(true); };
+  const [tourStep, setTourStep] = useState(null);
+  const startTour = () => { setView("dashboard"); setModal(null); setTimeout(() => setTourStep(0), 320); };
   useEffect(() => { if (splash) { const t = setTimeout(() => setSplash(false), 1300); return () => clearTimeout(t); } }, []);
 
   const stateRef = React.useRef(state);
@@ -711,6 +910,9 @@ function FinanceTracker() {
   const { accounts, pockets, categories, transactions, loans, rates, baseCurrency } = state;
   const currencyList = ["UAH"].concat(Object.keys(rates).filter((c) => c !== "UAH"));
   const reminders = state.reminders || [];
+  const goals = state.goals || [];
+  const crypto = state.crypto || [];
+  const cryptoPrices = state.cryptoPrices || {};
   const update = (patch) => setState((s) => ({ ...s, ...patch }));
   const notify = (msg) => setToast(msg);
 
@@ -734,6 +936,8 @@ function FinanceTracker() {
         if (tx.toPocketId === pocketId) bal += tx.toAmount;
       } else if (tx.type === "loan_out" && tx.pocketId === pocketId) bal -= tx.amount;
       else if (tx.type === "loan_return" && tx.pocketId === pocketId) bal += tx.amount;
+      else if (tx.type === "debt_take" && tx.pocketId === pocketId) bal += tx.amount;
+      else if (tx.type === "debt_repay" && tx.pocketId === pocketId) bal -= tx.amount;
     });
     return bal;
   }, [pockets, transactions]);
@@ -749,7 +953,8 @@ function FinanceTracker() {
   const pocketLabel = (pocketId) => {
     const p = getPocket(pocketId);
     if (!p) return "Видалений рахунок";
-    return `${p.account?.name || "Рахунок"} · ${p.currency}`;
+    const acc = p.account?.name || "Рахунок";
+    return p.name ? `${acc} · ${p.name} · ${p.currency}` : `${acc} · ${p.currency}`;
   };
 
   const activePockets = useMemo(() =>
@@ -796,19 +1001,59 @@ function FinanceTracker() {
     return arr;
   }, [transactions, baseCurrency, rates]);
 
-  /* ---------- loans ---------- */
+  // Budgets: spent this month vs the category's monthly limit (limit interpreted in base currency)
+  const budgetStatus = useMemo(() =>
+    categories.filter((c) => c.type === "expense" && !c.archived && c.budget > 0).map((c) => {
+      const spent = monthTx.filter((t) => t.type === "expense" && t.categoryId === c.id).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
+      const pct = c.budget > 0 ? Math.min(999, (spent / c.budget) * 100) : 0;
+      return { id: c.id, name: c.name, color: c.color, icon: c.icon, spent, budget: c.budget, pct };
+    }).sort((a, b) => b.pct - a.pct)
+  , [categories, monthTx, baseCurrency, rates]);
+
+  // Net worth (total capital) at the end of each of the last 6 months, in the base currency
+  const netWorthSeries = useMemo(() => {
+    const arr = [];
+    const nm = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(nm.getFullYear(), nm.getMonth() - i + 1, 0);
+      const cutoff = d.toISOString().slice(0, 10);
+      let total = 0;
+      pockets.forEach((p) => {
+        let bal = p.initialBalance || 0;
+        transactions.forEach((tx) => {
+          if (tx.date > cutoff) return;
+          if (tx.type === "income" && tx.pocketId === p.id) bal += tx.amount;
+          else if (tx.type === "expense" && tx.pocketId === p.id) bal -= tx.amount;
+          else if (tx.type === "transfer" || tx.type === "exchange") { if (tx.fromPocketId === p.id) bal -= tx.fromAmount; if (tx.toPocketId === p.id) bal += tx.toAmount; }
+          else if (tx.type === "loan_out" && tx.pocketId === p.id) bal -= tx.amount;
+          else if (tx.type === "loan_return" && tx.pocketId === p.id) bal += tx.amount;
+          else if (tx.type === "debt_take" && tx.pocketId === p.id) bal += tx.amount;
+          else if (tx.type === "debt_repay" && tx.pocketId === p.id) bal -= tx.amount;
+        });
+        total += convert(bal, p.currency, baseCurrency, rates);
+      });
+      arr.push({ month: MONTHS_UA[d.getMonth()], value: Math.round(total) });
+    }
+    return arr;
+  }, [pockets, transactions, baseCurrency, rates]);
+
+  /* ---------- loans & debts ---------- */
   const loanRemaining = (loan) => Math.max(0, Math.round((loan.amount - loan.returned) * 100) / 100);
-  const activeLoans = loans.filter((l) => l.status !== "returned");
+  const activeLoansAll = loans.filter((l) => l.status !== "returned" && !l.archived);
+  const activeLoans = activeLoansAll.filter((l) => l.direction !== "in");
+  const activeDebts = activeLoansAll.filter((l) => l.direction === "in");
   const totalLoanedOut = activeLoans.reduce((s, l) => s + convert(loanRemaining(l), l.currency, baseCurrency, rates), 0);
-  const overdueLoans = loans.filter((l) => l.status !== "returned" && new Date(l.dueDate) < now);
+  const totalOwed = activeDebts.reduce((s, l) => s + convert(loanRemaining(l), l.currency, baseCurrency, rates), 0);
+  const overdueLoans = activeLoans.filter((l) => new Date(l.dueDate) < now);
+  const overdueDebts = activeDebts.filter((l) => new Date(l.dueDate) < now);
   const overdueTotal = overdueLoans.reduce((s, l) => s + convert(loanRemaining(l), l.currency, baseCurrency, rates), 0);
   const upcomingLoans = [...activeLoans].filter((l) => new Date(l.dueDate) >= now).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 3);
 
   /* ============================== ACTIONS ============================== */
 
-  const addAccountWithPocket = (accData, currency, initialBalance) => {
+  const addAccountWithPocket = (accData, currency, initialBalance, pocketName) => {
     const account = { id: uid("acc"), archived: false, createdAt: new Date().toISOString().slice(0, 10), ...accData };
-    const pocket = { id: uid("pk"), accountId: account.id, currency, initialBalance: parseFloat(initialBalance) || 0, archived: false };
+    const pocket = { id: uid("pk"), accountId: account.id, currency, initialBalance: parseFloat(initialBalance) || 0, name: (pocketName || "").trim(), archived: false };
     update({ accounts: [...accounts, account], pockets: [...pockets, pocket] });
     notify("Рахунок створено");
   };
@@ -831,8 +1076,8 @@ function FinanceTracker() {
     update({ accounts: arr });
   };
 
-  const addPocket = (accountId, currency, initialBalance) => {
-    update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, archived: false }] });
+  const addPocket = (accountId, currency, initialBalance, name) => {
+    update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), archived: false }] });
     notify("Валютний субрахунок додано");
   };
   const editPocket = (id, patch) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
@@ -855,30 +1100,32 @@ function FinanceTracker() {
   const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
   const archiveCategory = (id) => update({ categories: categories.map((c) => (c.id === id ? { ...c, archived: !c.archived } : c)) });
 
-  const addTransaction = (tx) => { update({ transactions: [{ id: uid("tx"), fx: (tx.currency ? (rates[tx.currency] || 1) : 1), ...tx }, ...transactions] }); notify("Операцію збережено"); };
+  const addTransaction = (tx) => { update({ transactions: [{ id: uid("tx"), createdAt: new Date().toISOString(), fx: (tx.currency ? (rates[tx.currency] || 1) : 1), ...tx }, ...transactions] }); notify("Операцію збережено"); };
   const editTransaction = (id, patch) => update({ transactions: transactions.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
   const deleteTransaction = (id) => { update({ transactions: transactions.filter((t) => t.id !== id) }); notify("Операцію видалено"); };
-  const duplicateTransaction = (tx) => { update({ transactions: [{ ...tx, id: uid("tx"), date: new Date().toISOString().slice(0, 10) }, ...transactions] }); notify("Операцію дубльовано"); };
+  const duplicateTransaction = (tx) => { update({ transactions: [{ ...tx, id: uid("tx"), createdAt: new Date().toISOString(), date: new Date().toISOString().slice(0, 10) }, ...transactions] }); notify("Операцію дубльовано"); };
 
   const addLoan = (loan, sourcePocketId, amount, currency, note) => {
-    const newLoan = { id: uid("loan"), status: "active", returned: 0, ...loan };
-    const tx = { id: uid("tx"), type: "loan_out", date: loan.dateGiven, amount, currency, pocketId: sourcePocketId, loanId: newLoan.id, note: note || `Позика: ${loan.borrower}` };
+    const isDebt = loan.direction === "in";
+    const newLoan = { id: uid("loan"), status: "active", returned: 0, direction: loan.direction || "out", ...loan };
+    const tx = { id: uid("tx"), type: isDebt ? "debt_take" : "loan_out", date: loan.dateGiven, amount, currency, pocketId: sourcePocketId, loanId: newLoan.id, note: note || ((isDebt ? "Позика (борг) від: " : "Позика: ") + loan.borrower) };
     update({ loans: [newLoan, ...loans], transactions: [tx, ...transactions] });
-    notify("Позику створено");
+    notify(isDebt ? "Борг додано" : "Позику створено");
   };
 
   const registerLoanReturn = (loanId, returnAmount, returnPocketId, currency, date, note) => {
     const loan = loans.find((l) => l.id === loanId);
     if (!loan) return;
+    const isDebt = loan.direction === "in";
     const remaining = loanRemaining(loan);
     const amt = Math.min(returnAmount, remaining);
     const newReturned = Math.round((loan.returned + amt) * 100) / 100;
     const newStatus = newReturned >= loan.amount - 0.005 ? "returned" : "partial";
     update({
       loans: loans.map((l) => (l.id === loanId ? { ...l, returned: newReturned, status: newStatus } : l)),
-      transactions: [{ id: uid("tx"), type: "loan_return", date, amount: amt, currency, pocketId: returnPocketId, loanId, note: note || `Повернення позики: ${loan.borrower}` }, ...transactions],
+      transactions: [{ id: uid("tx"), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency, pocketId: returnPocketId, loanId, note: note || ((isDebt ? "Погашення боргу: " : "Повернення позики: ") + loan.borrower) }, ...transactions],
     });
-    notify(newStatus === "returned" ? "Позику повністю повернено" : "Часткове повернення зареєстровано");
+    notify(newStatus === "returned" ? (isDebt ? "Борг повністю погашено" : "Позику повністю повернено") : (isDebt ? "Часткове погашення зареєстровано" : "Часткове повернення зареєстровано"));
   };
 
   const editLoan = (id, patch) => update({ loans: loans.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
@@ -889,6 +1136,31 @@ function FinanceTracker() {
   const addReminder = (data) => { update({ reminders: [{ id: uid("rem"), done: false, ...data }, ...reminders] }); notify("Нагадування створено"); };
   const editReminder = (id, patch) => update({ reminders: reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
   const deleteReminder = (id) => { update({ reminders: reminders.filter((r) => r.id !== id) }); notify("Нагадування видалено"); };
+
+  const addGoal = (data) => { update({ goals: [{ id: uid("goal"), saved: 0, archived: false, createdAt: new Date().toISOString().slice(0, 10), ...data }, ...goals] }); notify("Ціль створено"); };
+  const editGoal = (id, patch) => update({ goals: goals.map((g) => (g.id === id ? { ...g, ...patch } : g)) });
+  const deleteGoal = (id) => { update({ goals: goals.filter((g) => g.id !== id) }); notify("Ціль видалено"); };
+  const contributeGoal = (id, delta) => { update({ goals: goals.map((g) => (g.id === id ? { ...g, saved: Math.max(0, Math.round((((g.saved || 0) + delta)) * 100) / 100) } : g)) }); notify(delta >= 0 ? "Ціль поповнено" : "Кошти знято"); };
+
+  const addCrypto = (data) => { update({ crypto: [{ id: uid("cx"), note: "", ...data }, ...crypto] }); notify("Актив додано"); };
+  const editCrypto = (id, patch) => update({ crypto: crypto.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+  const deleteCrypto = (id) => { update({ crypto: crypto.filter((c) => c.id !== id) }); notify("Актив видалено"); };
+  const refreshCryptoPrices = async () => {
+    const ids = Array.from(new Set(crypto.map((c) => c.coinId))).filter(Boolean);
+    if (ids.length === 0) return { ok: true };
+    try {
+      const resp = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=" + ids.join(",") + "&vs_currencies=usd");
+      const data = await resp.json();
+      if (!data || typeof data !== "object") throw new Error("bad");
+      const prices = { ...cryptoPrices };
+      ids.forEach((id) => { if (data[id] && typeof data[id].usd === "number") prices[id] = data[id].usd; });
+      update({ cryptoPrices: prices, cryptoUpdatedAt: new Date().toISOString() });
+      return { ok: true };
+    } catch (e) { return { ok: false }; }
+  };
+  const cryptoValueUSD = (c) => (c.amount || 0) * (cryptoPrices[c.coinId] || 0);
+  const cryptoTotalUSD = crypto.reduce((s, c) => s + cryptoValueUSD(c), 0);
+  const cryptoTotalBase = convert(cryptoTotalUSD, "USD", baseCurrency, rates);
   const toggleReminderDone = (id) => update({ reminders: reminders.map((r) => (r.id === id ? { ...r, done: !r.done } : r)) });
 
   const overdueReminders = reminders.filter((r) => !r.done && new Date(r.date) < new Date(new Date().setHours(0, 0, 0, 0)));
@@ -896,18 +1168,29 @@ function FinanceTracker() {
   const applyPin = (v) => { savePin(v); setPinState(v); };
   const applyPinDelay = (sec) => { savePinDelay(sec); setPinDelayState(sec); };
 
-  const exportBackup = () => {
+  const exportBackup = async () => {
     try {
       const payload = { ...state, theme, _app: "AiMyFinance", _v: 2, _exportedAt: new Date().toISOString() };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "finance-backup-" + new Date().toISOString().slice(0, 10) + ".json";
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
-      notify("Резервну копію збережено");
+      const res = await saveFile("k3-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(payload, null, 2), "application/json");
+      if (res !== "cancelled") notify(res === "downloaded" ? "Резервну копію збережено" : "Резервну копію збережено");
     } catch (e) { notify("Не вдалося створити копію"); }
+  };
+
+  const exportCSV = async () => {
+    try {
+      const catName = (id) => (categories.find((c) => c.id === id) || {}).name || "";
+      const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики" };
+      const rows = [["Дата", "Тип", "Сума", "Валюта", "Категорія", "Рахунок", "Нотатка"]];
+      transactions.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).forEach((t) => {
+        const amt = t.amount != null ? t.amount : (t.fromAmount != null ? t.fromAmount : "");
+        const cur = t.currency || t.fromCurrency || "";
+        const pk = pocketLabel(t.pocketId || t.fromPocketId);
+        rows.push([t.date, typeLbl[t.type] || t.type, amt, cur, catName(t.categoryId), pk, (t.note || "").replace(/[\r\n]+/g, " ")]);
+      });
+      const csv = rows.map((r) => r.map((cell) => { const s = String(cell); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(",")).join("\n");
+      const res = await saveFile("k3-transactions-" + new Date().toISOString().slice(0, 10) + ".csv", "\ufeff" + csv, "text/csv;charset=utf-8");
+      if (res !== "cancelled") notify(res === "downloaded" ? "CSV експортовано" : "CSV збережено");
+    } catch (e) { notify("Не вдалося створити CSV"); }
   };
 
   const importBackup = (file) => {
@@ -949,6 +1232,8 @@ function FinanceTracker() {
         .snap-card { scroll-snap-align: start; }
         @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: fadeSlideUp 0.28s ease both; }
+        @keyframes k3spin { to { transform: rotate(360deg); } }
+        .spin { animation: k3spin 0.9s linear infinite; }
         .lucide { stroke-width: 1.5; }
         .bank-card { position: relative; border-radius: 20px; padding: 20px; overflow: hidden; background: linear-gradient(155deg, #2B3757 0%, #1A2742 42%, #0E1626 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), var(--card-shadow, 0 8px 20px rgba(0,0,0,0.3)); }
         .bank-card::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--card-accent, var(--accent)); }
@@ -966,7 +1251,7 @@ function FinanceTracker() {
             {NAV_ITEMS.map((item) => {
               const Ic = item.icon;
               const active = view === item.id;
-              const badge = item.id === "loans" ? overdueLoans.length : 0;
+              const badge = item.id === "loans" ? (overdueLoans.length + overdueDebts.length) : 0;
               return (
                 <button key={item.id} onClick={() => setView(item.id)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all" style={{ background: active ? "var(--surface2)" : "transparent", color: active ? "var(--accent)" : "var(--text-dim)" }}>
                   <span className="relative flex items-center">
@@ -989,6 +1274,9 @@ function FinanceTracker() {
             </span>
             Нагадування
           </button>
+          <button onClick={() => setModal({ type: "help" })} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium" style={{ color: "var(--text-dim)" }}>
+            <HelpCircle size={18} /> Довідка та навчання
+          </button>
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium" style={{ color: "var(--text-dim)" }}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}{theme === "dark" ? "Світла тема" : "Темна тема"}
           </button>
@@ -998,6 +1286,9 @@ function FinanceTracker() {
           <div className="md:hidden flex items-center justify-between px-4 py-4 border-b sticky top-0 z-30" style={{ borderColor: "var(--border)", background: "var(--bg)", paddingTop: "calc(1rem + env(safe-area-inset-top))" }}>
             <Wordmark size={20} />
             <div className="flex items-center gap-1">
+              <button data-tour="help" onClick={() => setModal({ type: "help" })} className="p-2 rounded-lg" style={{ color: "var(--text-dim)" }}>
+                <HelpCircle size={18} />
+              </button>
               <button onClick={() => setModal({ type: "reminders" })} className="p-2 rounded-lg relative" style={{ color: "var(--text-dim)" }}>
                 <Bell size={18} />
                 {overdueReminders.length > 0 && (
@@ -1018,11 +1309,13 @@ function FinanceTracker() {
                 monthIncome={monthIncome} monthExpense={monthExpense} categoryBreakdown={categoryBreakdown} monthlySeries={monthlySeries}
                 transactions={transactions} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
                 setModal={setModal} setView={setView} totalLoanedOut={totalLoanedOut} overdueTotal={overdueTotal} upcomingLoans={upcomingLoans} activeLoans={activeLoans}
+                budgetStatus={budgetStatus} netWorthSeries={netWorthSeries} goals={goals}
+                crypto={crypto} cryptoPrices={cryptoPrices} cryptoTotalBase={cryptoTotalBase}
               />
             )}
             {view === "accounts" && (
               <AccountsView accounts={accounts} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
-                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} />
+                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} setView={setView} cryptoTotalBase={cryptoTotalBase} cryptoCount={crypto.length} />
             )}
             {view === "history" && (
               <HistoryView transactions={transactions} pockets={pockets} accounts={accounts} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
@@ -1034,18 +1327,24 @@ function FinanceTracker() {
             {view === "categories" && (
               <CategoriesView categories={categories} setModal={setModal} archiveCategory={archiveCategory} />
             )}
+            {view === "goals" && (
+              <GoalsView goals={goals} setModal={setModal} baseCurrency={baseCurrency} rates={rates} />
+            )}
+            {view === "crypto" && (
+              <CryptoView crypto={crypto} cryptoPrices={cryptoPrices} cryptoUpdatedAt={state.cryptoUpdatedAt} baseCurrency={baseCurrency} rates={rates} setModal={setModal} refreshCryptoPrices={refreshCryptoPrices} setToast={setToast} />
+            )}
             {view === "settings" && (
-              <SettingsView baseCurrency={baseCurrency} rates={rates} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} setView={setView} />
+              <SettingsView baseCurrency={baseCurrency} rates={rates} rateMode={state.rateMode || {}} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} exportCSV={exportCSV} setView={setView} />
             )}
           </div>
         </main>
       </div>
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 border-t flex items-stretch" style={{ background: "var(--surface)", borderColor: "var(--border)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div data-tour="nav" className="md:hidden fixed bottom-0 left-0 right-0 z-30 border-t flex items-stretch" style={{ background: "var(--surface)", borderColor: "var(--border)", paddingBottom: "env(safe-area-inset-bottom)" }}>
         {MOBILE_NAV.map((item) => {
           const Ic = item.icon;
           const active = view === item.id;
-          const badge = item.id === "loans" ? overdueLoans.length : 0;
+          const badge = item.id === "loans" ? (overdueLoans.length + overdueDebts.length) : 0;
           return (
             <button key={item.id} onClick={() => setView(item.id)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium" style={{ color: active ? "var(--accent)" : "var(--text-dim)" }}>
               <span className="relative flex items-center">
@@ -1058,7 +1357,7 @@ function FinanceTracker() {
             </button>
           );
         })}
-        <button onClick={() => setView("settings")} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium" style={{ color: view === "settings" || view === "categories" ? "var(--accent)" : "var(--text-dim)" }}>
+        <button onClick={() => setView("settings")} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium" style={{ color: view === "settings" || view === "categories" || view === "goals" || view === "crypto" ? "var(--accent)" : "var(--text-dim)" }}>
           <SettingsIcon size={20} />Ще
         </button>
       </div>
@@ -1079,6 +1378,8 @@ function FinanceTracker() {
           loans={loans} loanRemaining={loanRemaining} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel}
           transactions={transactions} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction}
           reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone}
+          addGoal={addGoal} editGoal={editGoal} deleteGoal={deleteGoal} contributeGoal={contributeGoal} startTour={startTour}
+          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto}
         />
       )}
 
@@ -1091,6 +1392,8 @@ function FinanceTracker() {
       )}
 
       {!consented && <ConsentScreen onAccept={acceptConsent} />}
+
+      {tourStep != null && <TourOverlay step={tourStep} setStep={setTourStep} onClose={() => setTourStep(null)} />}
     </div>
   );
 }
@@ -1106,7 +1409,7 @@ function PocketSelect({ accounts, pockets, value, onChange, excludePocketId, cla
         if (accPockets.length === 0) return null;
         return (
           <optgroup key={acc.id} label={acc.name}>
-            {accPockets.map((p) => <option key={p.id} value={p.id}>{acc.name} · {p.currency}</option>)}
+            {accPockets.map((p) => <option key={p.id} value={p.id}>{p.name ? `${p.name} · ${p.currency}` : `${acc.name} · ${p.currency}`}</option>)}
           </optgroup>
         );
       })}
@@ -1165,11 +1468,46 @@ function MiniBars({ data, height = 190 }) {
   );
 }
 
+// Dependency-free area/line chart for the net-worth trend
+function TrendArea({ data, height = 130 }) {
+  if (!data || data.length === 0) return null;
+  const vals = data.map((d) => d.value);
+  const max = Math.max.apply(null, vals);
+  const min = Math.min.apply(null, vals);
+  const range = (max - min) || 1;
+  const W = 320, H = height, pad = 10, topPad = 12;
+  const n = data.length;
+  const x = (i) => pad + (i * (W - pad * 2)) / (n - 1 || 1);
+  const y = (v) => H - pad - ((v - min) / range) * (H - pad - topPad);
+  const pts = data.map((d, i) => [x(i), y(d.value)]);
+  const line = pts.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = line + " L" + pts[n - 1][0].toFixed(1) + " " + (H - pad) + " L" + pts[0][0].toFixed(1) + " " + (H - pad) + " Z";
+  return (
+    <div style={{ width: "100%" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" style={{ display: "block", overflow: "visible" }}>
+        <defs>
+          <linearGradient id="twGold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#C9A362" stopOpacity="0.32" />
+            <stop offset="1" stopColor="#C9A362" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#twGold)" />
+        <path d={line} fill="none" stroke="#C9A362" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div style={{ display: "flex", marginTop: 6 }}>
+        {data.map((d, i) => (
+          <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>{d.month}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ============================== DASHBOARD ============================== */
 
-function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans }) {
+function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase }) {
   const net = monthIncome - monthExpense;
-  const recent = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+  const recent = [...transactions].sort(byRecent).slice(0, 6);
   const activeAccounts = accounts.filter((a) => !a.archived);
   const allPocketCards = activeAccounts.flatMap((acc) => pockets.filter((p) => p.accountId === acc.id && !p.archived).map((p) => ({ ...p, account: acc })));
 
@@ -1218,19 +1556,25 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
     }
   };
 
+  const nwLen = netWorthSeries ? netWorthSeries.length : 0;
+  const nwLast = nwLen ? netWorthSeries[nwLen - 1].value : 0;
+  const nwPrev = nwLen > 1 ? netWorthSeries[nwLen - 2].value : nwLast;
+  const nwDelta = nwLast - nwPrev;
+
   return (
     <div className="space-y-6 animate-in">
-      <div>
+      <div data-tour="total">
         <p className="text-sm mb-1" style={{ color: "var(--text-dim)" }}>Загальний капітал</p>
         <h1 onClick={toggleHide} className="font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none" style={{ color: "var(--text)", WebkitUserSelect: "none" }} title="Подвійний тап, щоб приховати">
-          {hideTotal ? "$$$$$$$" : fmtMoney(totalInBase, baseCurrency)}
+          {hideTotal ? "$$$$$$$" : fmtMoney(totalInBase + (cryptoTotalBase || 0), baseCurrency)}
         </h1>
         <div className="flex flex-wrap gap-2 mt-3">
           {Object.entries(byCurrencyTotals).map(([cur, val]) => <Badge key={cur} color="var(--accent2)">{hideTotal ? "••••" : fmtMoney(val, cur)}</Badge>)}
+          {cryptoTotalBase > 0 && <Badge color="var(--accent)">{hideTotal ? "••••" : `₿ ${fmtMoney(cryptoTotalBase, baseCurrency)}`}</Badge>}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div data-tour="actions" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <QuickAction icon={Minus} label="Додати витрату" onClick={() => setModal({ type: "transaction", payload: { kind: "expense" } })} />
         <QuickAction icon={Plus} label="Додати дохід" onClick={() => setModal({ type: "transaction", payload: { kind: "income" } })} />
         <QuickAction icon={ArrowLeftRight} label="Переказ" onClick={() => setModal({ type: "transfer" })} />
@@ -1242,7 +1586,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
           <h2 className="font-display font-semibold text-lg">Рахунки</h2>
           <button onClick={() => setView("accounts")} className="pill-link">Усі рахунки <ChevronRight size={13} /></button>
         </div>
-        <div className="flex gap-3 overflow-x-auto snap-x pt-1 pb-5 -mx-2 px-2">
+        <div data-tour="accounts" className="flex gap-3 overflow-x-auto snap-x pt-1 pb-5 -mx-2 px-2">
           {allPocketCards.map((p) => (
             <PocketCard key={p.id} pocket={p} balance={pocketBalance(p.id)} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} onLongPress={() => setModal({ type: "cardMenu", payload: p.id })} className="w-64 shrink-0 snap-card" />
           ))}
@@ -1305,6 +1649,90 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
           <MiniBars data={monthlySeries} baseCurrency={baseCurrency} />
         </Card>
       </div>
+
+      {nwLen >= 2 && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-semibold text-sm">Динаміка капіталу</h3>
+            <span className="text-xs font-semibold tabular flex items-center gap-1" style={{ color: nwDelta >= 0 ? "var(--accent)" : "var(--danger)" }}>
+              {nwDelta >= 0 ? "▲" : "▼"} {fmtMoney(Math.abs(nwDelta), baseCurrency)}
+            </span>
+          </div>
+          <TrendArea data={netWorthSeries} />
+          <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>Загальний капітал за останні 6 місяців · зміна за місяць</p>
+        </Card>
+      )}
+
+      {budgetStatus && budgetStatus.length > 0 && (
+        <Card className="p-4">
+          <h3 className="font-display font-semibold text-sm mb-3">Бюджети за місяць</h3>
+          <div className="space-y-3.5">
+            {budgetStatus.map((b) => {
+              const over = b.pct > 100;
+              const barColor = over ? "var(--danger)" : b.pct >= 80 ? "var(--warn)" : "var(--accent)";
+              return (
+                <div key={b.id}>
+                  <div className="flex items-center justify-between text-xs mb-1.5 gap-2">
+                    <span className="flex items-center gap-1.5 font-medium min-w-0"><Icon name={b.icon} size={13} style={{ color: b.color }} /><span className="truncate">{b.name}</span></span>
+                    <span className="tabular shrink-0" style={{ color: over ? "var(--danger)" : "var(--text-dim)" }}>{fmtMoney(b.spent, baseCurrency)} / {fmtMoney(b.budget, baseCurrency)}</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--surface2)" }}>
+                    <div style={{ width: Math.min(100, b.pct) + "%", height: "100%", background: barColor, borderRadius: 999, transition: "width .3s ease" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {goals && goals.filter((g) => !g.archived).length > 0 && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-semibold text-sm flex items-center gap-2"><PiggyBank size={16} /> Цілі накопичень</h3>
+            <button onClick={() => setView("goals")} className="pill-link">Усі цілі <ChevronRight size={13} /></button>
+          </div>
+          <div className="space-y-3.5">
+            {goals.filter((g) => !g.archived).slice(0, 3).map((g) => {
+              const saved = g.saved || 0;
+              const pct = g.target > 0 ? Math.min(100, (saved / g.target) * 100) : 0;
+              return (
+                <div key={g.id}>
+                  <div className="flex items-center justify-between text-xs mb-1.5 gap-2">
+                    <span className="font-medium truncate">{g.name}</span>
+                    <span className="tabular shrink-0" style={{ color: "var(--text-dim)" }}>{fmtMoney(saved, g.currency)} / {fmtMoney(g.target, g.currency)}</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--surface2)" }}>
+                    <div style={{ width: pct + "%", height: "100%", background: "var(--accent)", borderRadius: 999, transition: "width .3s ease" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {crypto && crypto.length > 0 && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-semibold text-sm flex items-center gap-2"><Coins size={16} /> Крипто-портфель</h3>
+            <button onClick={() => setView("crypto")} className="pill-link">Відкрити <ChevronRight size={13} /></button>
+          </div>
+          <p className="font-display font-bold text-xl tabular mb-3">{fmtMoney(cryptoTotalBase || 0, baseCurrency)}</p>
+          <div className="space-y-2.5">
+            {crypto.slice(0, 3).map((c) => {
+              const price = cryptoPrices[c.coinId] || 0;
+              const valBase = convert((c.amount || 0) * price, "USD", baseCurrency, rates);
+              return (
+                <div key={c.id} className="flex items-center justify-between text-xs gap-2">
+                  <span className="font-medium truncate">{c.amount} {c.symbol}</span>
+                  <span className="tabular shrink-0" style={{ color: "var(--text-dim)" }}>{price > 0 ? fmtMoney(valBase, baseCurrency) : "—"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {activeLoans.length > 0 && (
         <Card className="p-4">
@@ -1383,7 +1811,7 @@ function PocketCard({ pocket, balance, onClick, onLongPress, className = "" }) {
       <div className="flex items-center justify-between gap-2 mb-8">
         <span className="flex items-center gap-1.5 text-[11px] font-medium min-w-0" style={{ color: "rgba(255,255,255,0.55)" }}>
           <Icon name={typeInfo?.icon} size={13} style={{ color: "rgba(255,255,255,0.55)" }} />
-          <span className="truncate">{typeInfo?.label}</span>
+          <span className="truncate">{pocket.name ? pocket.name : typeInfo?.label}</span>
         </span>
         <span className="font-display font-bold shrink-0 leading-none" style={{ fontSize: 17, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.96)" }}>
           K<sup style={{ color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 }}>3</sup>
@@ -1394,7 +1822,10 @@ function PocketCard({ pocket, balance, onClick, onLongPress, className = "" }) {
         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}>{pocket.currency}</span>
       </div>
       <p className="text-xs mt-1.5 tracking-wider" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{masked}</p>
-      <p className="text-sm font-medium mt-3 truncate" style={{ color: "rgba(255,255,255,0.75)" }}>{acc.name}</p>
+      <div className="flex items-center justify-between gap-2 mt-3">
+        <p className="text-sm font-medium truncate" style={{ color: "rgba(255,255,255,0.75)" }}>{acc.name}</p>
+        {acc.bank && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(201,163,98,0.18)", color: "#E7CF9B" }}>{acc.bank}</span>}
+      </div>
     </div>
   );
 }
@@ -1423,7 +1854,7 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
 
 /* ============================== ACCOUNTS VIEW ============================== */
 
-function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts }) {
+function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts, setView, cryptoTotalBase, cryptoCount }) {
   const [showArchived, setShowArchived] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [confirmDel, setConfirmDel] = useState(null);
@@ -1513,7 +1944,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                     </div>
                     <div className="text-left min-w-0">
                       <p className="text-sm font-semibold truncate">{acc.name}</p>
-                      <p className="text-xs" style={{ color: "var(--text-dim)" }}>{ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label} · {pks.filter(p=>!p.archived).length} валют{pks.filter(p=>!p.archived).length===1?"а":""}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label} · {pks.filter(p=>!p.archived).length} валют{pks.filter(p=>!p.archived).length===1?"а":""}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 pl-2">
@@ -1533,16 +1964,18 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                     <button onClick={() => setConfirmDel(null)} className="text-xs font-medium px-2 py-1 rounded-md" style={{ background: "var(--surface2)", color: "var(--text)" }}>Ні</button>
                   </div>
                 )}
+                {acc.bank && confirmDel !== acc.id && <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md shrink-0" style={{ background: "var(--surface2)", color: "var(--accent)" }}>{acc.bank}</span>}
               </div>
               {isOpen && (
                 <div className="space-y-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
                   {pks.map((p) => (
-                    <div key={p.id} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} className={`flex items-center justify-between py-2 px-3 rounded-xl cursor-pointer hover:opacity-90 ${p.archived ? "opacity-50" : ""}`} style={{ background: "var(--surface2)" }}>
-                      <div>
+                    <div key={p.id} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} className={`flex items-center justify-between gap-2 py-2 px-3 rounded-xl cursor-pointer hover:opacity-90 ${p.archived ? "opacity-50" : ""}`} style={{ background: "var(--surface2)" }}>
+                      <div className="flex items-center gap-2 min-w-0">
                         <Badge color={acc.color}>{p.currency}</Badge>
+                        {p.name && <span className="text-xs font-medium truncate" style={{ color: "var(--text)" }}>{p.name}</span>}
                       </div>
-                      <p className="font-semibold text-sm tabular">{fmtMoney(pocketBalance(p.id), p.currency)}</p>
-                      <div className="flex gap-2">
+                      <p className="font-semibold text-sm tabular shrink-0">{fmtMoney(pocketBalance(p.id), p.currency)}</p>
+                      <div className="flex gap-2 shrink-0">
                         <button onClick={(e) => { e.stopPropagation(); setModal({ type: "pocket", payload: { accountId: acc.id, existing: p } }); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Edit3 size={13} /></button>
                         <button onClick={(e) => { e.stopPropagation(); archivePocket(p.id); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Archive size={13} /></button>
                       </div>
@@ -1561,6 +1994,22 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
         })}
         {list.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>Немає рахунків у цій категорії</p>}
       </div>
+
+      {!showArchived && (
+        <button onClick={() => setView && setView("crypto")} className="w-full text-left">
+          <Card className="p-4 flex items-center gap-3" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)", border: "1px solid var(--border)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(201,163,98,0.16)" }}><Coins size={18} style={{ color: "var(--accent)" }} /></div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>Крипто-портфель</p>
+              <p className="text-xs" style={{ color: "#A7B0C4" }}>{cryptoCount > 0 ? `${cryptoCount} актив${cryptoCount === 1 ? "" : (cryptoCount < 5 ? "и" : "ів")} · живі ціни` : "Додати активи · живі ціни"}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <p className="font-display font-bold text-base tabular" style={{ color: "#F3F0E8" }}>{fmtMoney(cryptoTotalBase || 0, baseCurrency)}</p>
+              <ChevronRight size={16} style={{ color: "#A7B0C4" }} />
+            </div>
+          </Card>
+        </button>
+      )}
     </div>
   );
 }
@@ -1596,7 +2045,7 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
         if (!hay.includes(search.toLowerCase())) return false;
       }
       return true;
-    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+    }).sort(byRecent);
   }, [transactions, filterType, filterPocket, filterCategory, filterCurrency, dateFrom, dateTo, search, pocketLabel]);
 
   const typeLabel = { all: "Усі типи", income: "Доходи", expense: "Витрати", transfer: "Перекази", exchange: "Обмін валют", loan_out: "Позики надані", loan_return: "Повернення позик" };
@@ -1675,16 +2124,19 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
 /* ============================== LOANS VIEW ============================== */
 
 function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archiveLoan, deleteLoan }) {
+  const [dir, setDir] = useState("out");
   const [showArchived, setShowArchived] = useState(false);
-  const active = loans.filter((l) => l.status !== "returned" && !l.archived);
-  const done = loans.filter((l) => l.status === "returned" || l.archived);
+  const isIn = dir === "in";
+  const byDir = loans.filter((l) => (isIn ? l.direction === "in" : l.direction !== "in"));
+  const active = byDir.filter((l) => l.status !== "returned" && !l.archived);
+  const done = byDir.filter((l) => l.status === "returned" || l.archived);
   const overdueCount = active.filter((l) => new Date(l.dueDate) < new Date()).length;
   const list = showArchived ? done : active;
 
   const statusInfo = {
     active: { label: "Активна", color: "var(--accent2)" },
-    partial: { label: "Частково повернена", color: "var(--warn)" },
-    returned: { label: "Повернена", color: "var(--accent)" },
+    partial: { label: isIn ? "Частково погашена" : "Частково повернена", color: "var(--warn)" },
+    returned: { label: isIn ? "Погашена" : "Повернена", color: "var(--accent)" },
     overdue: { label: "Прострочена", color: "var(--danger)" },
   };
   const effectiveStatus = (l) => {
@@ -1695,16 +2147,22 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archive
 
   return (
     <div className="space-y-5 animate-in">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display font-bold text-2xl">Позики</h1>
-        <Button onClick={() => setModal({ type: "loan" })}><Plus size={16} /> Надати позику</Button>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h1 className="font-display font-bold text-2xl">Позики та борги</h1>
+        <Button onClick={() => setModal({ type: "loan", payload: { direction: dir } })}><Plus size={16} /> {isIn ? "Додати борг" : "Надати позику"}</Button>
       </div>
+
+      <div className="flex gap-1.5 p-1 rounded-xl" style={{ background: "var(--surface2)" }}>
+        <button onClick={() => setDir("out")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition" style={{ background: !isIn ? "var(--surface)" : "transparent", color: !isIn ? "var(--text)" : "var(--text-dim)" }}>Мені винні</button>
+        <button onClick={() => setDir("in")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition" style={{ background: isIn ? "var(--surface)" : "transparent", color: isIn ? "var(--text)" : "var(--text-dim)" }}>Я винен</button>
+      </div>
+
       <div className="flex gap-2 text-sm">
         <button onClick={() => setShowArchived(false)} className="px-3 py-1.5 rounded-lg font-medium inline-flex items-center gap-2" style={{ background: !showArchived ? "var(--surface2)" : "transparent", color: !showArchived ? "var(--text)" : "var(--text-dim)" }}>
           Активні ({active.length})
           {overdueCount > 0 && <span className="min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none" style={{ background: "var(--danger)", color: "#fff" }}>{overdueCount}</span>}
         </button>
-        <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>Архів завершених ({done.length})</button>
+        <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>Архів ({done.length})</button>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -1721,34 +2179,34 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archive
           return (
             <SwipeRow key={loan.id} actions={loanActs} rounded={true}>
             <Card className="p-5" style={{ background: "var(--surface)" }}>
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "var(--surface2)" }}><Users size={16} style={{ color: "var(--text-dim)" }} /></div>
-                  <div>
-                    <p className="text-sm font-semibold">{loan.borrower}</p>
-                    <p className="text-xs" style={{ color: "var(--text-dim)" }}>{loan.note}</p>
+              <div className="flex items-start justify-between mb-3 gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><Users size={16} style={{ color: "var(--text-dim)" }} /></div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{loan.borrower}</p>
+                    <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{loan.note}</p>
                   </div>
                 </div>
                 <Badge color={statusInfo[st].color}>{statusInfo[st].label}</Badge>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>Початкова сума</p><p className="font-semibold tabular">{fmtMoney(loan.amount, loan.currency)}</p></div>
-                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>Залишок боргу</p><p className="font-semibold tabular" style={{ color: remaining > 0 ? "var(--warn)" : "var(--accent)" }}>{fmtMoney(remaining, loan.currency)}</p></div>
-                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>Повернено</p><p className="font-semibold tabular">{fmtMoney(loan.returned, loan.currency)}</p></div>
-                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>Дата повернення</p><p className="font-semibold">{fmtDate(loan.dueDate)}</p></div>
+                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? "Сума боргу" : "Початкова сума"}</p><p className="font-semibold tabular">{fmtMoney(loan.amount, loan.currency)}</p></div>
+                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? "Залишок до сплати" : "Залишок боргу"}</p><p className="font-semibold tabular" style={{ color: remaining > 0 ? "var(--warn)" : "var(--accent)" }}>{fmtMoney(remaining, loan.currency)}</p></div>
+                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? "Погашено" : "Повернено"}</p><p className="font-semibold tabular">{fmtMoney(loan.returned, loan.currency)}</p></div>
+                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? "Термін сплати" : "Дата повернення"}</p><p className="font-semibold">{fmtDate(loan.dueDate)}</p></div>
               </div>
-              <p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>Видано з: {pk ? `${pk.account?.name} · ${pk.currency}` : "—"}</p>
+              <p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>{isIn ? "Отримано на: " : "Видано з: "}{pk ? `${pk.account?.name} · ${pk.currency}` : "—"}</p>
               <p className="text-xs mb-3" style={{ color: days < 0 ? "var(--danger)" : "var(--text-dim)" }}>
                 {days === 0 ? "Строк сьогодні" : days > 0 ? `Залишилось ${days} дн.` : `Прострочено на ${Math.abs(days)} дн.`}
               </p>
               {loan.status !== "returned" && (
-                <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "loanReturn", payload: loan })}>Зареєструвати повернення</Button>
+                <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "loanReturn", payload: loan })}>{isIn ? "Зареєструвати погашення" : "Зареєструвати повернення"}</Button>
               )}
             </Card>
             </SwipeRow>
           );
         })}
-        {list.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>Немає позик у цій категорії</p>}
+        {list.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>{isIn ? "Немає боргів у цій категорії" : "Немає позик у цій категорії"}</p>}
       </div>
     </div>
   );
@@ -1783,15 +2241,235 @@ function CategoriesView({ categories, setModal, archiveCategory }) {
   );
 }
 
+/* ============================== GOALS ============================== */
+
+function GoalsView({ goals, setModal, baseCurrency, rates }) {
+  const active = goals.filter((g) => !g.archived);
+  const totalTarget = active.reduce((s, g) => s + convert(g.target, g.currency, baseCurrency, rates), 0);
+  const totalSaved = active.reduce((s, g) => s + convert(g.saved || 0, g.currency, baseCurrency, rates), 0);
+  return (
+    <div className="space-y-5 animate-in max-w-2xl">
+      <div className="flex items-center justify-between">
+        <h1 className="font-display font-bold text-2xl">Цілі накопичень</h1>
+        <Button onClick={() => setModal({ type: "goal", payload: null })}><Plus size={16} /> Нова ціль</Button>
+      </div>
+      {active.length > 0 && (
+        <Card className="p-4 flex items-center justify-between">
+          <span className="text-sm" style={{ color: "var(--text-dim)" }}>Накопичено загалом</span>
+          <span className="font-display font-bold tabular text-sm">{fmtMoney(totalSaved, baseCurrency)} / {fmtMoney(totalTarget, baseCurrency)}</span>
+        </Card>
+      )}
+      <div className="grid sm:grid-cols-2 gap-4">
+        {active.map((g) => {
+          const saved = g.saved || 0;
+          const pct = g.target > 0 ? Math.min(100, (saved / g.target) * 100) : 0;
+          const done = g.target > 0 && saved >= g.target;
+          const remaining = Math.max(0, g.target - saved);
+          return (
+            <Card key={g.id} className="p-5">
+              <div className="flex items-start justify-between mb-3 gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold flex items-center gap-1.5">{done && <Check size={14} style={{ color: "var(--accent)" }} />}<span className="truncate">{g.name}</span></p>
+                  {g.note && <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{g.note}</p>}
+                </div>
+                <button onClick={() => setModal({ type: "goal", payload: g })} className="p-1.5 rounded-lg shrink-0" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
+              </div>
+              <p className="font-display font-bold text-xl tabular mb-2">{fmtMoney(saved, g.currency)} <span className="text-sm font-medium" style={{ color: "var(--text-dim)" }}>/ {fmtMoney(g.target, g.currency)}</span></p>
+              <div className="h-2.5 rounded-full overflow-hidden mb-2" style={{ background: "var(--surface2)" }}>
+                <div style={{ width: pct + "%", height: "100%", background: "var(--accent)", borderRadius: 999, transition: "width .3s ease" }} />
+              </div>
+              <div className="flex items-center justify-between text-xs mb-3">
+                <span className="font-semibold" style={{ color: "var(--accent)" }}>{Math.round(pct)}%</span>
+                <span style={{ color: "var(--text-dim)" }}>{done ? "Ціль досягнута 🎉" : "Залишилось " + fmtMoney(remaining, g.currency)}</span>
+              </div>
+              <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "goalContribute", payload: g })}>Поповнити</Button>
+            </Card>
+          );
+        })}
+        {active.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>Ще немає цілей. Створіть першу — і відстежуйте прогрес накопичень.</p>}
+      </div>
+    </div>
+  );
+}
+
+function GoalModal({ onClose, existing, addGoal, editGoal, deleteGoal, currencies }) {
+  const isEdit = existing && existing.id;
+  const [name, setName] = useState(existing?.name || "");
+  const [target, setTarget] = useState(existing?.target != null ? String(existing.target) : "");
+  const [currency, setCurrency] = useState(existing?.currency || "UAH");
+  const [saved, setSaved] = useState(existing?.saved != null ? String(existing.saved) : "0");
+  const [note, setNote] = useState(existing?.note || "");
+  const [error, setError] = useState("");
+  const [confirmDel, setConfirmDel] = useState(false);
+  const submit = () => {
+    if (!name.trim()) return setError("Введіть назву цілі");
+    const t = parseFloat(target);
+    if (!(t > 0)) return setError("Вкажіть суму цілі");
+    const data = { name: name.trim(), target: t, currency, saved: Math.max(0, parseFloat(saved) || 0), note: note.trim() };
+    if (isEdit) editGoal(existing.id, data); else addGoal(data);
+    onClose();
+  };
+  return (
+    <Modal title={isEdit ? "Редагувати ціль" : "Нова ціль"} onClose={onClose}>
+      <Field label="Назва" error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder="Напр. Відпустка" /></Field>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="col-span-2"><Field label="Сума цілі"><Input type="number" inputMode="decimal" value={target} onChange={(e) => { setTarget(e.target.value); setError(""); }} placeholder="0" /></Field></div>
+        <Field label="Валюта"><Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select></Field>
+      </div>
+      <Field label="Вже накопичено"><Input type="number" inputMode="decimal" value={saved} onChange={(e) => setSaved(e.target.value)} placeholder="0" /></Field>
+      <Field label="Нотатка (необовʼязково)"><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{isEdit ? "Зберегти" : "Створити ціль"}</Button>
+      {isEdit && (confirmDel ? (
+        <div className="flex items-center justify-between mt-3 text-sm">
+          <span style={{ color: "var(--text-dim)" }}>Видалити ціль?</span>
+          <div className="flex gap-2">
+            <button onClick={() => { deleteGoal(existing.id); onClose(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--danger)", color: "#fff" }}>Так</button>
+            <button onClick={() => setConfirmDel(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text)" }}>Ні</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setConfirmDel(true)} className="w-full text-center mt-3 text-xs font-medium" style={{ color: "var(--danger)" }}>Видалити ціль</button>
+      ))}
+    </Modal>
+  );
+}
+
+function GoalContributeModal({ onClose, goal, contributeGoal }) {
+  const [amount, setAmount] = useState("");
+  const [mode, setMode] = useState("add");
+  const submit = () => {
+    const a = parseFloat(amount);
+    if (!(a > 0)) return;
+    contributeGoal(goal.id, mode === "add" ? a : -a);
+    onClose();
+  };
+  const saved = goal.saved || 0;
+  return (
+    <Modal title={goal.name} onClose={onClose}>
+      <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>Накопичено: <b style={{ color: "var(--text)" }}>{fmtMoney(saved, goal.currency)}</b> з {fmtMoney(goal.target, goal.currency)}</p>
+      <div className="flex gap-2 mb-3">
+        <button onClick={() => setMode("add")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium" style={{ background: mode === "add" ? "var(--accent)" : "var(--surface2)", color: mode === "add" ? "var(--accent-ink)" : "var(--text)" }}>Поповнити</button>
+        <button onClick={() => setMode("withdraw")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium" style={{ background: mode === "withdraw" ? "var(--danger)" : "var(--surface2)", color: mode === "withdraw" ? "#fff" : "var(--text)" }}>Зняти</button>
+      </div>
+      <Field label={`Сума (${goal.currency})`}><Input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{mode === "add" ? "Поповнити ціль" : "Зняти кошти"}</Button>
+    </Modal>
+  );
+}
+
+/* ============================== CRYPTO PORTFOLIO ============================== */
+
+function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates, setModal, refreshCryptoPrices, setToast }) {
+  const [busy, setBusy] = useState(false);
+  // Auto-load live prices on open if some are missing or the cache is stale (>10 min),
+  // so the portfolio value (and the total capital) reflect the market without a manual tap.
+  useEffect(() => {
+    const missing = crypto.some((c) => !(cryptoPrices[c.coinId] > 0));
+    const stale = !cryptoUpdatedAt || (Date.now() - new Date(cryptoUpdatedAt).getTime()) > 10 * 60 * 1000;
+    if (crypto.length > 0 && (missing || stale)) {
+      setBusy(true);
+      refreshCryptoPrices().then(() => setBusy(false)).catch(() => setBusy(false));
+    }
+  }, []);
+  const valBase = (c) => convert((c.amount || 0) * (cryptoPrices[c.coinId] || 0), "USD", baseCurrency, rates);
+  const total = crypto.reduce((s, c) => s + valBase(c), 0);
+  const refresh = async () => {
+    setBusy(true);
+    const res = await refreshCryptoPrices();
+    setBusy(false);
+    if (setToast) setToast(res && res.ok ? "Ціни оновлено" : "Не вдалося оновити ціни");
+  };
+  const fmtUpd = cryptoUpdatedAt ? new Date(cryptoUpdatedAt).toLocaleString("uk-UA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "ще не оновлювались";
+  return (
+    <div className="space-y-5 animate-in max-w-2xl">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h1 className="font-display font-bold text-2xl">Крипто-портфель</h1>
+        <Button onClick={() => setModal({ type: "crypto", payload: null })}><Plus size={16} /> Додати актив</Button>
+      </div>
+      <Card className="p-5" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)" }}>
+        <p className="text-xs mb-1" style={{ color: "#A7B0C4" }}>Загальна вартість портфелю</p>
+        <p className="font-display font-extrabold text-3xl tabular" style={{ color: "#F3F0E8" }}>{fmtMoney(total, baseCurrency)}</p>
+        <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
+          <span className="text-[11px]" style={{ color: "#A7B0C4" }}>Оновлено: {fmtUpd}</span>
+          <Button variant="secondary" onClick={refresh} disabled={busy}><RefreshCw size={15} className={busy ? "spin" : ""} /> {busy ? "Оновлення…" : "Оновити ціни"}</Button>
+        </div>
+      </Card>
+      <div className="space-y-3">
+        {crypto.map((c) => {
+          const price = cryptoPrices[c.coinId] || 0;
+          const v = valBase(c);
+          return (
+            <Card key={c.id} className="p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[11px]" style={{ background: "var(--surface2)", color: "var(--accent)" }}>{c.symbol}</div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{c.amount} {c.symbol}</p>
+                  <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{c.name}{price > 0 ? ` · ${fmtMoney(convert(price, "USD", baseCurrency, rates), baseCurrency)}` : ""}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <p className="font-display font-bold text-sm tabular">{price > 0 ? fmtMoney(v, baseCurrency) : "—"}</p>
+                <button onClick={() => setModal({ type: "crypto", payload: c })} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
+              </div>
+            </Card>
+          );
+        })}
+        {crypto.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>Портфель порожній. Додайте перший актив — і бачте його вартість за живими цінами.</p>}
+      </div>
+      <p className="text-[11px]" style={{ color: "var(--text-dim)" }}>Ціни надає CoinGecko й оновлюються за вашим запитом (потрібен інтернет). Кількість монет вводиться вручну.</p>
+    </div>
+  );
+}
+
+function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto }) {
+  const isEdit = existing && existing.id;
+  const [coinId, setCoinId] = useState(existing?.coinId || CRYPTO_COINS[0].id);
+  const [amount, setAmount] = useState(existing?.amount != null ? String(existing.amount) : "");
+  const [note, setNote] = useState(existing?.note || "");
+  const [error, setError] = useState("");
+  const [confirmDel, setConfirmDel] = useState(false);
+  const submit = () => {
+    const a = parseFloat(amount);
+    if (!(a > 0)) return setError("Вкажіть кількість");
+    const coin = CRYPTO_COINS.find((c) => c.id === coinId) || CRYPTO_COINS[0];
+    const data = { coinId: coin.id, symbol: coin.symbol, name: coin.name, amount: a, note: note.trim() };
+    if (isEdit) editCrypto(existing.id, data); else addCrypto(data);
+    onClose();
+  };
+  return (
+    <Modal title={isEdit ? "Редагувати актив" : "Додати крипто-актив"} onClose={onClose}>
+      <Field label="Монета">
+        <Select value={coinId} onChange={(e) => setCoinId(e.target.value)}>{CRYPTO_COINS.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.symbol})</option>)}</Select>
+      </Field>
+      <Field label="Кількість" error={error}><Input type="number" step="any" inputMode="decimal" value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} placeholder="напр. 0.5" /></Field>
+      <Field label="Нотатка (необовʼязково)"><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{isEdit ? "Зберегти" : "Додати"}</Button>
+      {isEdit && (confirmDel ? (
+        <div className="flex items-center justify-between mt-3 text-sm">
+          <span style={{ color: "var(--text-dim)" }}>Видалити актив?</span>
+          <div className="flex gap-2">
+            <button onClick={() => { deleteCrypto(existing.id); onClose(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--danger)", color: "#fff" }}>Так</button>
+            <button onClick={() => setConfirmDel(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text)" }}>Ні</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setConfirmDel(true)} className="w-full text-center mt-3 text-xs font-medium" style={{ color: "var(--danger)" }}>Видалити актив</button>
+      ))}
+    </Modal>
+  );
+}
+
 /* ============================== SETTINGS VIEW ============================== */
 
-function SettingsView({ baseCurrency, rates, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, setView }) {
+function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView }) {
   const [localRates, setLocalRates] = useState(() => {
     const o = {};
     Object.keys(rates).forEach((k) => { o[k] = String(rates[k]); });
     return o;
   });
   const [base, setBase] = useState(baseCurrency);
+  const [localRateMode, setLocalRateMode] = useState(() => Object.assign({}, rateMode || {}));
+  const toggleRateMode = (c) => setLocalRateMode((m) => Object.assign({}, m, { [c]: (m[c] === "manual" ? "auto" : "manual") }));
   const [addCur, setAddCur] = useState("");
   const [crossFrom, setCrossFrom] = useState("USD");
   const [crossTo, setCrossTo] = useState("EUR");
@@ -1803,12 +2481,37 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
     return b > 0 ? a / b : 0;
   })();
   const addCurrency = () => { if (addCur && !(addCur in localRates)) { setLocalRates({ ...localRates, [addCur]: "" }); setAddCur(""); } };
+  const [ratesBusy, setRatesBusy] = useState(false);
+  const [ratesMsg, setRatesMsg] = useState("");
+  const updateRatesOnline = async () => {
+    setRatesBusy(true); setRatesMsg("");
+    try {
+      const resp = await fetch("https://open.er-api.com/v6/latest/UAH");
+      const data = await resp.json();
+      if (!data || data.result !== "success" || !data.rates) throw new Error("bad");
+      const newLocal = { ...localRates };
+      const newRates = { UAH: 1 };
+      Object.keys(localRates).forEach((c) => {
+        if (c === "UAH") return;
+        if (localRateMode[c] === "manual") { newRates[c] = parseFloat(localRates[c]) || 0; return; }
+        const r = data.rates[c];
+        if (r && r > 0) { const v = Math.round((1 / r) * 10000) / 10000; newLocal[c] = String(v); newRates[c] = v; }
+        else { newRates[c] = parseFloat(localRates[c]) || 0; }
+      });
+      setLocalRates(newLocal);
+      update({ rates: newRates, rateMode: localRateMode });
+      setRatesMsg("Оновлено: " + new Date().toLocaleDateString("uk-UA"));
+      setToast && setToast("Курси оновлено");
+    } catch (e) {
+      setRatesMsg("Не вдалося оновити — перевірте інтернет");
+    } finally { setRatesBusy(false); }
+  };
   const removeCurrency = (c) => { const r = { ...localRates }; delete r[c]; setLocalRates(r); if (base === c) setBase("UAH"); if (crossFrom === c) setCrossFrom("UAH"); if (crossTo === c) setCrossTo("UAH"); };
   const save = () => {
     const parsed = { UAH: 1 };
     Object.keys(localRates).forEach((k) => { if (k !== "UAH") parsed[k] = parseFloat(localRates[k]) || 0; });
     const finalBase = base === "UAH" || parsed[base] !== undefined ? base : "UAH";
-    update({ rates: parsed, baseCurrency: finalBase });
+    update({ rates: parsed, baseCurrency: finalBase, rateMode: localRateMode });
     setToast && setToast("Налаштування збережено");
   };
 
@@ -1870,6 +2573,18 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
         <h3 className="font-display font-semibold text-sm mb-1">Категорії</h3>
         <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Додавайте власні категорії витрат і доходів, редагуйте назви, іконки та кольори або ховайте зайві.</p>
         <Button variant="secondary" onClick={() => setView && setView("categories")}><Tags size={15} /> Керувати категоріями</Button>
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-display font-semibold text-sm mb-1">Цілі накопичень</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Ставте фінансові цілі (відпустка, техніка, подушка безпеки) і відстежуйте прогрес накопичень.</p>
+        <Button variant="secondary" onClick={() => setView && setView("goals")}><PiggyBank size={15} /> Мої цілі</Button>
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-display font-semibold text-sm mb-1">Крипто-портфель</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Додайте свої крипто-активи (BTC, ETH, SOL…) і бачте вартість портфелю за живими ринковими цінами.</p>
+        <Button variant="secondary" onClick={() => setView && setView("crypto")}><Coins size={15} /> Відкрити портфель</Button>
       </Card>
 
       <Card className="p-5">
@@ -1936,8 +2651,9 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
             <ArrowUpRight size={15} /> Відновити з файлу
             <input type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) importBackup(f); e.target.value = ""; }} />
           </label>
+          <Button variant="secondary" onClick={exportCSV}><HistoryIcon size={15} /> Експорт у CSV</Button>
         </div>
-        <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>Відновлення замінить поточні дані на цьому пристрої.</p>
+        <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>Відновлення замінить поточні дані на цьому пристрої. CSV зручний для Excel і аналізу операцій.</p>
       </Card>
 
       <Card className="p-5">
@@ -1945,13 +2661,20 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
           <Select value={base} onChange={(e) => setBase(e.target.value)}>{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
         </Field>
 
-        <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>Курси валют — скільки <b style={{ color: "var(--text)" }}>UAH</b> коштує 1 одиниця валюти. Крос-курси між валютами рахуються автоматично.</p>
+        <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>Курси валют — скільки <b style={{ color: "var(--text)" }}>UAH</b> коштує 1 одиниця валюти. Позначка <b style={{ color: "var(--text)" }}>«Авто»</b> оновлюється онлайн, <b style={{ color: "var(--text)" }}>«Вручну»</b> — залишає ваше значення. Крос-курси рахуються автоматично.</p>
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <Button variant="secondary" onClick={updateRatesOnline} disabled={ratesBusy}><RefreshCw size={15} className={ratesBusy ? "spin" : ""} /> {ratesBusy ? "Оновлення…" : "Оновити курси онлайн"}</Button>
+          {ratesMsg && <span className="text-[11px]" style={{ color: ratesMsg.indexOf("Не вдалося") === 0 ? "var(--danger)" : "var(--text-dim)" }}>{ratesMsg}</span>}
+        </div>
         <div className="grid grid-cols-2 gap-3">
           {activeCurs.filter((c) => c !== "UAH").map((c) => (
             <div key={c}>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-1 gap-1">
                 <span className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>1 {c} =</span>
-                <button onClick={() => removeCurrency(c)} className="text-[11px] font-medium" style={{ color: "var(--danger)" }}>Прибрати</button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => toggleRateMode(c)} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={localRateMode[c] === "manual" ? { background: "var(--surface2)", color: "var(--text-dim)", border: "1px solid var(--border)" } : { background: "var(--accent)", color: "var(--accent-ink)" }}>{localRateMode[c] === "manual" ? "Вручну" : "Авто"}</button>
+                  <button onClick={() => removeCurrency(c)} className="text-[11px] font-medium" style={{ color: "var(--danger)" }}>Прибрати</button>
+                </div>
               </div>
               <Input type="number" step="0.0001" inputMode="decimal" value={localRates[c] ?? ""} onChange={(e) => setLocalRates({ ...localRates, [c]: e.target.value })} placeholder="0" />
             </div>
@@ -2009,7 +2732,7 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
 
 /* ============================== MODAL ROUTER ============================== */
 
-function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone }) {
+function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto }) {
   const close = () => setModal(null);
   if (modal.type === "account") return <AccountModal onClose={close} existing={modal.payload} addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} currencies={currencies} />;
   if (modal.type === "pocket") return <PocketModal onClose={close} accountId={modal.payload.accountId} existing={modal.payload.existing} accounts={accounts} pockets={pockets} addPocket={addPocket} editPocket={editPocket} currencies={currencies} />;
@@ -2018,11 +2741,15 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "transaction") return <TransactionModal onClose={close} kind={modal.payload.kind} editing={modal.payload.editing} presetPocketId={modal.payload.presetPocketId} accounts={accounts} pockets={pockets} categories={categories} addTransaction={addTransaction} editTransaction={editTransaction} />;
   if (modal.type === "transfer") return <TransferExchangeModal onClose={close} mode="transfer" presetFromPocketId={modal.payload?.presetPocketId} accounts={accounts} pockets={pockets} rates={rates} addTransaction={addTransaction} />;
   if (modal.type === "exchange") return <TransferExchangeModal onClose={close} mode="exchange" presetFromPocketId={modal.payload?.presetPocketId} accounts={accounts} pockets={pockets} rates={rates} addTransaction={addTransaction} />;
-  if (modal.type === "loan") return <LoanModal onClose={close} accounts={accounts} pockets={pockets} addLoan={addLoan} />;
+  if (modal.type === "loan") return <LoanModal onClose={close} accounts={accounts} pockets={pockets} addLoan={addLoan} direction={(modal.payload && modal.payload.direction) || "out"} />;
   if (modal.type === "loanReturn") return <LoanReturnModal onClose={close} loan={modal.payload} accounts={accounts} pockets={pockets} registerLoanReturn={registerLoanReturn} loanRemaining={loanRemaining} />;
   if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
   if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
   if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} currencies={currencies} />;
+  if (modal.type === "goal") return <GoalModal onClose={close} existing={modal.payload} addGoal={addGoal} editGoal={editGoal} deleteGoal={deleteGoal} currencies={currencies} />;
+  if (modal.type === "goalContribute") return <GoalContributeModal onClose={close} goal={modal.payload} contributeGoal={contributeGoal} />;
+  if (modal.type === "help") return <HelpModal onClose={close} startTour={startTour} />;
+  if (modal.type === "crypto") return <CryptoModal onClose={close} existing={modal.payload} addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} />;
   return null;
 }
 
@@ -2136,7 +2863,7 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
   const history = useMemo(() =>
     transactions
       .filter((t) => t.pocketId === pocketId || t.fromPocketId === pocketId || t.toPocketId === pocketId)
-      .sort((a, b) => new Date(b.date) - new Date(a.date)),
+      .sort(byRecent),
   [transactions, pocketId]);
 
   return (
@@ -2230,22 +2957,27 @@ function CardMenuModal({ onClose, pocketId, pockets, getPocket, setModal, archiv
 /* ---------- Account Modal (creates account + its first currency pocket) ---------- */
 function AccountModal({ onClose, existing, addAccountWithPocket, editAccount, currencies }) {
   const [name, setName] = useState(existing?.name || "");
+  const [bank, setBank] = useState(existing?.bank || "");
   const [type, setType] = useState(existing?.type || "cash");
   const [color, setColor] = useState(existing?.color || ACCOUNT_COLORS[0]);
   const [currency, setCurrency] = useState("UAH");
+  const [pocketName, setPocketName] = useState("");
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState("");
 
   const submit = () => {
     if (!name.trim()) return setError("Введіть назву рахунку");
-    if (existing) { editAccount(existing.id, { name: name.trim(), type, color }); }
-    else { addAccountWithPocket({ name: name.trim(), type, color }, currency, balance); }
+    if (existing) { editAccount(existing.id, { name: name.trim(), type, color, bank: bank.trim() }); }
+    else { addAccountWithPocket({ name: name.trim(), type, color, bank: bank.trim() }, currency, balance, pocketName); }
     onClose();
   };
 
   return (
     <Modal title={existing ? "Редагувати рахунок" : "Новий рахунок"} onClose={onClose}>
-      <Field label="Назва" error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder="Напр. Готівка, Monobank" /></Field>
+      <Field label="Назва" error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder="Напр. Чорна картка" /></Field>
+      <Field label="Банк (необовʼязково) — для групування">
+        <Input value={bank} onChange={(e) => setBank(e.target.value)} placeholder="Напр. Монобанк, ПриватБанк" />
+      </Field>
       <Field label="Тип рахунку">
         <Select value={type} onChange={(e) => setType(e.target.value)}>{ACCOUNT_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</Select>
       </Field>
@@ -2257,6 +2989,7 @@ function AccountModal({ onClose, existing, addAccountWithPocket, editAccount, cu
       {!existing && (
         <>
           <p className="text-xs mb-2 mt-1" style={{ color: "var(--text-dim)" }}>Створимо перший валютний субрахунок. Інші валюти можна додати пізніше.</p>
+          <Field label="Назва субрахунку (необовʼязково)"><Input value={pocketName} onChange={(e) => setPocketName(e.target.value)} placeholder="Напр. Основний" /></Field>
           <Field label="Валюта">
             <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select>
           </Field>
@@ -2275,19 +3008,23 @@ function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocke
   const pool = currencies || CURRENCIES;
   const availableCurrencies = pool.filter((c) => !usedCurrencies.includes(c) || c === existing?.currency);
   const [currency, setCurrency] = useState(existing?.currency || availableCurrencies[0] || "UAH");
+  const [name, setName] = useState(existing?.name || "");
   const [balance, setBalance] = useState(existing ? String(existing.initialBalance) : "0");
   const [error, setError] = useState("");
   const currencyChanged = existing && currency !== existing.currency;
 
   const submit = () => {
     if (!currency) return setError("Оберіть валюту");
-    if (existing) editPocket(existing.id, { currency, initialBalance: parseFloat(balance) || 0 });
-    else addPocket(accountId, currency, balance);
+    if (existing) editPocket(existing.id, { currency, initialBalance: parseFloat(balance) || 0, name: name.trim() });
+    else addPocket(accountId, currency, balance, name);
     onClose();
   };
 
   return (
     <Modal title={existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`} onClose={onClose}>
+      <Field label="Назва субрахунку (необовʼязково)">
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Напр. Заначка, Зарплатна" />
+      </Field>
       <Field label="Валюта" error={error}>
         <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {availableCurrencies.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -2310,12 +3047,14 @@ function CategoryModal({ onClose, existing, addCategory, editCategory }) {
   const [type, setType] = useState(existing?.type || "expense");
   const [icon, setIcon] = useState(existing?.icon || "MoreHorizontal");
   const [color, setColor] = useState(existing?.color || ACCOUNT_COLORS[0]);
+  const [budget, setBudget] = useState(existing?.budget != null ? String(existing.budget) : "");
   const [error, setError] = useState("");
   const iconOptions = Object.keys(ICONS);
 
   const submit = () => {
     if (!name.trim()) return setError("Введіть назву категорії");
     const data = { name: name.trim(), type, icon, color };
+    if (type === "expense") { const b = parseFloat(budget); data.budget = b > 0 ? b : null; } else { data.budget = null; }
     if (isEdit) editCategory(existing.id, data); else addCategory(data);
     onClose();
   };
@@ -2341,6 +3080,11 @@ function CategoryModal({ onClose, existing, addCategory, editCategory }) {
       <Field label="Колір">
         <div className="flex gap-2 flex-wrap">{ACCOUNT_COLORS.map((c) => <button key={c} onClick={() => setColor(c)} className="w-8 h-8 rounded-full" style={{ background: c, border: color === c ? "2px solid var(--text)" : "2px solid transparent" }} />)}</div>
       </Field>
+      {type === "expense" && (
+        <Field label="Місячний ліміт (бюджет), необовʼязково">
+          <Input type="number" inputMode="decimal" step="1" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="напр. 8000" />
+        </Field>
+      )}
       <Button className="w-full mt-2" onClick={submit}>{isEdit ? "Зберегти зміни" : "Створити категорію"}</Button>
     </Modal>
   );
@@ -2478,7 +3222,8 @@ function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, po
 }
 
 /* ---------- Loan Modal ---------- */
-function LoanModal({ onClose, accounts, pockets, addLoan }) {
+function LoanModal({ onClose, accounts, pockets, addLoan, direction }) {
+  const isIn = direction === "in";
   const active = pockets.filter((p) => !p.archived);
   const [borrower, setBorrower] = useState("");
   const [amount, setAmount] = useState("");
@@ -2492,25 +3237,25 @@ function LoanModal({ onClose, accounts, pockets, addLoan }) {
 
   const submit = () => {
     const amt = parseFloat(amount);
-    if (!borrower.trim()) return setError("Введіть ім'я позичальника");
+    if (!borrower.trim()) return setError(isIn ? "Вкажіть, кому ви винні" : "Введіть ім'я позичальника");
     if (!amt || amt <= 0) return setError("Введіть коректну суму");
     if (!pocketId) return setError("Оберіть рахунок");
-    if (!dueDate) return setError("Вкажіть очікувану дату повернення");
-    addLoan({ borrower: borrower.trim(), amount: amt, currency, pocketId, dateGiven, dueDate, note }, pocketId, amt, currency, note);
+    if (!dueDate) return setError(isIn ? "Вкажіть термін сплати" : "Вкажіть очікувану дату повернення");
+    addLoan({ borrower: borrower.trim(), amount: amt, currency, pocketId, dateGiven, dueDate, note, direction: isIn ? "in" : "out" }, pocketId, amt, currency, note);
     onClose();
   };
 
   return (
-    <Modal title="Надати позику" onClose={onClose}>
-      <Field label="Ім'я / назва позичальника" error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} placeholder="Напр. Олег К." /></Field>
-      <Field label="Рахунок, з якого видано кошти">
+    <Modal title={isIn ? "Додати борг (я винен)" : "Надати позику"} onClose={onClose}>
+      <Field label={isIn ? "Кому ви винні" : "Ім'я / назва позичальника"} error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} placeholder={isIn ? "Напр. Банк / Андрій" : "Напр. Олег К."} /></Field>
+      <Field label={isIn ? "Рахунок, куди надійшли кошти" : "Рахунок, з якого видано кошти"}>
         <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} />
       </Field>
       <Field label={`Сума (${currency})`}><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
-      <Field label="Дата надання"><Input type="date" value={dateGiven} onChange={(e) => setDateGiven(e.target.value)} /></Field>
-      <Field label="Очікувана дата повернення"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
+      <Field label={isIn ? "Дата отримання" : "Дата надання"}><Input type="date" value={dateGiven} onChange={(e) => setDateGiven(e.target.value)} /></Field>
+      <Field label={isIn ? "Термін сплати" : "Очікувана дата повернення"}><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
       <Field label="Коментар / домовленість"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
-      <Button className="w-full mt-2" onClick={submit}>Надати позику</Button>
+      <Button className="w-full mt-2" onClick={submit}>{isIn ? "Додати борг" : "Надати позику"}</Button>
     </Modal>
   );
 }
@@ -2558,19 +3303,19 @@ function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn,
   };
 
   return (
-    <Modal title={`Повернення позики: ${loan.borrower}`} onClose={onClose}>
+    <Modal title={(loan.direction === "in" ? "Погашення боргу: " : "Повернення позики: ") + loan.borrower} onClose={onClose}>
       <p className="text-sm mb-4 px-3 py-2 rounded-lg" style={{ background: "var(--surface2)", color: "var(--text-dim)" }}>
-        Залишок боргу: <strong style={{ color: "var(--text)" }}>{fmtMoney(remaining, loan.currency)}</strong>
+        {loan.direction === "in" ? "Залишок до сплати: " : "Залишок боргу: "}<strong style={{ color: "var(--text)" }}>{fmtMoney(remaining, loan.currency)}</strong>
       </p>
-      <Field label={`Сума повернення (${loan.currency})`} error={error}>
+      <Field label={(loan.direction === "in" ? "Сума погашення" : "Сума повернення") + ` (${loan.currency})`} error={error}>
         <Input type="number" step="0.01" max={remaining} value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} />
       </Field>
-      <Field label={`Рахунок зарахування (валюта ${loan.currency})`}>
+      <Field label={(loan.direction === "in" ? "Рахунок, з якого сплачуєте" : "Рахунок зарахування") + ` (валюта ${loan.currency})`}>
         <PocketSelect accounts={accounts} pockets={active} value={pocketId} onChange={setPocketId} />
       </Field>
-      <Field label="Дата повернення"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label="Дата"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
       <Field label="Коментар"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
-      <Button className="w-full mt-2" onClick={submit}>Зареєструвати повернення</Button>
+      <Button className="w-full mt-2" onClick={submit}>{loan.direction === "in" ? "Зареєструвати погашення" : "Зареєструвати повернення"}</Button>
     </Modal>
   );
 }
