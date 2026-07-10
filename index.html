@@ -204,6 +204,13 @@ function convert(amount, from, to, ratesToUAH) {
   return uahAmount / (ratesToUAH[to] || 1);
 }
 
+// Convert a transaction to the base currency using the rate snapshotted when it was created
+// (t.fx = rate of the transaction's currency to UAH at creation time). Falls back to current rate.
+function txToBase(t, base, ratesToUAH) {
+  const fx = t.fx != null ? t.fx : (ratesToUAH[t.currency] || 1);
+  return (t.amount * fx) / (ratesToUAH[base] || 1);
+}
+
 function Icon({ name, size = 18, className = "", style = {} }) {
   const C = ICONS[name] || MoreHorizontal;
   return <C size={size} className={className} style={style} />;
@@ -310,9 +317,22 @@ const STORAGE_KEY = "financeTrackerUA_v2";
 function loadState() {
   try {
     const raw = window.localStorage ? window.localStorage.getItem(STORAGE_KEY) : null;
-    if (raw) return JSON.parse(raw);
+    if (raw) return migrateState(JSON.parse(raw));
   } catch (e) { /* ignore */ }
   return null;
+}
+// One-time backfill: lock the FX rate of existing income/expense transactions to the stored rate,
+// so future rate edits don't retroactively change historical totals.
+function migrateState(s) {
+  if (s && Array.isArray(s.transactions) && s.rates) {
+    s.transactions = s.transactions.map(function (t) {
+      if ((t.type === "income" || t.type === "expense") && t.fx == null) {
+        return Object.assign({}, t, { fx: s.rates[t.currency] || 1 });
+      }
+      return t;
+    });
+  }
+  return s;
 }
 function saveState(state) {
   try { if (window.localStorage) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
@@ -322,6 +342,10 @@ function saveState(state) {
 const PIN_KEY = "ft_pin";
 function loadPin() { try { return window.localStorage ? window.localStorage.getItem(PIN_KEY) : null; } catch (e) { return null; } }
 function savePin(v) { try { if (window.localStorage) { if (v) window.localStorage.setItem(PIN_KEY, v); else window.localStorage.removeItem(PIN_KEY); } } catch (e) {} }
+/* When to re-lock after leaving the app: seconds of being in background (0 = immediately) */
+const PIN_DELAY_KEY = "ft_pin_delay";
+function loadPinDelay() { try { const v = window.localStorage ? window.localStorage.getItem(PIN_DELAY_KEY) : null; return v == null ? 0 : parseInt(v, 10) || 0; } catch (e) { return 0; } }
+function savePinDelay(sec) { try { if (window.localStorage) window.localStorage.setItem(PIN_DELAY_KEY, String(sec)); } catch (e) {} }
 
 /* First-run consent (stored on device) */
 const CONSENT_KEY = "ft_consent";
@@ -613,21 +637,34 @@ function FinanceTracker() {
   const [session, setSession] = useState(null);
   const [pin, setPinState] = useState(() => loadPin());
   const [locked, setLocked] = useState(() => !!loadPin());
+  const [pinDelay, setPinDelayState] = useState(() => loadPinDelay());
+  const hiddenAtRef = React.useRef(null);
+  // Re-lock when returning from background. Records when the app was hidden and, on return,
+  // locks if the time away >= the chosen delay (0 = immediately). More reliable on iOS than
+  // locking during the hide event, because the "resume" events fire while the app is active.
+  useEffect(() => {
+    if (!pin) return;
+    const markHidden = () => { if (hiddenAtRef.current == null) hiddenAtRef.current = Date.now(); };
+    const checkResume = () => {
+      if (hiddenAtRef.current == null) return;
+      const away = Date.now() - hiddenAtRef.current;
+      hiddenAtRef.current = null;
+      if (away >= pinDelay * 1000) setLocked(true);
+    };
+    const onVis = () => { if (document.visibilityState === "hidden") markHidden(); else checkResume(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pagehide", markHidden);
+    window.addEventListener("pageshow", checkResume);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pagehide", markHidden);
+      window.removeEventListener("pageshow", checkResume);
+    };
+  }, [pin, pinDelay]);
   const [splash, setSplash] = useState(() => !loadState());
   const [consented, setConsented] = useState(() => loadConsent());
   const acceptConsent = () => { saveConsent(); setConsented(true); };
   useEffect(() => { if (splash) { const t = setTimeout(() => setSplash(false), 1300); return () => clearTimeout(t); } }, []);
-  // Re-lock as soon as the app is backgrounded / hidden (so PIN is required on return, not only on a full restart)
-  useEffect(() => {
-    if (!pin) return;
-    const relock = () => { if (document.visibilityState === "hidden") setLocked(true); };
-    document.addEventListener("visibilitychange", relock);
-    window.addEventListener("pagehide", relock);
-    return () => {
-      document.removeEventListener("visibilitychange", relock);
-      window.removeEventListener("pagehide", relock);
-    };
-  }, [pin]);
 
   const stateRef = React.useRef(state);
   useEffect(() => { stateRef.current = { ...state, theme }; }, [state, theme]);
@@ -734,15 +771,15 @@ function FinanceTracker() {
   const monthKey = (d) => d.slice(0, 7);
   const thisMonthKey = now.toISOString().slice(0, 7);
   const monthTx = transactions.filter((t) => (t.type === "income" || t.type === "expense") && monthKey(t.date) === thisMonthKey);
-  const monthIncome = monthTx.filter((t) => t.type === "income").reduce((s, t) => s + convert(t.amount, t.currency, baseCurrency, rates), 0);
-  const monthExpense = monthTx.filter((t) => t.type === "expense").reduce((s, t) => s + convert(t.amount, t.currency, baseCurrency, rates), 0);
+  const monthIncome = monthTx.filter((t) => t.type === "income").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
+  const monthExpense = monthTx.filter((t) => t.type === "expense").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
 
   const categoryBreakdown = useMemo(() => {
     const m = {};
     monthTx.filter((t) => t.type === "expense").forEach((t) => {
       const cat = categories.find((c) => c.id === t.categoryId);
       const key = cat ? cat.name : "Інше";
-      m[key] = (m[key] || 0) + convert(t.amount, t.currency, baseCurrency, rates);
+      m[key] = (m[key] || 0) + txToBase(t, baseCurrency, rates);
     });
     return Object.entries(m).map(([name, value]) => ({ name, value, color: (categories.find((c) => c.name === name) || {}).color || "#8B93A3" })).sort((a, b) => b.value - a.value);
   }, [monthTx, categories, baseCurrency, rates]);
@@ -752,8 +789,8 @@ function FinanceTracker() {
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = d.toISOString().slice(0, 7);
-      const inc = transactions.filter((t) => t.type === "income" && monthKey(t.date) === key).reduce((s, t) => s + convert(t.amount, t.currency, baseCurrency, rates), 0);
-      const exp = transactions.filter((t) => t.type === "expense" && monthKey(t.date) === key).reduce((s, t) => s + convert(t.amount, t.currency, baseCurrency, rates), 0);
+      const inc = transactions.filter((t) => t.type === "income" && monthKey(t.date) === key).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
+      const exp = transactions.filter((t) => t.type === "expense" && monthKey(t.date) === key).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
       arr.push({ month: MONTHS_UA[d.getMonth()], income: Math.round(inc), expense: Math.round(exp) });
     }
     return arr;
@@ -818,7 +855,7 @@ function FinanceTracker() {
   const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
   const archiveCategory = (id) => update({ categories: categories.map((c) => (c.id === id ? { ...c, archived: !c.archived } : c)) });
 
-  const addTransaction = (tx) => { update({ transactions: [{ id: uid("tx"), ...tx }, ...transactions] }); notify("Операцію збережено"); };
+  const addTransaction = (tx) => { update({ transactions: [{ id: uid("tx"), fx: (tx.currency ? (rates[tx.currency] || 1) : 1), ...tx }, ...transactions] }); notify("Операцію збережено"); };
   const editTransaction = (id, patch) => update({ transactions: transactions.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
   const deleteTransaction = (id) => { update({ transactions: transactions.filter((t) => t.id !== id) }); notify("Операцію видалено"); };
   const duplicateTransaction = (tx) => { update({ transactions: [{ ...tx, id: uid("tx"), date: new Date().toISOString().slice(0, 10) }, ...transactions] }); notify("Операцію дубльовано"); };
@@ -857,6 +894,7 @@ function FinanceTracker() {
   const overdueReminders = reminders.filter((r) => !r.done && new Date(r.date) < new Date(new Date().setHours(0, 0, 0, 0)));
 
   const applyPin = (v) => { savePin(v); setPinState(v); };
+  const applyPinDelay = (sec) => { savePinDelay(sec); setPinDelayState(sec); };
 
   const exportBackup = () => {
     try {
@@ -997,7 +1035,7 @@ function FinanceTracker() {
               <CategoriesView categories={categories} setModal={setModal} archiveCategory={archiveCategory} />
             )}
             {view === "settings" && (
-              <SettingsView baseCurrency={baseCurrency} rates={rates} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} exportBackup={exportBackup} importBackup={importBackup} setView={setView} />
+              <SettingsView baseCurrency={baseCurrency} rates={rates} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} setView={setView} />
             )}
           </div>
         </main>
@@ -1148,8 +1186,8 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
   else { pStart = customFrom; pEnd = customTo; }
   const inRange = (d) => (!pStart || d >= pStart) && (!pEnd || d <= pEnd);
   const periodTx = transactions.filter((t) => (t.type === "income" || t.type === "expense") && inRange(t.date));
-  const periodIncome = periodTx.filter((t) => t.type === "income").reduce((s, t) => s + convert(t.amount, t.currency, baseCurrency, rates), 0);
-  const periodExpense = periodTx.filter((t) => t.type === "expense").reduce((s, t) => s + convert(t.amount, t.currency, baseCurrency, rates), 0);
+  const periodIncome = periodTx.filter((t) => t.type === "income").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
+  const periodExpense = periodTx.filter((t) => t.type === "expense").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
   const periodNet = periodIncome - periodExpense;
   const periodLabel = period === "day" ? "за сьогодні" : period === "month" ? "за місяць" : period === "year" ? "за рік" : "за період";
   const periodBreakdown = (() => {
@@ -1157,7 +1195,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
     periodTx.filter((t) => t.type === "expense").forEach((t) => {
       const cat = categories.find((c) => c.id === t.categoryId);
       const key = cat ? cat.name : "Інше";
-      m[key] = (m[key] || 0) + convert(t.amount, t.currency, baseCurrency, rates);
+      m[key] = (m[key] || 0) + txToBase(t, baseCurrency, rates);
     });
     return Object.entries(m).map(([name, value]) => ({ name, value, color: (categories.find((c) => c.name === name) || {}).color || "#8B93A3" })).sort((a, b) => b.value - a.value);
   })();
@@ -1747,7 +1785,7 @@ function CategoriesView({ categories, setModal, archiveCategory }) {
 
 /* ============================== SETTINGS VIEW ============================== */
 
-function SettingsView({ baseCurrency, rates, update, session, setToast, pin, applyPin, exportBackup, importBackup, setView }) {
+function SettingsView({ baseCurrency, rates, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, setView }) {
   const [localRates, setLocalRates] = useState(() => {
     const o = {};
     Object.keys(rates).forEach((k) => { o[k] = String(rates[k]); });
@@ -1860,7 +1898,12 @@ function SettingsView({ baseCurrency, rates, update, session, setToast, pin, app
         <h3 className="font-display font-semibold text-sm mb-1">PIN-код</h3>
         {pin && !pinMode ? (
           <div>
-            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Увімкнено. Застосунок запитуватиме код при кожному відкритті.</p>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Увімкнено. Застосунок запитуватиме код при відкритті та після згортання.</p>
+            <p className="text-[11px] font-medium mb-1.5" style={{ color: "var(--text-dim)" }}>Запитувати PIN</p>
+            <div className="flex gap-2 mb-3">
+              <button onClick={() => applyPinDelay(0)} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={{ background: pinDelay === 0 ? "var(--accent)" : "var(--surface2)", color: pinDelay === 0 ? "var(--accent-ink)" : "var(--text)", border: "1px solid var(--border)" }}>Одразу</button>
+              <button onClick={() => applyPinDelay(60)} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={{ background: pinDelay === 60 ? "var(--accent)" : "var(--surface2)", color: pinDelay === 60 ? "var(--accent-ink)" : "var(--text)", border: "1px solid var(--border)" }}>Через 1 хв</button>
+            </div>
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => { setPinMode(true); setPin1(""); setPin2(""); setPinErr(""); }}>Змінити</Button>
               <Button variant="secondary" onClick={removePin}>Вимкнути</Button>
