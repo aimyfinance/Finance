@@ -148,11 +148,21 @@ const CRYPTO_COINS = [
 const FEEDBACK_EMAIL = "hello@k3.finance";
 const APP_VERSION = "1.0";
 const TOUR_STEPS = [
-  { sel: '[data-tour="total"]', title: "Загальний капітал", text: "Сума всіх ваших рахунків у базовій валюті. Подвійний тап приховує суму від сторонніх очей." },
-  { sel: '[data-tour="actions"]', title: "Швидкі дії", text: "Додавайте витрати й доходи, робіть перекази між рахунками та обмін валют одним дотиком." },
-  { sel: '[data-tour="accounts"]', title: "Ваші рахунки", text: "Гортайте картки. Кожен рахунок може мати кілька валютних субрахунків із власними назвами та тегом банку." },
-  { sel: '[data-tour="help"]', title: "Довідка поруч", text: "Ця кнопка завжди тут: гайд по функціях, часті запитання та цей огляд." },
-  { sel: '[data-tour="nav"]', title: "Навігація", text: "Огляд, Рахунки, Історія, Позики та борги, і «Ще» — там налаштування, категорії, цілі та курси валют." },
+  { view: "dashboard", sel: '[data-tour="total"]', title: "Загальний капітал", text: "Сума всіх ваших рахунків і крипто у базовій валюті. Подвійний тап приховує суму від сторонніх очей." },
+  { view: "dashboard", sel: '[data-tour="actions"]', title: "Швидкі дії", text: "Додавайте витрати й доходи, робіть перекази між рахунками та обмін валют одним дотиком." },
+  { view: "dashboard", sel: '[data-tour="accounts"]', title: "Картки рахунків", text: "Гортайте картки. Тап відкриває рахунок, довге натискання — меню: редагувати, змінити валюту, архівувати." },
+  { view: "dashboard", sel: '[data-tour="period"]', title: "Період звіту", text: "День, місяць, рік або свій діапазон дат. Доходи, витрати й діаграма перерахуються під обраний період." },
+  { view: "dashboard", sel: '[data-tour="budgets"]', title: "Бюджети", text: "Задайте місячний ліміт у категорії витрат — тут зʼявиться прогрес: золотий у межах, жовтий біля межі, червоний при перевищенні." },
+  { view: "dashboard", sel: '[data-tour="networth"]', title: "Динаміка капіталу", text: "Графік зростання капіталу за 6 місяців і зміна за останній місяць — щоб бачити тренд, а не лише поточну суму." },
+  { view: "dashboard", sel: '[data-tour="goals"]', title: "Цілі накопичень", text: "Відпустка, техніка, подушка безпеки — ставте цілі, поповнюйте їх і стежте за прогресом." },
+  { view: "accounts", sel: '[data-tour="acclist"]', title: "Рахунки та субрахунки", text: "Рахунок — контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з назвами. Перетягуйте за ручку, щоб змінити порядок." },
+  { view: "accounts", sel: '[data-tour="cryptocard"]', title: "Крипто-портфель", text: "Додайте свої активи (BTC, ETH, SOL…) — вартість оновлюється за живими ринковими цінами й додається до капіталу." },
+  { view: "history", sel: '[data-tour="histsearch"]', title: "Історія та фільтри", text: "Шукайте за описом і фільтруйте за типом, рахунком, категорією, валютою й датами. Свайп операції вліво відкриває дії: редагувати, копія, видалити." },
+  { view: "loans", sel: '[data-tour="loandir"]', title: "Позики та борги", text: "Перемикач «Мені винні» / «Я винен». Реєструйте видачу, часткові повернення й погашення — баланси оновлюються самі." },
+  { view: "settings", sel: '[data-tour="setrates"]', title: "Валюти та курси", text: "Додавайте валюти, тримайте курс «Авто» (оновлюється онлайн) або «Вручну». Крос-курси рахуються автоматично." },
+  { view: "settings", sel: '[data-tour="setpin"]', title: "Безпека", text: "PIN-код на вході: запитувати одразу після згортання або через хвилину. Код зберігається лише на цьому пристрої." },
+  { view: "settings", sel: '[data-tour="setbackup"]', title: "Резервні копії", text: "Зберігайте копію даних у файл і експортуйте операції в CSV для Excel. Радимо робити копію регулярно." },
+  { view: "dashboard", sel: '[data-tour="help"]', title: "Довідка поруч", text: "Ця кнопка завжди тут: гайд по функціях, часті запитання та цей огляд. Поруч — перемикач мови." },
 ];
 const CURRENCY_SYMBOLS = { UAH: "₴", USD: "$", EUR: "€", GBP: "£", PLN: "zł", CHF: "CHF" };
 
@@ -398,6 +408,27 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Картки рахунків": "Account cards",
+  "Період звіту": "Reporting period",
+  "Історія та фільтри": "History and filters",
+  "Валюти та курси": "Currencies and rates",
+  "Безпека": "Security",
+  "Резервні копії": "Backups",
+  "Сума всіх ваших рахунків і крипто у базовій валюті. Подвійний тап приховує суму від сторонніх очей.": "The total of all your accounts and crypto in the base currency. Double-tap to hide it from prying eyes.",
+  "Гортайте картки. Тап відкриває рахунок, довге натискання — меню: редагувати, змінити валюту, архівувати.": "Swipe the cards. Tap to open an account; press and hold for the menu: edit, change currency, archive.",
+  "День, місяць, рік або свій діапазон дат. Доходи, витрати й діаграма перерахуються під обраний період.": "Day, month, year or a custom date range. Income, expenses and the chart recalculate for the period you pick.",
+  "Задайте місячний ліміт у категорії витрат — тут зʼявиться прогрес: золотий у межах, жовтий біля межі, червоний при перевищенні.": "Set a monthly limit on an expense category and its progress appears here: gold within budget, amber near the limit, red when exceeded.",
+  "Графік зростання капіталу за 6 місяців і зміна за останній місяць — щоб бачити тренд, а не лише поточну суму.": "A 6-month chart of your net worth plus the change this month — so you see the trend, not just today's number.",
+  "Відпустка, техніка, подушка безпеки — ставте цілі, поповнюйте їх і стежте за прогресом.": "A holiday, new gadgets, a safety cushion — set goals, top them up and watch your progress.",
+  "Рахунок — контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з назвами. Перетягуйте за ручку, щоб змінити порядок.": "An account is a container (card, cash, deposit). Inside are named currency sub-accounts. Drag by the handle to reorder them.",
+  "Додайте свої активи (BTC, ETH, SOL…) — вартість оновлюється за живими ринковими цінами й додається до капіталу.": "Add your assets (BTC, ETH, SOL…) — their value updates at live market prices and counts towards your total capital.",
+  "Шукайте за описом і фільтруйте за типом, рахунком, категорією, валютою й датами. Свайп операції вліво відкриває дії: редагувати, копія, видалити.": "Search by description and filter by type, account, category, currency and dates. Swipe a row left for actions: edit, copy, delete.",
+  "Перемикач «Мені винні» / «Я винен». Реєструйте видачу, часткові повернення й погашення — баланси оновлюються самі.": "The “Owed to me” / “I owe” switch. Record lending, partial returns and repayments — balances update automatically.",
+  "Додавайте валюти, тримайте курс «Авто» (оновлюється онлайн) або «Вручну». Крос-курси рахуються автоматично.": "Add currencies and keep each rate “Auto” (updated online) or “Manual”. Cross rates are calculated automatically.",
+  "PIN-код на вході: запитувати одразу після згортання або через хвилину. Код зберігається лише на цьому пристрої.": "A PIN at launch: ask right after backgrounding, or a minute later. The code is stored on this device only.",
+  "Зберігайте копію даних у файл і експортуйте операції в CSV для Excel. Радимо робити копію регулярно.": "Save a data backup to a file and export transactions to CSV for Excel. We recommend backing up regularly.",
+  "Ця кнопка завжди тут: гайд по функціях, часті запитання та цей огляд. Поруч — перемикач мови.": "This button is always here: the feature guide, FAQ and this tour. The language switch sits next to it.",
+  "Екскурсія по всіх розділах застосунку": "A walkthrough of every section of the app",
   "Версія": "Version",
   "Крок": "Step",
   "з": "of",
@@ -1289,7 +1320,7 @@ function HelpModal({ onClose, startTour }) {
         <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}><HelpCircle size={18} color="#131B2B" /></div>
         <div className="text-left">
           <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>{tr("Інтерактивний огляд")}</p>
-          <p className="text-[11px]" style={{ color: "#A7B0C4" }}>{tr("Швидка екскурсія по головному екрану")}</p>
+          <p className="text-[11px]" style={{ color: "#A7B0C4" }}>{tr("Екскурсія по всіх розділах застосунку")}</p>
         </div>
       </button>
       <div className="flex gap-1.5 mb-3 p-1 rounded-xl" style={{ background: "var(--surface2)" }}>
@@ -1312,23 +1343,41 @@ function HelpModal({ onClose, startTour }) {
 }
 
 // Coach-mark tour: dims the screen and spotlights one element at a time with a tooltip
-function TourOverlay({ step, setStep, onClose }) {
+function TourOverlay({ step, setStep, onClose, setView }) {
   const [rect, setRect] = useState(null);
   const cur = TOUR_STEPS[step];
   const last = step >= TOUR_STEPS.length - 1;
   useEffect(() => {
-    const el = cur && document.querySelector(cur.sel);
-    if (!el) { setRect(null); return; }
-    try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
+    if (!cur) return;
+    // Some steps live on another screen — switch there first, then find the target.
+    if (cur.view && setView) setView(cur.view);
+    let cancelled = false;
+    let el = null;
     const measure = () => {
+      if (!el || cancelled) return;
       const r = el.getBoundingClientRect();
       setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
     };
-    const t = setTimeout(measure, 320);
-    measure();
+    // The target may not exist until the new screen has rendered — retry briefly.
+    let tries = 0;
+    const find = () => {
+      if (cancelled) return;
+      el = document.querySelector(cur.sel);
+      if (el) {
+        try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
+        measure();
+        setTimeout(measure, 380);
+      } else if (tries++ < 12) {
+        setTimeout(find, 60);
+      } else {
+        setRect(null); // no anchor on this screen — show the tip centred
+      }
+    };
+    setRect(null);
+    setTimeout(find, 60);
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
-    return () => { clearTimeout(t); window.removeEventListener("resize", measure); window.removeEventListener("scroll", measure, true); };
+    return () => { cancelled = true; window.removeEventListener("resize", measure); window.removeEventListener("scroll", measure, true); };
   }, [step]);
 
   const pad = 8;
@@ -1944,7 +1993,7 @@ function FinanceTracker() {
 
       {!consented && <ConsentScreen onAccept={acceptConsent} />}
 
-      {tourStep != null && <TourOverlay step={tourStep} setStep={setTourStep} onClose={() => setTourStep(null)} />}
+      {tourStep != null && <TourOverlay step={tourStep} setStep={setTourStep} setView={setView} onClose={() => { setTourStep(null); setView("dashboard"); }} />}
     </div>
   );
 }
@@ -2148,7 +2197,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       </div>
 
       <div>
-        <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+        <div data-tour="period" className="flex items-center gap-1.5 mb-3 flex-wrap">
           {[["day", tr("День")], ["month", tr("Місяць")], ["year", tr("Рік")], ["custom", tr("Свій період")]].map(([id, label]) => (
             <button key={id} onClick={() => setPeriod(id)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition" style={{ background: period === id ? "var(--accent)" : "var(--surface2)", color: period === id ? "#08110D" : "var(--text-dim)", border: "1px solid var(--border)" }}>{label}</button>
           ))}
@@ -2202,7 +2251,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       </div>
 
       {nwLen >= 2 && (
-        <Card className="p-4">
+        <Card data-tour="networth" className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display font-semibold text-sm">{tr("Динаміка капіталу")}</h3>
             <span className="text-xs font-semibold tabular flex items-center gap-1" style={{ color: nwDelta >= 0 ? "var(--accent)" : "var(--danger)" }}>
@@ -2215,7 +2264,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       )}
 
       {budgetStatus && budgetStatus.length > 0 && (
-        <Card className="p-4">
+        <Card data-tour="budgets" className="p-4">
           <h3 className="font-display font-semibold text-sm mb-3">{tr("Бюджети за місяць")}</h3>
           <div className="space-y-3.5">
             {budgetStatus.map((b) => {
@@ -2238,7 +2287,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       )}
 
       {goals && goals.filter((g) => !g.archived).length > 0 && (
-        <Card className="p-4">
+        <Card data-tour="goals" className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display font-semibold text-sm flex items-center gap-2"><PiggyBank size={16} /> {tr("Цілі накопичень")}</h3>
             <button onClick={() => setView("goals")} className="pill-link">{tr("Усі цілі")} <ChevronRight size={13} /></button>
@@ -2461,7 +2510,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
         <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>{tr("Архів")}</button>
       </div>
       {!showArchived && list.length > 1 && (
-        <p className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Перетягни за ручку")} <span style={{ verticalAlign: "middle" }}>⠿</span>{tr(", щоб змінити порядок рахунків.")}</p>
+        <p data-tour="acclist" className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Перетягни за ручку")} <span style={{ verticalAlign: "middle" }}>⠿</span>{tr(", щоб змінити порядок рахунків.")}</p>
       )}
       <div ref={listRef} className="space-y-4">
         {list.map((acc) => {
@@ -2547,7 +2596,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
       </div>
 
       {!showArchived && (
-        <button onClick={() => setView && setView("crypto")} className="w-full text-left">
+        <button data-tour="cryptocard" onClick={() => setView && setView("crypto")} className="w-full text-left">
           <Card className="p-4 flex items-center gap-3" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)", border: "1px solid var(--border)" }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(201,163,98,0.16)" }}><Coins size={18} style={{ color: "var(--accent)" }} /></div>
             <div className="min-w-0 flex-1">
@@ -2610,7 +2659,7 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
 
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-dim)" }} />
-        <Input placeholder={tr("Пошук за описом...")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <Input data-tour="histsearch" placeholder={tr("Пошук за описом...")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
       {showFilters && (
@@ -2703,7 +2752,7 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archive
         <Button onClick={() => setModal({ type: "loan", payload: { direction: dir } })}><Plus size={16} /> {isIn ? tr("Додати борг") : tr("Надати позику")}</Button>
       </div>
 
-      <div className="flex gap-1.5 p-1 rounded-xl" style={{ background: "var(--surface2)" }}>
+      <div data-tour="loandir" className="flex gap-1.5 p-1 rounded-xl" style={{ background: "var(--surface2)" }}>
         <button onClick={() => setDir("out")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition" style={{ background: !isIn ? "var(--surface)" : "transparent", color: !isIn ? "var(--text)" : "var(--text-dim)" }}>{tr("Мені винні")}</button>
         <button onClick={() => setDir("in")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition" style={{ background: isIn ? "var(--surface)" : "transparent", color: isIn ? "var(--text)" : "var(--text-dim)" }}>{tr("Я винен")}</button>
       </div>
@@ -3162,7 +3211,7 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">{tr("PIN-код")}</h3>
+        <h3 data-tour="setpin" className="font-display font-semibold text-sm mb-1">{tr("PIN-код")}</h3>
         {pin && !pinMode ? (
           <div>
             <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Увімкнено. Застосунок запитуватиме код при відкритті та після згортання.")}</p>
@@ -3195,7 +3244,7 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">{tr("Резервна копія")}</h3>
+        <h3 data-tour="setbackup" className="font-display font-semibold text-sm mb-1">{tr("Резервна копія")}</h3>
         <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Збережіть файл-копію на iPhone або відновіть дані з файлу. Хмарна копія — у блоці «Синхронізація» вище.")}</p>
         <div className="flex gap-2 flex-wrap">
           <Button variant="secondary" onClick={exportBackup}><ArrowDownRight size={15} /> {tr("Зберегти копію")}</Button>
@@ -3213,7 +3262,7 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
           <Select value={base} onChange={(e) => setBase(e.target.value)}>{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
         </Field>
 
-        <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>{tr("Курси валют — скільки")} <b style={{ color: "var(--text)" }}>UAH</b> {tr("коштує 1 одиниця валюти. Позначка")} <b style={{ color: "var(--text)" }}>{tr("«Авто»")}</b> {tr("оновлюється онлайн,")} <b style={{ color: "var(--text)" }}>{tr("«Вручну»")}</b> {tr("— залишає ваше значення. Крос-курси рахуються автоматично.")}</p>
+        <p data-tour="setrates" className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>{tr("Курси валют — скільки")} <b style={{ color: "var(--text)" }}>UAH</b> {tr("коштує 1 одиниця валюти. Позначка")} <b style={{ color: "var(--text)" }}>{tr("«Авто»")}</b> {tr("оновлюється онлайн,")} <b style={{ color: "var(--text)" }}>{tr("«Вручну»")}</b> {tr("— залишає ваше значення. Крос-курси рахуються автоматично.")}</p>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <Button variant="secondary" onClick={updateRatesOnline} disabled={ratesBusy}><RefreshCw size={15} className={ratesBusy ? "spin" : ""} /> {ratesBusy ? tr("Оновлення…") : tr("Оновити курси онлайн")}</Button>
           {ratesMsg && <span className="text-[11px]" style={{ color: ratesErr ? "var(--danger)" : "var(--text-dim)" }}>{ratesMsg}</span>}
