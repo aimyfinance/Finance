@@ -211,13 +211,13 @@ const MONTHS_UA = ["Січ", "Лют", "Бер", "Кві", "Тра", "Чер", "
 function fmtMoney(amount, currency) {
   const sym = CURRENCY_SYMBOLS[currency] || currency;
   const n = Number(amount) || 0;
-  const formatted = n.toLocaleString("uk-UA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatted = n.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return `${formatted} ${sym}`;
 }
 
 function fmtDate(d) {
   const date = new Date(d);
-  return date.toLocaleDateString("uk-UA", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return date.toLocaleDateString(locale(), { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function daysBetween(a, b) {
@@ -290,7 +290,7 @@ function Icon({ name, size = 18, className = "", style = {} }) {
 
 /* ============================== DEMO DATA ============================== */
 /*
-  Accounts are containers (e.g. "Готівка", "Monobank"). Each account can hold
+  Accounts are containers (e.g. tr("Готівка"), "Monobank"). Each account can hold
   multiple currency "pockets" — one balance per currency, e.g. Готівка can
   hold a UAH pocket, a USD pocket and an EUR pocket at the same time.
 */
@@ -391,6 +391,545 @@ function buildDemoData() {
 }
 
 /* ============================== PERSISTENCE ============================== */
+
+/* ============================== i18n (UK / EN) ============================== */
+const LANG_KEY = "ft_lang";
+function loadLang() { try { return (window.localStorage && window.localStorage.getItem(LANG_KEY)) === "en" ? "en" : "uk"; } catch (e) { return "uk"; } }
+function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
+
+const EN_DICT = {
+  "Версія": "Version",
+  "Крок": "Step",
+  "з": "of",
+  "до": "by",
+  "Витрати за категоріями": "Expenses by category",
+  "актив": "asset",
+  "активи": "assets",
+  "живі ціни": "live prices",
+  "валюта": "currency",
+  "валют": "currencies",
+", щоб змінити порядок рахунків.": " to reorder accounts.",
+". Дані зберігаються в хмару автоматично.": ". Data is saved to the cloud automatically.",
+"6 місяців витрат": "6 months of expenses",
+"CSV експортовано": "CSV exported",
+"CSV збережено": "CSV saved",
+"K³ Finance — персональний застосунок для обліку особистих фінансів. Користуючись ним, ви погоджуєтесь із умовами нижче.": "K³ Finance is a personal app for tracking your own finances. By using it, you agree to the terms below.",
+"PIN має містити 4–6 цифр": "PIN must be 4–6 digits",
+"PIN-код": "PIN code",
+"PIN-код вимкнено": "PIN code disabled",
+"PIN-код увімкнено": "PIN code enabled",
+"«Авто»": "“Auto”",
+"«Вручну»": "“Manual”",
+"«Переказ» — між своїми рахунками. «Обмін валют» — між різними валютами за вашим курсом; баланси перерахуються автоматично.": "“Transfer” moves money between your own accounts. “Exchange” converts between currencies at your rate; balances update automatically.",
+"Іконка": "Icon",
+"Ім'я / назва позичальника": "Borrower name",
+"Інвестиційний рахунок": "Investment account",
+"Інвестиції": "Investments",
+"Інше": "Other",
+"Інший": "Other",
+"Історія": "History",
+"Історія операцій": "Transaction history",
+"Інтерактивний огляд": "Interactive tour",
+"Авто": "Auto",
+"Автомобіль": "Car",
+"Акаунт створено": "Account created",
+"Актив видалено": "Asset deleted",
+"Актив додано": "Asset added",
+"Актив.": "Restore",
+"Активна": "Active",
+"Активні": "Active",
+"Архів": "Archive",
+"Архівувати картку": "Archive card",
+"Архівувати субрахунок": "Archive sub-account",
+"Базова валюта (для загального балансу)": "Base currency (for total balance)",
+"Банк (необовʼязково) — для групування": "Bank (optional) — for grouping",
+"Банківський рахунок": "Bank account",
+"Безпека (PIN)": "Security (PIN)",
+"Безпека.": "Security.",
+"Бер": "Mar",
+"Борг додано": "Debt added",
+"Борг на навчання": "Tuition loan",
+"Борг повністю погашено": "Debt fully repaid",
+"Бюджети": "Budgets",
+"Бюджети за місяць": "Monthly budgets",
+"Бізнес": "Business",
+"Валюта": "Currency",
+"Валютний": "FX",
+"Валютний субрахунок додано": "Currency sub-account added",
+"Ваш відгук або побажання…": "Your feedback or suggestion…",
+"Ваші дані.": "Your data.",
+"Ваші рахунки": "Your accounts",
+"Введіть PIN-код": "Enter PIN code",
+"Введіть коректну суму": "Enter a valid amount",
+"Введіть коректну суму повернення": "Enter a valid repayment amount",
+"Введіть коректну суму списання": "Enter a valid amount to debit",
+"Введіть назву категорії": "Enter a category name",
+"Введіть назву нагадування": "Enter a reminder title",
+"Введіть назву рахунку": "Enter an account name",
+"Введіть назву цілі": "Enter a goal name",
+"Введіть ім'я позичальника": "Enter the borrower's name",
+"Введіть імʼя позичальника": "Enter the borrower's name",
+"Вер": "Sep",
+"Вже накопичено": "Already saved",
+"Ви вийшли з акаунта": "Signed out",
+"Ви відповідаєте за збереження свого PIN-коду та доступу до пристрою.": "You are responsible for keeping your PIN code and device access secure.",
+"Ви увійшли як": "Signed in as",
+"Видал.": "Delete",
+"Видалений рахунок": "Deleted account",
+"Видалення рахунку/категорії зберігає повʼязані операції в історії, але саму позицію відновити не можна — робіть резервні копії.": "Deleting an account or category keeps related transactions in history, but the item itself cannot be restored — keep backups.",
+"Видалити": "Delete",
+"Видалити актив": "Delete asset",
+"Видалити актив?": "Delete asset?",
+"Видалити картку": "Delete card",
+"Видалити рахунок?": "Delete account?",
+"Видалити ціль": "Delete goal",
+"Видалити ціль?": "Delete goal?",
+"Видано з: ": "Issued from: ",
+"Вийти з акаунта": "Sign out",
+"Вимкнути": "Disable",
+"Витрата": "Expense",
+"Витрати": "Expenses",
+"Вкажіть курси обох валют, щоб побачити крос-курс": "Set rates for both currencies to see the cross rate",
+"Вкажіть кількість": "Enter an amount",
+"Вкажіть очікувану дату повернення": "Set the expected return date",
+"Вкажіть суму цілі": "Set the goal amount",
+"Вкажіть термін сплати": "Set the due date",
+"Вкажіть, кому ви винні": "Enter who you owe",
+"Вручну": "Manual",
+"Встановити PIN": "Set PIN",
+"Від": "From",
+"Відкрити": "Open",
+"Відкрити портфель": "Open portfolio",
+"Відкрити рахунок": "Open account",
+"Відкрито поштовий застосунок": "Mail app opened",
+"Відновити з файлу": "Restore from file",
+"Відновлення замінить поточні дані на цьому пристрої. CSV зручний для Excel і аналізу операцій.": "Restoring replaces the current data on this device. CSV is handy for Excel and analysis.",
+"Відповідальність.": "Liability.",
+"Відпустка": "Vacation",
+"Гайд": "Guide",
+"Гаманець": "Wallet",
+"Гортайте картки. Кожен рахунок може мати кілька валютних субрахунків із власними назвами та тегом банку.": "Swipe the cards. Each account can hold several currency sub-accounts with their own names and a bank tag.",
+"Готово": "Done",
+"Готівка": "Cash",
+"Гру": "Dec",
+"Далі": "Next",
+"Дані відновлено з копії": "Data restored from backup",
+"Дані завантажено з хмари": "Data loaded from cloud",
+"Дані збережено в хмару": "Data saved to cloud",
+"Дата": "Date",
+"Дата надання": "Date issued",
+"Дата отримання": "Date received",
+"Дата повернення": "Return date",
+"Де зберігаються мої дані?": "Where is my data stored?",
+"День": "Day",
+"Депозит": "Deposit",
+"Динаміка капіталу": "Net worth trend",
+"До": "To",
+"Довідка поруч": "Help is always here",
+"Довідка та навчання": "Help & learning",
+"Додавайте витрати й доходи, робіть перекази між рахунками та обмін валют одним дотиком.": "Add expenses and income, transfer between accounts and exchange currency in one tap.",
+"Додавайте власні категорії витрат і доходів, редагуйте назви, іконки та кольори або ховайте зайві.": "Add your own expense and income categories, edit names, icons and colours, or hide the ones you don't need.",
+"Додавайте доходи й витрати кнопками на головному екрані. Курс валюти фіксується на момент операції, тож зміна курсу не змінює минулі суми.": "Add income and expenses from the home screen. The exchange rate is locked at the moment of the transaction, so changing rates never rewrites past totals.",
+"Додайте свої крипто-активи (BTC, ETH, SOL…) і бачте вартість портфелю за живими ринковими цінами.": "Add your crypto assets (BTC, ETH, SOL…) and see your portfolio value at live market prices.",
+"Додати": "Add",
+"Додати актив": "Add asset",
+"Додати активи · живі ціни": "Add assets · live prices",
+"Додати борг": "Add debt",
+"Додати борг (я винен)": "Add debt (I owe)",
+"Додати валютний субрахунок": "Add currency sub-account",
+"Додати валюту": "Add currency",
+"Додати витрату": "Add expense",
+"Додати дохід": "Add income",
+"Додати крипто-актив": "Add crypto asset",
+"Додати субрахунок": "Add sub-account",
+"Доходи": "Income",
+"Дохід": "Income",
+"Дохід і витрати за місяцями": "Income and expenses by month",
+"Дім": "Home",
+"Експорт у CSV": "Export to CSV",
+"Жов": "Oct",
+"Загалом надано": "Total lent",
+"Загальна вартість портфелю": "Total portfolio value",
+"Загальний капітал": "Total capital",
+"Загальний капітал за останні 6 місяців · зміна за місяць": "Total capital over the last 6 months · change this month",
+"Залишилось ": "Left: ",
+"Залишок боргу": "Outstanding",
+"Залишок боргу: ": "Outstanding: ",
+"Залишок до сплати": "Left to repay",
+"Залишок до сплати: ": "Left to repay: ",
+"Заначка": "Stash",
+"Запитувати PIN": "Ask for PIN",
+"Заплатити за інтернет": "Pay for internet",
+"Зареєструвати повернення": "Record a return",
+"Зареєструвати погашення": "Record a repayment",
+"Зарплата": "Salary",
+"Застосунок не є банком, фінансовою установою чи фінансовим радником і не надає інвестиційних порад. Усі фінансові рішення ви приймаєте самостійно.": "The app is not a bank, financial institution or financial adviser, and gives no investment advice. All financial decisions are yours.",
+"Захистіть застосунок кодом на вході. Код зберігається лише на цьому пристрої.": "Protect the app with a code at launch. The code is stored on this device only.",
+"Зберегти": "Save",
+"Зберегти зміни": "Save changes",
+"Зберегти копію": "Save backup",
+"Зберегти налаштування": "Save settings",
+"Збережіть файл-копію на iPhone або відновіть дані з файлу. Хмарна копія — у блоці «Синхронізація» вище.": "Save a backup file to your iPhone or restore data from a file. Cloud backup is in the “Sync” block above.",
+"Зберігайте копію даних у файл (JSON) або експортуйте операції в CSV для Excel. Дані зберігаються на вашому пристрої.": "Save a data backup to a file (JSON) or export transactions to CSV for Excel. Data is stored on your device.",
+"Зворотний зв'язок": "Feedback",
+"Здоров'я": "Health",
+"Зміна валюти не конвертує вже наявні операції — вони залишаться у своїх сумах.": "Changing the currency does not convert existing transactions — their amounts stay as they are.",
+"Змінити": "Change",
+"Змінити валюту / баланс": "Change currency / balance",
+"Зняти": "Withdraw",
+"Зняти кошти": "Withdraw funds",
+"Картка": "Card",
+"Картку буде видалено. Операції залишаться в історії.": "The card will be deleted. Transactions stay in history.",
+"Картку видалено (операції збережено)": "Card deleted (transactions kept)",
+"Категорія": "Category",
+"Категорії": "Categories",
+"Кві": "Apr",
+"Керувати категоріями": "Manage categories",
+"Коди не збігаються": "Codes do not match",
+"Колір": "Colour",
+"Коментар": "Comment",
+"Коментар / домовленість": "Comment / agreement",
+"Кому ви винні": "Who you owe",
+"Кому позичено": "Lent to",
+"Комунальні послуги": "Utilities",
+"Копія": "Copy",
+"Кошти знято": "Funds withdrawn",
+"Крипто-портфель": "Crypto portfolio",
+"Крос-курс валют": "Currency cross rate",
+"Курси валют": "Exchange rates",
+"Курси валют — скільки": "Exchange rates — how much",
+"Курси оновлено": "Rates updated",
+"Кілька карток одного банку?": "Several cards from one bank?",
+"Кількість": "Amount",
+"Ласкаво просимо до K³": "Welcome to K³",
+"Лип": "Jul",
+"Лис": "Nov",
+"Локально на вашому пристрої. Регулярно робіть резервну копію, щоб не втратити дані.": "Locally on your device. Make regular backups so you don't lose it.",
+"Лют": "Feb",
+"Марина В.": "Marina V.",
+"Мені винні": "Owed to me",
+"Монета": "Coin",
+"Монобанк": "Monobank",
+"Море влітку": "Sea in summer",
+"Мої цілі": "My goals",
+"Місяць": "Month",
+"Місячний ліміт (бюджет), необовʼязково": "Monthly limit (budget), optional",
+"Навігація": "Navigation",
+"Нагадування": "Reminders",
+"Нагадування видалено": "Reminder deleted",
+"Нагадування створено": "Reminder created",
+"Надати позику": "Lend money",
+"Надіслати відгук": "Send feedback",
+"Назад": "Back",
+"Назва": "Name",
+"Назва субрахунку (необовʼязково)": "Sub-account name (optional)",
+"Накопичено загалом": "Saved in total",
+"Накопичено:": "Saved:",
+"Налаштування": "Settings",
+"Налаштування збережено": "Settings saved",
+"Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт.": "Settings → “Manage categories” → “New category”. Pick a type, icon, colour and, if you like, a monthly limit.",
+"Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати.": "Settings → the “PIN code” block → “Set PIN”. Then choose when it should be asked for.",
+"Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними.": "Settings → the rates block → “Update rates online”. Currencies marked “Manual” stay unchanged.",
+"Налаштування → курси: додавайте валюти, тримайте курс «Авто» (оновлюється онлайн) або «Вручну». Крос-курси рахуються самі.": "Settings → rates: add currencies and keep each rate “Auto” (updated online) or “Manual”. Cross rates are calculated for you.",
+"Напр. Банк / Андрій": "e.g. Bank / Andrii",
+"Напр. Відпустка": "e.g. Vacation",
+"Напр. Заначка, Зарплатна": "e.g. Stash, Salary",
+"Напр. Монобанк, ПриватБанк": "e.g. Monobank, PrivatBank",
+"Напр. Олег К.": "e.g. Oleh K.",
+"Напр. Оплатити прибиральницю": "e.g. Pay the cleaner",
+"Напр. Основний": "e.g. Main",
+"Напр. Чорна картка": "e.g. Black Card",
+"Натискаючи кнопку, ви приймаєте умови застосунку.": "By tapping the button you accept the app's terms.",
+"Не вдалося": "Failed",
+"Не вдалося оновити ціни": "Could not update prices",
+"Не вдалося оновити — перевірте інтернет": "Update failed — check your connection",
+"Не вдалося прочитати файл": "Could not read the file",
+"Не вдалося створити CSV": "Could not create the CSV",
+"Не вдалося створити копію": "Could not create the backup",
+"Невірний код, спробуйте ще": "Wrong code, try again",
+"Немає боргів у цій категорії": "No debts in this section",
+"Немає витрат за цей період": "No expenses for this period",
+"Немає нагадувань": "No reminders",
+"Немає операцій за заданими фільтрами": "No transactions match these filters",
+"Немає позик у цій категорії": "No loans in this section",
+"Немає рахунків у цій категорії": "No accounts in this section",
+"Необов'язково": "Optional",
+"Нова категорія": "New category",
+"Нова ціль": "New goal",
+"Нове нагадування": "New reminder",
+"Новий PIN": "New PIN",
+"Новий ноутбук": "New laptop",
+"Новий рахунок": "New account",
+"Нотатка": "Note",
+"Нотатка (необовʼязково)": "Note (optional)",
+"Ні": "No",
+"Оберіть валюту": "Choose a currency",
+"Оберіть дату": "Choose a date",
+"Оберіть дату повернення": "Choose a return date",
+"Оберіть категорію": "Choose a category",
+"Оберіть рахунки": "Choose accounts",
+"Оберіть рахунок": "Choose an account",
+"Оберіть рахунок зарахування": "Choose the destination account",
+"Оберіть різні рахунки": "Choose different accounts",
+"Обмін": "Exchange",
+"Обмін валют": "Exchange",
+"Обмін валюти": "Currency exchange",
+"Обмін на подорож": "Exchange for a trip",
+"Обміняти": "Exchange",
+"Огляд": "Overview",
+"Огляд, Рахунки, Історія, Позики та борги, і «Ще» — там налаштування, категорії, цілі та курси валют.": "Overview, Accounts, History, Loans & debts, and “More” — settings, categories, goals and exchange rates live there.",
+"Одразу": "Immediately",
+"Одяг": "Clothing",
+"Олег К.": "Oleh K.",
+"Оновити курси онлайн": "Update rates online",
+"Оновити ціни": "Update prices",
+"Оновлення…": "Updating…",
+"Оновлено: ": "Updated: ",
+"Операцію видалено": "Transaction deleted",
+"Операцію дубльовано": "Transaction duplicated",
+"Операцію збережено": "Transaction saved",
+"Операції": "Transactions",
+"Операції по цьому рахунку": "Transactions for this account",
+"Операції сортуються за датою. Переконайтесь, що дата — сьогодні; операції одного дня показуються найновішою згори.": "Transactions are sorted by date. Make sure the date is today; entries from the same day show newest first.",
+"Опис / коментар": "Description / comment",
+"Оплатити прибиральницю": "Pay the cleaner",
+"Освіта": "Education",
+"Основний": "Main",
+"Останні транзакції": "Recent transactions",
+"Отримано на: ": "Received to: ",
+"Очікувана дата повернення": "Expected return date",
+"Паливо": "Fuel",
+"Пароль": "Password",
+"Переказ": "Transfer",
+"Переказ між рахунками": "Transfer between accounts",
+"Переказати": "Transfer",
+"Перекази": "Transfers",
+"Перекази та обмін валют": "Transfers and currency exchange",
+"Перетягни за ручку": "Drag by the handle",
+"Перетягнути": "Drag",
+"Період від": "Period from",
+"Період до": "Period to",
+"Повернена": "Returned",
+"Повернення коштів": "Refunds",
+"Повернення позик": "Loan returns",
+"Повернення позики": "Loan return",
+"Повернення позики: ": "Loan return: ",
+"Повернено": "Returned",
+"Повторіть PIN": "Repeat PIN",
+"Погашена": "Repaid",
+"Погашення боргу: ": "Debt repayment: ",
+"Погашено": "Repaid",
+"Погоджуюсь і продовжити": "Agree and continue",
+"Подарунки": "Gifts",
+"Подвійний тап, щоб приховати": "Double-tap to hide",
+"Подорожі": "Travel",
+"Подушка безпеки": "Safety cushion",
+"Поділіться побажанням, ідеєю чи повідомте про проблему — ми будемо вдячні за ваш відгук.": "Share a suggestion or an idea, or report a problem — we're grateful for your feedback.",
+"Позика (борг) від: ": "Debt from: ",
+"Позика видана": "Loan issued",
+"Позика на ремонт": "Loan for renovation",
+"Позика надана": "Loan given",
+"Позика: ": "Loan: ",
+"Позики": "Loans",
+"Позики надані": "Loans given",
+"Позики та борги": "Loans & debts",
+"Позику видалено (операції збережено)": "Loan deleted (transactions kept)",
+"Позику повністю повернено": "Loan fully returned",
+"Позику створено": "Loan created",
+"Поповнення готівки": "Cash top-up",
+"Поповнити": "Top up",
+"Поповнити ціль": "Top up goal",
+"Портфель порожній. Додайте перший актив — і бачте його вартість за живими цінами.": "Your portfolio is empty. Add your first asset and see its value at live prices.",
+"Початкова сума": "Initial amount",
+"Початковий баланс": "Opening balance",
+"Початковий баланс (без транзакцій)": "Opening balance (before transactions)",
+"Пошук за описом...": "Search by description...",
+"Прибрати": "Remove",
+"ПриватБанк": "PrivatBank",
+"Придумайте код із 4–6 цифр.": "Choose a code of 4–6 digits.",
+"Призначення.": "Purpose.",
+"Продукти": "Groceries",
+"Пропустити": "Skip",
+"Прострочена": "Overdue",
+"Прострочено": "Overdue",
+"Рахунки": "Accounts",
+"Рахунки та субрахунки": "Accounts and sub-accounts",
+"Рахунок": "Account",
+"Рахунок видалено (операції збережено)": "Account deleted (transactions kept)",
+"Рахунок зарахування": "Destination account",
+"Рахунок списання": "Source account",
+"Рахунок створено": "Account created",
+"Рахунок — це контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з власними назвами (напр. «Основний», «Заначка»). Додайте тег банку, щоб згрупувати кілька карток одного банку.": "An account is a container (card, cash, deposit). Inside are currency sub-accounts with their own names (e.g. “Main”, “Stash”). Add a bank tag to group several cards from the same bank.",
+"Рахунок, з якого видано кошти": "Account the money is lent from",
+"Рахунок, з якого сплачуєте": "Account you repay from",
+"Рахунок, куди надійшли кошти": "Account the money arrived in",
+"Ред.": "Edit",
+"Редагувати актив": "Edit asset",
+"Редагувати категорію": "Edit category",
+"Редагувати нагадування": "Edit reminder",
+"Редагувати операцію": "Edit transaction",
+"Редагувати позику": "Edit loan",
+"Редагувати рахунок": "Edit account",
+"Редагувати рахунок (назва, колір, тип)": "Edit account (name, colour, type)",
+"Редагувати ціль": "Edit goal",
+"Резервна копія": "Backup",
+"Резервну копію збережено": "Backup saved",
+"Резервні копії та експорт": "Backups and export",
+"Ресторани": "Restaurants",
+"Розваги": "Entertainment",
+"Розділ «Позики та борги» має перемикач «Мені винні» / «Я винен». Реєструйте видачу, часткові повернення та погашення.": "The “Loans & debts” section has an “Owed to me” / “I owe” switch. Record lending, partial returns and repayments.",
+"Розробник не гарантує безперебійної роботи чи абсолютної точності розрахунків і не несе відповідальності за можливу втрату даних. Регулярно робіть резервні копії у розділі «Резервна копія».": "The developer does not guarantee uninterrupted operation or absolute accuracy of calculations, and is not liable for possible data loss. Make regular backups in the “Backup” section.",
+"Рік": "Year",
+"Свій період": "Custom range",
+"Світла тема": "Light theme",
+"Сер": "Aug",
+"Синхронізація між пристроями": "Sync across devices",
+"Скасувати": "Cancel",
+"Спорт": "Sports",
+"Ставте фінансові цілі (відпустка, техніка, подушка безпеки) і відстежуйте прогрес накопичень.": "Set financial goals (a holiday, gadgets, a safety cushion) and track your saving progress.",
+"Створимо перший валютний субрахунок. Інші валюти можна додати пізніше.": "We'll create the first currency sub-account. You can add other currencies later.",
+"Створити": "Create",
+"Створити акаунт": "Create account",
+"Створити категорію": "Create category",
+"Створити рахунок": "Create account",
+"Створити ціль": "Create goal",
+"Створюйте фінансові цілі (Налаштування → «Мої цілі»), поповнюйте їх і стежте за прогресом.": "Create financial goals (Settings → “My goals”), top them up and follow your progress.",
+"Створіть окремий рахунок для кожної картки й впишіть однаковий «Банк» — вони позначаться тегом банку.": "Create a separate account for each card and enter the same “Bank” — they'll be marked with the bank tag.",
+"Строк сьогодні": "Due today",
+"Сума": "Amount",
+"Сума (необов'язково)": "Amount (optional)",
+"Сума боргу": "Debt amount",
+"Сума всіх ваших рахунків у базовій валюті. Подвійний тап приховує суму від сторонніх очей.": "The total of all your accounts in the base currency. Double-tap to hide it from prying eyes.",
+"Сума зарахування має бути додатною": "The amount received must be positive",
+"Сума повернення": "Return amount",
+"Сума погашення": "Repayment amount",
+"Сума цілі": "Goal amount",
+"Суму, валюту й рахунок змінити не можна (вони пов'язані з операцією видачі). Можна відкоригувати позичальника, дату й коментар.": "The amount, currency and account can't be changed (they're tied to the original transaction). You can adjust the borrower, date and comment.",
+"Січ": "Jan",
+"Так": "Yes",
+"Темна тема": "Dark theme",
+"Термін сплати": "Due date",
+"Тип": "Type",
+"Тип операції": "Transaction type",
+"Тип рахунку": "Account type",
+"Тра": "May",
+"Транспорт": "Transport",
+"У категорії витрат задайте місячний ліміт — на головному зʼявиться прогрес-бар із попередженням при наближенні до межі.": "Set a monthly limit on an expense category — a progress bar appears on the home screen and warns you as you approach it.",
+"Увійдіть, щоб синхронізувати дані між своїми пристроями. На новому пристрої увійдіть тим самим акаунтом — дані підтягнуться.": "Sign in to sync data across your devices. On a new device, sign in with the same account and your data will appear.",
+"Увійти": "Sign in",
+"Увімкнено. Застосунок запитуватиме код при відкритті та після згортання.": "Enabled. The app will ask for the code when opened and after being backgrounded.",
+"Увімкніть PIN-код у Налаштуваннях і оберіть, коли запитувати — одразу після згортання чи через хвилину.": "Turn on the PIN code in Settings and choose when it's asked for — right after backgrounding, or a minute later.",
+"Угода користувача та конфіденційність": "Terms of use and privacy",
+"Уся історія": "Full history",
+"Усі валюти": "All currencies",
+"Усі доступні валюти вже додані до цього рахунку.": "All available currencies have already been added to this account.",
+"Усі записи зберігаються локально на вашому пристрої. Якщо ви увімкнули хмарну синхронізацію, дані також зберігаються у вашому обліковому записі синхронізації. Ми не продаємо й не передаємо ваші дані третім сторонам.": "All records are stored locally on your device. If you enable cloud sync, data is also stored in your sync account. We do not sell or share your data with third parties.",
+"Усі категорії": "All categories",
+"Усі позики": "All loans",
+"Усі рахунки": "All accounts",
+"Усі типи": "All types",
+"Усі цілі": "All goals",
+"Файл не схожий на резервну копію": "This file doesn't look like a backup",
+"Фото чеку (необов'язково)": "Receipt photo (optional)",
+"Хмарну синхронізацію не налаштовано. Додайте ключі Supabase у код застосунку, щоб увімкнути вхід і збереження в хмару.": "Cloud sync isn't configured. Add your Supabase keys to the app code to enable sign-in and cloud saving.",
+"Ця кнопка завжди тут: гайд по функціях, часті запитання та цей огляд.": "This button is always here: the feature guide, FAQ and this tour.",
+"Ціль видалено": "Goal deleted",
+"Ціль досягнута 🎉": "Goal reached 🎉",
+"Ціль поповнено": "Goal topped up",
+"Ціль створено": "Goal created",
+"Цілі накопичень": "Savings goals",
+"Ціни надає CoinGecko й оновлюються за вашим запитом (потрібен інтернет). Кількість монет вводиться вручну.": "Prices come from CoinGecko and refresh on request (internet needed). Coin amounts are entered manually.",
+"Ціни оновлено": "Prices updated",
+"Часткове повернення зареєстровано": "Partial return recorded",
+"Часткове погашення зареєстровано": "Partial repayment recorded",
+"Частково повернена": "Partly returned",
+"Частково погашена": "Partly repaid",
+"Часті запитання": "FAQ",
+"Чер": "Jun",
+"Через 1 хв": "After 1 min",
+"Чи можна повернути видалене?": "Can deleted items be restored?",
+"Чистий результат": "Net result",
+"Чому нова операція не зверху?": "Why isn't my new transaction at the top?",
+"Чорна картка": "Black Card",
+"Швидка екскурсія по головному екрану": "A quick tour of the home screen",
+"Швидкі дії": "Quick actions",
+"Ще": "More",
+"Ще немає операцій по цьому рахунку": "No transactions for this account yet",
+"Ще немає транзакцій": "No transactions yet",
+"Ще немає цілей. Створіть першу — і відстежуйте прогрес накопичень.": "No goals yet. Create your first one and track your progress.",
+"Що зробити": "What to do",
+"Я винен": "I owe",
+"Як додати свою категорію?": "How do I add my own category?",
+"Як налаштувати PIN-код?": "How do I set up a PIN code?",
+"Як оновити курси валют?": "How do I update exchange rates?",
+"за місяць": "this month",
+"за період": "for the period",
+"за рік": "this year",
+"за сьогодні": "today",
+"коштує 1 одиниця валюти. Позначка": "one unit of that currency costs. The",
+"мінімум 6 символів": "at least 6 characters",
+"напр. 0.5": "e.g. 0.5",
+"напр. 8000": "e.g. 8000",
+"оновлюється онлайн,": "tag updates online,",
+"сьогодні": "today",
+"чек": "receipt",
+"ще не оновлювались": "not updated yet",
+"— залишає ваше значення. Крос-курси рахуються автоматично.": "keeps your own value. Cross rates are calculated automatically.",
+"— оберіть валюту —": "— choose a currency —",
+"Загалом": "Total",
+"Крок": "Step",
+"з": "of",
+"актив": "asset",
+"активи": "assets",
+"активів": "assets",
+"живі ціни": "live prices",
+"валют": "currencies",
+"валюта": "currency",
+"дн.": "d."
+};
+
+// Patterns for strings built at runtime (with interpolated values)
+const EN_RULES = [
+  [/^Залишилось (.+) дн\.$/, "$1 days left"],
+  [/^через (.+) дн\.$/, "in $1 d."],
+  [/^ \(валюта (\w+)\)$/, " ($1)"],
+  [/^Прострочено на (.+) дн\.$/, "$1 days overdue"],
+  [/^прострочено на (.+) дн\.$/, "$1 days overdue"],
+  [/^Сума \((.+)\)$/, "Amount ($1)"],
+  [/^Сума списання \((.+)\)$/, "Amount to debit ($1)"],
+  [/^Сума зарахування \((.+)\)$/, "Amount received ($1)"],
+  [/^Сума повернення \((.+)\)$/, "Return amount ($1)"],
+  [/^Сума погашення \((.+)\)$/, "Repayment amount ($1)"],
+  [/^Комісія \((.+), необов'язково\)$/, "Fee ($1, optional)"],
+  [/^Курс обміну \(1 (\w+) = X (\w+)\)$/, "Exchange rate (1 $1 = X $2)"],
+  [/^Рахунок зарахування \(валюта (\w+)\)$/, "Destination account ($1)"],
+  [/^Рахунок, з якого сплачуєте \(валюта (\w+)\)$/, "Account you repay from ($1)"],
+  [/^Новий валютний субрахунок · (.+)$/, "New currency sub-account · $1"],
+  [/^Субрахунок (.+)$/, "Sub-account · $1"],
+  [/^Позика: (.+)$/, "Loan: $1"],
+  [/^Позика \(борг\) від: (.+)$/, "Debt from: $1"],
+  [/^Повернення позики: (.+)$/, "Loan return: $1"],
+  [/^Погашення боргу: (.+)$/, "Debt repayment: $1"],
+  [/^Часткове повернення: (.+)$/, "Partial return: $1"],
+  [/^Сума не може перевищувати залишок боргу \((.+)\)$/, "Amount can't exceed the outstanding balance ($1)"],
+  [/^Оновлено: (.+)$/, "Updated: $1"],
+  [/^Залишок боргу: (.+)$/, "Outstanding: $1"],
+  [/^Залишок до сплати: (.+)$/, "Left to repay: $1"],
+  [/^Накопичено: (.+)$/, "Saved: $1"],
+];
+
+let LANG = loadLang();
+// Translate a display string. Unknown text (e.g. names the user typed) is returned unchanged.
+function tr(s) {
+  if (LANG !== "en" || typeof s !== "string" || !s) return s;
+  if (EN_DICT[s] !== undefined) return EN_DICT[s];
+  for (let i = 0; i < EN_RULES.length; i++) {
+    const m = s.match(EN_RULES[i][0]);
+    if (m) return EN_RULES[i][1].replace(/\$(\d)/g, function (_, d) { return m[Number(d)]; });
+  }
+  return s;
+}
+function locale() { return LANG === "en" ? "en-GB" : "uk-UA"; }
 
 const STORAGE_KEY = "financeTrackerUA_v2";
 
@@ -573,6 +1112,7 @@ function SplashLogo({ iconSize = 88 }) {
 
 
 function Field({ label, error, children }) {
+  label = tr(label);
   return (
     <label className="block mb-3">
       <span className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-dim)" }}>{label}</span>
@@ -597,6 +1137,7 @@ function Textarea(props) {
 }
 
 function Modal({ title, onClose, children, wide }) {
+  title = tr(title);
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: "rgba(0,0,0,0.55)" }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className={`w-full ${wide ? "sm:max-w-lg" : "sm:max-w-md"} max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border`} style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -663,7 +1204,7 @@ function LockScreen({ pin, onUnlock }) {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-8" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: "var(--accent)" }}><Lock size={26} color="#08110D" /></div>
-      <p className="text-sm mb-6" style={{ color: err ? "var(--danger)" : "var(--text-dim)" }}>{err ? "Невірний код, спробуйте ще" : "Введіть PIN-код"}</p>
+      <p className="text-sm mb-6" style={{ color: err ? "var(--danger)" : "var(--text-dim)" }}>{err ? tr("Невірний код, спробуйте ще") : tr("Введіть PIN-код")}</p>
       <div className="flex gap-3 mb-9">
         {dots.map((i) => (
           <div key={i} className="w-3 h-3 rounded-full transition" style={{ background: i < entry.length ? (err ? "var(--danger)" : "var(--accent)") : "var(--surface2)" }} />
@@ -685,12 +1226,12 @@ function LockScreen({ pin, onUnlock }) {
 function AgreementText() {
   return (
     <div className="space-y-2.5 text-xs leading-relaxed" style={{ color: "var(--text-dim)" }}>
-      <p>K³ Finance — персональний застосунок для обліку особистих фінансів. Користуючись ним, ви погоджуєтесь із умовами нижче.</p>
-      <p><b style={{ color: "var(--text)" }}>Ваші дані.</b> Усі записи зберігаються локально на вашому пристрої. Якщо ви увімкнули хмарну синхронізацію, дані також зберігаються у вашому обліковому записі синхронізації. Ми не продаємо й не передаємо ваші дані третім сторонам.</p>
-      <p><b style={{ color: "var(--text)" }}>Призначення.</b> Застосунок не є банком, фінансовою установою чи фінансовим радником і не надає інвестиційних порад. Усі фінансові рішення ви приймаєте самостійно.</p>
-      <p><b style={{ color: "var(--text)" }}>Відповідальність.</b> Розробник не гарантує безперебійної роботи чи абсолютної точності розрахунків і не несе відповідальності за можливу втрату даних. Регулярно робіть резервні копії у розділі «Резервна копія».</p>
-      <p><b style={{ color: "var(--text)" }}>Безпека.</b> Ви відповідаєте за збереження свого PIN-коду та доступу до пристрою.</p>
-      <p style={{ color: "var(--text-dim)", opacity: 0.7 }}>Версія {APP_VERSION}</p>
+      <p>{tr("K³ Finance — персональний застосунок для обліку особистих фінансів. Користуючись ним, ви погоджуєтесь із умовами нижче.")}</p>
+      <p><b style={{ color: "var(--text)" }}>{tr("Ваші дані.")}</b> {tr("Усі записи зберігаються локально на вашому пристрої. Якщо ви увімкнули хмарну синхронізацію, дані також зберігаються у вашому обліковому записі синхронізації. Ми не продаємо й не передаємо ваші дані третім сторонам.")}</p>
+      <p><b style={{ color: "var(--text)" }}>{tr("Призначення.")}</b> {tr("Застосунок не є банком, фінансовою установою чи фінансовим радником і не надає інвестиційних порад. Усі фінансові рішення ви приймаєте самостійно.")}</p>
+      <p><b style={{ color: "var(--text)" }}>{tr("Відповідальність.")}</b> {tr("Розробник не гарантує безперебійної роботи чи абсолютної точності розрахунків і не несе відповідальності за можливу втрату даних. Регулярно робіть резервні копії у розділі «Резервна копія».")}</p>
+      <p><b style={{ color: "var(--text)" }}>{tr("Безпека.")}</b> {tr("Ви відповідаєте за збереження свого PIN-коду та доступу до пристрою.")}</p>
+      <p style={{ color: "var(--text-dim)", opacity: 0.7 }}>{tr("Версія")} {APP_VERSION}</p>
     </div>
   );
 }
@@ -702,14 +1243,14 @@ function ConsentScreen({ onAccept }) {
       <div className="flex-1 overflow-y-auto px-6 pt-8 pb-4 w-full max-w-lg mx-auto">
         <div className="flex flex-col items-center text-center mb-6">
           <AppIcon size={66} />
-          <h1 className="font-display font-bold text-2xl mt-4">Ласкаво просимо до K³</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>Угода користувача та конфіденційність</p>
+          <h1 className="font-display font-bold text-2xl mt-4">{tr("Ласкаво просимо до K³")}</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>{tr("Угода користувача та конфіденційність")}</p>
         </div>
         <AgreementText />
       </div>
       <div className="px-6 pb-6 pt-3 w-full max-w-lg mx-auto" style={{ borderTop: "1px solid var(--border)" }}>
-        <Button className="w-full" onClick={onAccept}>Погоджуюсь і продовжити</Button>
-        <p className="text-[11px] text-center mt-2" style={{ color: "var(--text-dim)" }}>Натискаючи кнопку, ви приймаєте умови застосунку.</p>
+        <Button className="w-full" onClick={onAccept}>{tr("Погоджуюсь і продовжити")}</Button>
+        <p className="text-[11px] text-center mt-2" style={{ color: "var(--text-dim)" }}>{tr("Натискаючи кнопку, ви приймаєте умови застосунку.")}</p>
       </div>
     </div>
   );
@@ -721,39 +1262,39 @@ function HelpModal({ onClose, startTour }) {
   const [tab, setTab] = useState("guide");
   const [open, setOpen] = useState(0);
   const guide = [
-    { q: "Рахунки та субрахунки", a: "Рахунок — це контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з власними назвами (напр. «Основний», «Заначка»). Додайте тег банку, щоб згрупувати кілька карток одного банку." },
-    { q: "Операції", a: "Додавайте доходи й витрати кнопками на головному екрані. Курс валюти фіксується на момент операції, тож зміна курсу не змінює минулі суми." },
-    { q: "Перекази та обмін валют", a: "«Переказ» — між своїми рахунками. «Обмін валют» — між різними валютами за вашим курсом; баланси перерахуються автоматично." },
-    { q: "Бюджети", a: "У категорії витрат задайте місячний ліміт — на головному зʼявиться прогрес-бар із попередженням при наближенні до межі." },
-    { q: "Цілі накопичень", a: "Створюйте фінансові цілі (Налаштування → «Мої цілі»), поповнюйте їх і стежте за прогресом." },
-    { q: "Позики та борги", a: "Розділ «Позики та борги» має перемикач «Мені винні» / «Я винен». Реєструйте видачу, часткові повернення та погашення." },
-    { q: "Курси валют", a: "Налаштування → курси: додавайте валюти, тримайте курс «Авто» (оновлюється онлайн) або «Вручну». Крос-курси рахуються самі." },
-    { q: "Безпека (PIN)", a: "Увімкніть PIN-код у Налаштуваннях і оберіть, коли запитувати — одразу після згортання чи через хвилину." },
-    { q: "Резервні копії та експорт", a: "Зберігайте копію даних у файл (JSON) або експортуйте операції в CSV для Excel. Дані зберігаються на вашому пристрої." },
+    { q: tr("Рахунки та субрахунки"), a: tr("Рахунок — це контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з власними назвами (напр. «Основний», «Заначка»). Додайте тег банку, щоб згрупувати кілька карток одного банку.") },
+    { q: tr("Операції"), a: tr("Додавайте доходи й витрати кнопками на головному екрані. Курс валюти фіксується на момент операції, тож зміна курсу не змінює минулі суми.") },
+    { q: tr("Перекази та обмін валют"), a: tr("«Переказ» — між своїми рахунками. «Обмін валют» — між різними валютами за вашим курсом; баланси перерахуються автоматично.") },
+    { q: tr("Бюджети"), a: tr("У категорії витрат задайте місячний ліміт — на головному зʼявиться прогрес-бар із попередженням при наближенні до межі.") },
+    { q: tr("Цілі накопичень"), a: tr("Створюйте фінансові цілі (Налаштування → «Мої цілі»), поповнюйте їх і стежте за прогресом.") },
+    { q: tr("Позики та борги"), a: tr("Розділ «Позики та борги» має перемикач «Мені винні» / «Я винен». Реєструйте видачу, часткові повернення та погашення.") },
+    { q: tr("Курси валют"), a: tr("Налаштування → курси: додавайте валюти, тримайте курс «Авто» (оновлюється онлайн) або «Вручну». Крос-курси рахуються самі.") },
+    { q: tr("Безпека (PIN)"), a: tr("Увімкніть PIN-код у Налаштуваннях і оберіть, коли запитувати — одразу після згортання чи через хвилину.") },
+    { q: tr("Резервні копії та експорт"), a: tr("Зберігайте копію даних у файл (JSON) або експортуйте операції в CSV для Excel. Дані зберігаються на вашому пристрої.") },
   ];
   const faq = [
-    { q: "Як додати свою категорію?", a: "Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт." },
-    { q: "Як налаштувати PIN-код?", a: "Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати." },
-    { q: "Як оновити курси валют?", a: "Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними." },
-    { q: "Чому нова операція не зверху?", a: "Операції сортуються за датою. Переконайтесь, що дата — сьогодні; операції одного дня показуються найновішою згори." },
-    { q: "Кілька карток одного банку?", a: "Створіть окремий рахунок для кожної картки й впишіть однаковий «Банк» — вони позначаться тегом банку." },
-    { q: "Чи можна повернути видалене?", a: "Видалення рахунку/категорії зберігає повʼязані операції в історії, але саму позицію відновити не можна — робіть резервні копії." },
-    { q: "Де зберігаються мої дані?", a: "Локально на вашому пристрої. Регулярно робіть резервну копію, щоб не втратити дані." },
+    { q: tr("Як додати свою категорію?"), a: tr("Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт.") },
+    { q: tr("Як налаштувати PIN-код?"), a: tr("Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати.") },
+    { q: tr("Як оновити курси валют?"), a: tr("Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними.") },
+    { q: tr("Чому нова операція не зверху?"), a: tr("Операції сортуються за датою. Переконайтесь, що дата — сьогодні; операції одного дня показуються найновішою згори.") },
+    { q: tr("Кілька карток одного банку?"), a: tr("Створіть окремий рахунок для кожної картки й впишіть однаковий «Банк» — вони позначаться тегом банку.") },
+    { q: tr("Чи можна повернути видалене?"), a: tr("Видалення рахунку/категорії зберігає повʼязані операції в історії, але саму позицію відновити не можна — робіть резервні копії.") },
+    { q: tr("Де зберігаються мої дані?"), a: tr("Локально на вашому пристрої. Регулярно робіть резервну копію, щоб не втратити дані.") },
   ];
   const items = tab === "guide" ? guide : faq;
   const tabStyle = (on) => ({ background: on ? "var(--surface)" : "transparent", color: on ? "var(--text)" : "var(--text-dim)" });
   return (
-    <Modal title="Довідка та навчання" onClose={onClose}>
+    <Modal title={tr("Довідка та навчання")} onClose={onClose}>
       <button onClick={startTour} className="w-full flex items-center gap-3 p-3 rounded-xl mb-4" style={{ background: "linear-gradient(135deg, #1A2338, #10192B)" }}>
         <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}><HelpCircle size={18} color="#131B2B" /></div>
         <div className="text-left">
-          <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>Інтерактивний огляд</p>
-          <p className="text-[11px]" style={{ color: "#A7B0C4" }}>Швидка екскурсія по головному екрану</p>
+          <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>{tr("Інтерактивний огляд")}</p>
+          <p className="text-[11px]" style={{ color: "#A7B0C4" }}>{tr("Швидка екскурсія по головному екрану")}</p>
         </div>
       </button>
       <div className="flex gap-1.5 mb-3 p-1 rounded-xl" style={{ background: "var(--surface2)" }}>
-        <button onClick={() => { setTab("guide"); setOpen(0); }} className="flex-1 py-2 rounded-lg text-sm font-medium transition" style={tabStyle(tab === "guide")}>Гайд</button>
-        <button onClick={() => { setTab("faq"); setOpen(0); }} className="flex-1 py-2 rounded-lg text-sm font-medium transition" style={tabStyle(tab === "faq")}>Часті запитання</button>
+        <button onClick={() => { setTab("guide"); setOpen(0); }} className="flex-1 py-2 rounded-lg text-sm font-medium transition" style={tabStyle(tab === "guide")}>{tr("Гайд")}</button>
+        <button onClick={() => { setTab("faq"); setOpen(0); }} className="flex-1 py-2 rounded-lg text-sm font-medium transition" style={tabStyle(tab === "faq")}>{tr("Часті запитання")}</button>
       </div>
       <div className="space-y-2">
         {items.map((it, i) => (
@@ -809,14 +1350,14 @@ function TourOverlay({ step, setStep, onClose }) {
       <div className="fixed px-4" style={{ left: 0, right: 0, ...vpos }}>
         <div className="rounded-2xl p-4 mx-auto" style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow)", maxWidth: 460 }}>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>Крок {step + 1} з {TOUR_STEPS.length}</span>
-            <button onClick={onClose} className="text-[11px] font-medium" style={{ color: "var(--text-dim)" }}>Пропустити</button>
+            <span className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>{tr("Крок")} {step + 1} {tr("з")} {TOUR_STEPS.length}</span>
+            <button onClick={onClose} className="text-[11px] font-medium" style={{ color: "var(--text-dim)" }}>{tr("Пропустити")}</button>
           </div>
-          <h3 className="font-display font-bold text-base mb-1">{cur.title}</h3>
-          <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>{cur.text}</p>
+          <h3 className="font-display font-bold text-base mb-1">{tr(cur.title)}</h3>
+          <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>{tr(cur.text)}</p>
           <div className="flex gap-2 justify-end">
-            {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)}>Назад</Button>}
-            <Button onClick={() => (last ? onClose() : setStep(step + 1))}>{last ? "Готово" : "Далі"}</Button>
+            {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)}>{tr("Назад")}</Button>}
+            <Button onClick={() => (last ? onClose() : setStep(step + 1))}>{last ? tr("Готово") : tr("Далі")}</Button>
           </div>
         </div>
       </div>
@@ -862,6 +1403,9 @@ function FinanceTracker() {
   const [consented, setConsented] = useState(() => loadConsent());
   const acceptConsent = () => { saveConsent(); setConsented(true); };
   const [tourStep, setTourStep] = useState(null);
+  const [lang, setLang] = useState(() => loadLang());
+  LANG = lang; // module-level, read by tr() in every child rendered after this
+  const applyLang = (v) => { saveLang(v); setLang(v); };
   const startTour = () => { setView("dashboard"); setModal(null); setTimeout(() => setTourStep(0), 320); };
   useEffect(() => { if (splash) { const t = setTimeout(() => setSplash(false), 1300); return () => clearTimeout(t); } }, []);
 
@@ -892,10 +1436,10 @@ function FinanceTracker() {
       if (cloud && cloud.accounts) {
         setState({ accounts: cloud.accounts, pockets: cloud.pockets, categories: cloud.categories, transactions: cloud.transactions, loans: cloud.loans, rates: cloud.rates, baseCurrency: cloud.baseCurrency, reminders: cloud.reminders || [] });
         if (cloud.theme) setTheme(cloud.theme);
-        setToast("Дані завантажено з хмари");
+        setToast(tr("Дані завантажено з хмари"));
       } else {
         cloudPush(session.user.id, stateRef.current);
-        setToast("Дані збережено в хмару");
+        setToast(tr("Дані збережено в хмару"));
       }
     });
     return () => { cancelled = true; };
@@ -952,9 +1496,9 @@ function FinanceTracker() {
 
   const pocketLabel = (pocketId) => {
     const p = getPocket(pocketId);
-    if (!p) return "Видалений рахунок";
-    const acc = p.account?.name || "Рахунок";
-    return p.name ? `${acc} · ${p.name} · ${p.currency}` : `${acc} · ${p.currency}`;
+    if (!p) return tr("Видалений рахунок");
+    const acc = tr(p.account?.name) || tr("Рахунок");
+    return p.name ? `${acc} · ${tr(p.name)} · ${p.currency}` : `${acc} · ${p.currency}`;
   };
 
   const activePockets = useMemo(() =>
@@ -983,7 +1527,7 @@ function FinanceTracker() {
     const m = {};
     monthTx.filter((t) => t.type === "expense").forEach((t) => {
       const cat = categories.find((c) => c.id === t.categoryId);
-      const key = cat ? cat.name : "Інше";
+      const key = cat ? cat.name : tr("Інше");
       m[key] = (m[key] || 0) + txToBase(t, baseCurrency, rates);
     });
     return Object.entries(m).map(([name, value]) => ({ name, value, color: (categories.find((c) => c.name === name) || {}).color || "#8B93A3" })).sort((a, b) => b.value - a.value);
@@ -1055,14 +1599,14 @@ function FinanceTracker() {
     const account = { id: uid("acc"), archived: false, createdAt: new Date().toISOString().slice(0, 10), ...accData };
     const pocket = { id: uid("pk"), accountId: account.id, currency, initialBalance: parseFloat(initialBalance) || 0, name: (pocketName || "").trim(), archived: false };
     update({ accounts: [...accounts, account], pockets: [...pockets, pocket] });
-    notify("Рахунок створено");
+    notify(tr("Рахунок створено"));
   };
   const editAccount = (id, patch) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)) });
   const archiveAccount = (id) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, archived: !a.archived } : a)) });
-  // Delete account + its pockets, but KEEP transactions (they remain in history, labelled "Видалений рахунок")
+  // Delete account + its pockets, but KEEP transactions (they remain in history, labelled tr("Видалений рахунок"))
   const deleteAccount = (id) => {
     update({ accounts: accounts.filter((a) => a.id !== id), pockets: pockets.filter((p) => p.accountId !== id) });
-    notify("Рахунок видалено (операції збережено)");
+    notify(tr("Рахунок видалено (операції збережено)"));
   };
   // Move account "fromId" to the position of "toId" in the accounts array
   const reorderAccounts = (fromId, toId) => {
@@ -1078,12 +1622,12 @@ function FinanceTracker() {
 
   const addPocket = (accountId, currency, initialBalance, name) => {
     update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), archived: false }] });
-    notify("Валютний субрахунок додано");
+    notify(tr("Валютний субрахунок додано"));
   };
   const editPocket = (id, patch) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
   const archivePocket = (id) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, archived: !p.archived } : p)) });
   // Delete a single currency card, keeping its transactions in history
-  const deletePocket = (id) => { update({ pockets: pockets.filter((p) => p.id !== id) }); notify("Картку видалено (операції збережено)"); };
+  const deletePocket = (id) => { update({ pockets: pockets.filter((p) => p.id !== id) }); notify(tr("Картку видалено (операції збережено)")); };
   // Reorder cards: swap a pocket with its nearest active neighbour in the given direction (-1 left, +1 right)
   const movePocket = (id, dir) => {
     const arr = [...pockets];
@@ -1100,17 +1644,17 @@ function FinanceTracker() {
   const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
   const archiveCategory = (id) => update({ categories: categories.map((c) => (c.id === id ? { ...c, archived: !c.archived } : c)) });
 
-  const addTransaction = (tx) => { update({ transactions: [{ id: uid("tx"), createdAt: new Date().toISOString(), fx: (tx.currency ? (rates[tx.currency] || 1) : 1), ...tx }, ...transactions] }); notify("Операцію збережено"); };
+  const addTransaction = (tx) => { update({ transactions: [{ id: uid("tx"), createdAt: new Date().toISOString(), fx: (tx.currency ? (rates[tx.currency] || 1) : 1), ...tx }, ...transactions] }); notify(tr("Операцію збережено")); };
   const editTransaction = (id, patch) => update({ transactions: transactions.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
-  const deleteTransaction = (id) => { update({ transactions: transactions.filter((t) => t.id !== id) }); notify("Операцію видалено"); };
-  const duplicateTransaction = (tx) => { update({ transactions: [{ ...tx, id: uid("tx"), createdAt: new Date().toISOString(), date: new Date().toISOString().slice(0, 10) }, ...transactions] }); notify("Операцію дубльовано"); };
+  const deleteTransaction = (id) => { update({ transactions: transactions.filter((t) => t.id !== id) }); notify(tr("Операцію видалено")); };
+  const duplicateTransaction = (tx) => { update({ transactions: [{ ...tx, id: uid("tx"), createdAt: new Date().toISOString(), date: new Date().toISOString().slice(0, 10) }, ...transactions] }); notify(tr("Операцію дубльовано")); };
 
   const addLoan = (loan, sourcePocketId, amount, currency, note) => {
     const isDebt = loan.direction === "in";
     const newLoan = { id: uid("loan"), status: "active", returned: 0, direction: loan.direction || "out", ...loan };
-    const tx = { id: uid("tx"), type: isDebt ? "debt_take" : "loan_out", date: loan.dateGiven, amount, currency, pocketId: sourcePocketId, loanId: newLoan.id, note: note || ((isDebt ? "Позика (борг) від: " : "Позика: ") + loan.borrower) };
+    const tx = { id: uid("tx"), type: isDebt ? "debt_take" : "loan_out", date: loan.dateGiven, amount, currency, pocketId: sourcePocketId, loanId: newLoan.id, note: note || ((isDebt ? tr("Позика (борг) від: ") : tr("Позика: ")) + loan.borrower) };
     update({ loans: [newLoan, ...loans], transactions: [tx, ...transactions] });
-    notify(isDebt ? "Борг додано" : "Позику створено");
+    notify(isDebt ? tr("Борг додано") : tr("Позику створено"));
   };
 
   const registerLoanReturn = (loanId, returnAmount, returnPocketId, currency, date, note) => {
@@ -1123,28 +1667,28 @@ function FinanceTracker() {
     const newStatus = newReturned >= loan.amount - 0.005 ? "returned" : "partial";
     update({
       loans: loans.map((l) => (l.id === loanId ? { ...l, returned: newReturned, status: newStatus } : l)),
-      transactions: [{ id: uid("tx"), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency, pocketId: returnPocketId, loanId, note: note || ((isDebt ? "Погашення боргу: " : "Повернення позики: ") + loan.borrower) }, ...transactions],
+      transactions: [{ id: uid("tx"), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency, pocketId: returnPocketId, loanId, note: note || ((isDebt ? tr("Погашення боргу: ") : tr("Повернення позики: ")) + loan.borrower) }, ...transactions],
     });
-    notify(newStatus === "returned" ? (isDebt ? "Борг повністю погашено" : "Позику повністю повернено") : (isDebt ? "Часткове погашення зареєстровано" : "Часткове повернення зареєстровано"));
+    notify(newStatus === "returned" ? (isDebt ? tr("Борг повністю погашено") : tr("Позику повністю повернено")) : (isDebt ? tr("Часткове погашення зареєстровано") : tr("Часткове повернення зареєстровано")));
   };
 
   const editLoan = (id, patch) => update({ loans: loans.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
   const archiveLoan = (id) => { update({ loans: loans.map((l) => (l.id === id ? { ...l, archived: !l.archived } : l)) }); };
   // Delete the loan record but keep its transactions in history (balances stay intact)
-  const deleteLoan = (id) => { update({ loans: loans.filter((l) => l.id !== id) }); notify("Позику видалено (операції збережено)"); };
+  const deleteLoan = (id) => { update({ loans: loans.filter((l) => l.id !== id) }); notify(tr("Позику видалено (операції збережено)")); };
 
-  const addReminder = (data) => { update({ reminders: [{ id: uid("rem"), done: false, ...data }, ...reminders] }); notify("Нагадування створено"); };
+  const addReminder = (data) => { update({ reminders: [{ id: uid("rem"), done: false, ...data }, ...reminders] }); notify(tr("Нагадування створено")); };
   const editReminder = (id, patch) => update({ reminders: reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
-  const deleteReminder = (id) => { update({ reminders: reminders.filter((r) => r.id !== id) }); notify("Нагадування видалено"); };
+  const deleteReminder = (id) => { update({ reminders: reminders.filter((r) => r.id !== id) }); notify(tr("Нагадування видалено")); };
 
-  const addGoal = (data) => { update({ goals: [{ id: uid("goal"), saved: 0, archived: false, createdAt: new Date().toISOString().slice(0, 10), ...data }, ...goals] }); notify("Ціль створено"); };
+  const addGoal = (data) => { update({ goals: [{ id: uid("goal"), saved: 0, archived: false, createdAt: new Date().toISOString().slice(0, 10), ...data }, ...goals] }); notify(tr("Ціль створено")); };
   const editGoal = (id, patch) => update({ goals: goals.map((g) => (g.id === id ? { ...g, ...patch } : g)) });
-  const deleteGoal = (id) => { update({ goals: goals.filter((g) => g.id !== id) }); notify("Ціль видалено"); };
-  const contributeGoal = (id, delta) => { update({ goals: goals.map((g) => (g.id === id ? { ...g, saved: Math.max(0, Math.round((((g.saved || 0) + delta)) * 100) / 100) } : g)) }); notify(delta >= 0 ? "Ціль поповнено" : "Кошти знято"); };
+  const deleteGoal = (id) => { update({ goals: goals.filter((g) => g.id !== id) }); notify(tr("Ціль видалено")); };
+  const contributeGoal = (id, delta) => { update({ goals: goals.map((g) => (g.id === id ? { ...g, saved: Math.max(0, Math.round((((g.saved || 0) + delta)) * 100) / 100) } : g)) }); notify(delta >= 0 ? tr("Ціль поповнено") : tr("Кошти знято")); };
 
-  const addCrypto = (data) => { update({ crypto: [{ id: uid("cx"), note: "", ...data }, ...crypto] }); notify("Актив додано"); };
+  const addCrypto = (data) => { update({ crypto: [{ id: uid("cx"), note: "", ...data }, ...crypto] }); notify(tr("Актив додано")); };
   const editCrypto = (id, patch) => update({ crypto: crypto.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
-  const deleteCrypto = (id) => { update({ crypto: crypto.filter((c) => c.id !== id) }); notify("Актив видалено"); };
+  const deleteCrypto = (id) => { update({ crypto: crypto.filter((c) => c.id !== id) }); notify(tr("Актив видалено")); };
   const refreshCryptoPrices = async () => {
     const ids = Array.from(new Set(crypto.map((c) => c.coinId))).filter(Boolean);
     if (ids.length === 0) return { ok: true };
@@ -1172,15 +1716,15 @@ function FinanceTracker() {
     try {
       const payload = { ...state, theme, _app: "AiMyFinance", _v: 2, _exportedAt: new Date().toISOString() };
       const res = await saveFile("k3-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(payload, null, 2), "application/json");
-      if (res !== "cancelled") notify(res === "downloaded" ? "Резервну копію збережено" : "Резервну копію збережено");
-    } catch (e) { notify("Не вдалося створити копію"); }
+      if (res !== "cancelled") notify(res === "downloaded" ? tr("Резервну копію збережено") : tr("Резервну копію збережено"));
+    } catch (e) { notify(tr("Не вдалося створити копію")); }
   };
 
   const exportCSV = async () => {
     try {
       const catName = (id) => (categories.find((c) => c.id === id) || {}).name || "";
-      const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики" };
-      const rows = [["Дата", "Тип", "Сума", "Валюта", "Категорія", "Рахунок", "Нотатка"]];
+      const typeLbl = { income: tr("Дохід"), expense: tr("Витрата"), transfer: tr("Переказ"), exchange: tr("Обмін валют"), loan_out: tr("Позика видана"), loan_return: tr("Повернення позики") };
+      const rows = [[tr("Дата"), tr("Тип"), tr("Сума"), tr("Валюта"), tr("Категорія"), tr("Рахунок"), tr("Нотатка")]];
       transactions.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).forEach((t) => {
         const amt = t.amount != null ? t.amount : (t.fromAmount != null ? t.fromAmount : "");
         const cur = t.currency || t.fromCurrency || "";
@@ -1189,8 +1733,8 @@ function FinanceTracker() {
       });
       const csv = rows.map((r) => r.map((cell) => { const s = String(cell); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(",")).join("\n");
       const res = await saveFile("k3-transactions-" + new Date().toISOString().slice(0, 10) + ".csv", "\ufeff" + csv, "text/csv;charset=utf-8");
-      if (res !== "cancelled") notify(res === "downloaded" ? "CSV експортовано" : "CSV збережено");
-    } catch (e) { notify("Не вдалося створити CSV"); }
+      if (res !== "cancelled") notify(res === "downloaded" ? tr("CSV експортовано") : tr("CSV збережено"));
+    } catch (e) { notify(tr("Не вдалося створити CSV")); }
   };
 
   const importBackup = (file) => {
@@ -1198,11 +1742,11 @@ function FinanceTracker() {
     reader.onload = function () {
       try {
         const obj = JSON.parse(reader.result);
-        if (!obj || !obj.accounts || !obj.pockets) { notify("Файл не схожий на резервну копію"); return; }
+        if (!obj || !obj.accounts || !obj.pockets) { notify(tr("Файл не схожий на резервну копію")); return; }
         setState({ accounts: obj.accounts, pockets: obj.pockets, categories: obj.categories || [], transactions: obj.transactions || [], loans: obj.loans || [], rates: obj.rates || rates, baseCurrency: obj.baseCurrency || baseCurrency, reminders: obj.reminders || [] });
         if (obj.theme) setTheme(obj.theme);
-        notify("Дані відновлено з копії");
-      } catch (e) { notify("Не вдалося прочитати файл"); }
+        notify(tr("Дані відновлено з копії"));
+      } catch (e) { notify(tr("Не вдалося прочитати файл")); }
     };
     reader.readAsText(file);
   };
@@ -1210,12 +1754,12 @@ function FinanceTracker() {
   /* ============================== NAV ============================== */
 
   const NAV_ITEMS = [
-    { id: "dashboard", label: "Огляд", icon: LayoutDashboard },
-    { id: "accounts", label: "Рахунки", icon: Wallet },
-    { id: "history", label: "Історія", icon: HistoryIcon },
-    { id: "loans", label: "Позики", icon: Banknote },
-    { id: "categories", label: "Категорії", icon: Tags },
-    { id: "settings", label: "Налаштування", icon: SettingsIcon },
+    { id: "dashboard", label: tr("Огляд"), icon: LayoutDashboard },
+    { id: "accounts", label: tr("Рахунки"), icon: Wallet },
+    { id: "history", label: tr("Історія"), icon: HistoryIcon },
+    { id: "loans", label: tr("Позики"), icon: Banknote },
+    { id: "categories", label: tr("Категорії"), icon: Tags },
+    { id: "settings", label: tr("Налаштування"), icon: SettingsIcon },
   ];
   const MOBILE_NAV = NAV_ITEMS.filter((n) => ["dashboard", "accounts", "history", "loans"].includes(n.id));
   const vars = themeVars(theme);
@@ -1275,10 +1819,14 @@ function FinanceTracker() {
             Нагадування
           </button>
           <button onClick={() => setModal({ type: "help" })} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium" style={{ color: "var(--text-dim)" }}>
-            <HelpCircle size={18} /> Довідка та навчання
+            <HelpCircle size={18} /> {tr("Довідка та навчання")}
+          </button>
+          <button onClick={() => applyLang(lang === "uk" ? "en" : "uk")} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium" style={{ color: "var(--text-dim)" }}>
+            <span className="w-[18px] text-center text-[11px] font-bold" style={{ color: "var(--accent)" }}>{lang === "uk" ? "EN" : "UA"}</span>
+            {lang === "uk" ? "English" : "Українська"}
           </button>
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium" style={{ color: "var(--text-dim)" }}>
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}{theme === "dark" ? "Світла тема" : "Темна тема"}
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}{theme === "dark" ? tr("Світла тема") : tr("Темна тема")}
           </button>
         </aside>
 
@@ -1286,6 +1834,9 @@ function FinanceTracker() {
           <div className="md:hidden flex items-center justify-between px-4 py-4 border-b sticky top-0 z-30" style={{ borderColor: "var(--border)", background: "var(--bg)", paddingTop: "calc(1rem + env(safe-area-inset-top))" }}>
             <Wordmark size={20} />
             <div className="flex items-center gap-1">
+              <button onClick={() => applyLang(lang === "uk" ? "en" : "uk")} className="px-2 py-1.5 rounded-lg text-[11px] font-bold tracking-wide" style={{ color: "var(--accent)", background: "var(--surface2)", border: "1px solid var(--border)" }}>
+                {lang === "uk" ? "EN" : "UA"}
+              </button>
               <button data-tour="help" onClick={() => setModal({ type: "help" })} className="p-2 rounded-lg" style={{ color: "var(--text-dim)" }}>
                 <HelpCircle size={18} />
               </button>
@@ -1358,7 +1909,7 @@ function FinanceTracker() {
           );
         })}
         <button onClick={() => setView("settings")} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium" style={{ color: view === "settings" || view === "categories" || view === "goals" || view === "crypto" ? "var(--accent)" : "var(--text-dim)" }}>
-          <SettingsIcon size={20} />Ще
+          <SettingsIcon size={20} />{tr("Ще")}
         </button>
       </div>
 
@@ -1408,8 +1959,8 @@ function PocketSelect({ accounts, pockets, value, onChange, excludePocketId, cla
         const accPockets = pockets.filter((p) => p.accountId === acc.id && !p.archived && p.id !== excludePocketId);
         if (accPockets.length === 0) return null;
         return (
-          <optgroup key={acc.id} label={acc.name}>
-            {accPockets.map((p) => <option key={p.id} value={p.id}>{p.name ? `${p.name} · ${p.currency}` : `${acc.name} · ${p.currency}`}</option>)}
+          <optgroup key={acc.id} label={tr(acc.name)}>
+            {accPockets.map((p) => <option key={p.id} value={p.id}>{p.name ? `${tr(p.name)} · ${p.currency}` : `${tr(acc.name)} · ${p.currency}`}</option>)}
           </optgroup>
         );
       })}
@@ -1461,7 +2012,7 @@ function MiniBars({ data, height = 190 }) {
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
         {data.map((d, i) => (
-          <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>{d.month}</div>
+          <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>{tr(d.month)}</div>
         ))}
       </div>
     </div>
@@ -1496,7 +2047,7 @@ function TrendArea({ data, height = 130 }) {
       </svg>
       <div style={{ display: "flex", marginTop: 6 }}>
         {data.map((d, i) => (
-          <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>{d.month}</div>
+          <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>{tr(d.month)}</div>
         ))}
       </div>
     </div>
@@ -1527,12 +2078,12 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
   const periodIncome = periodTx.filter((t) => t.type === "income").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
   const periodExpense = periodTx.filter((t) => t.type === "expense").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
   const periodNet = periodIncome - periodExpense;
-  const periodLabel = period === "day" ? "за сьогодні" : period === "month" ? "за місяць" : period === "year" ? "за рік" : "за період";
+  const periodLabel = period === "day" ? tr("за сьогодні") : period === "month" ? tr("за місяць") : period === "year" ? tr("за рік") : tr("за період");
   const periodBreakdown = (() => {
     const m = {};
     periodTx.filter((t) => t.type === "expense").forEach((t) => {
       const cat = categories.find((c) => c.id === t.categoryId);
-      const key = cat ? cat.name : "Інше";
+      const key = cat ? cat.name : tr("Інше");
       m[key] = (m[key] || 0) + txToBase(t, baseCurrency, rates);
     });
     return Object.entries(m).map(([name, value]) => ({ name, value, color: (categories.find((c) => c.name === name) || {}).color || "#8B93A3" })).sort((a, b) => b.value - a.value);
@@ -1564,8 +2115,8 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
   return (
     <div className="space-y-6 animate-in">
       <div data-tour="total">
-        <p className="text-sm mb-1" style={{ color: "var(--text-dim)" }}>Загальний капітал</p>
-        <h1 onClick={toggleHide} className="font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none" style={{ color: "var(--text)", WebkitUserSelect: "none" }} title="Подвійний тап, щоб приховати">
+        <p className="text-sm mb-1" style={{ color: "var(--text-dim)" }}>{tr("Загальний капітал")}</p>
+        <h1 onClick={toggleHide} className="font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none" style={{ color: "var(--text)", WebkitUserSelect: "none" }} title={tr("Подвійний тап, щоб приховати")}>
           {hideTotal ? "$$$$$$$" : fmtMoney(totalInBase + (cryptoTotalBase || 0), baseCurrency)}
         </h1>
         <div className="flex flex-wrap gap-2 mt-3">
@@ -1575,64 +2126,64 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       </div>
 
       <div data-tour="actions" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <QuickAction icon={Minus} label="Додати витрату" onClick={() => setModal({ type: "transaction", payload: { kind: "expense" } })} />
-        <QuickAction icon={Plus} label="Додати дохід" onClick={() => setModal({ type: "transaction", payload: { kind: "income" } })} />
-        <QuickAction icon={ArrowLeftRight} label="Переказ" onClick={() => setModal({ type: "transfer" })} />
-        <QuickAction icon={RefreshCw} label="Обмін валюти" onClick={() => setModal({ type: "exchange" })} />
+        <QuickAction icon={Minus} label={tr("Додати витрату")} onClick={() => setModal({ type: "transaction", payload: { kind: "expense" } })} />
+        <QuickAction icon={Plus} label={tr("Додати дохід")} onClick={() => setModal({ type: "transaction", payload: { kind: "income" } })} />
+        <QuickAction icon={ArrowLeftRight} label={tr("Переказ")} onClick={() => setModal({ type: "transfer" })} />
+        <QuickAction icon={RefreshCw} label={tr("Обмін валюти")} onClick={() => setModal({ type: "exchange" })} />
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-semibold text-lg">Рахунки</h2>
-          <button onClick={() => setView("accounts")} className="pill-link">Усі рахунки <ChevronRight size={13} /></button>
+          <h2 className="font-display font-semibold text-lg">{tr("Рахунки")}</h2>
+          <button onClick={() => setView("accounts")} className="pill-link">{tr("Усі рахунки")} <ChevronRight size={13} /></button>
         </div>
         <div data-tour="accounts" className="flex gap-3 overflow-x-auto snap-x pt-1 pb-5 -mx-2 px-2">
           {allPocketCards.map((p) => (
             <PocketCard key={p.id} pocket={p} balance={pocketBalance(p.id)} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} onLongPress={() => setModal({ type: "cardMenu", payload: p.id })} className="w-64 shrink-0 snap-card" />
           ))}
           <button onClick={() => setModal({ type: "account" })} className="snap-card shrink-0 w-64 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 text-sm font-medium" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
-            <Plus size={16} /> Новий рахунок
+            <Plus size={16} /> {tr("Новий рахунок")}
           </button>
         </div>
       </div>
 
       <div>
         <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-          {[["day", "День"], ["month", "Місяць"], ["year", "Рік"], ["custom", "Свій період"]].map(([id, label]) => (
+          {[["day", tr("День")], ["month", tr("Місяць")], ["year", tr("Рік")], ["custom", tr("Свій період")]].map(([id, label]) => (
             <button key={id} onClick={() => setPeriod(id)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition" style={{ background: period === id ? "var(--accent)" : "var(--surface2)", color: period === id ? "#08110D" : "var(--text-dim)", border: "1px solid var(--border)" }}>{label}</button>
           ))}
         </div>
         {period === "custom" && (
           <Card className="p-3 mb-3 space-y-3">
             <label className="block min-w-0">
-              <span className="text-[11px] font-medium mb-1.5 flex items-center gap-1" style={{ color: "var(--text-dim)" }}><Calendar size={12} /> Від</span>
+              <span className="text-[11px] font-medium mb-1.5 flex items-center gap-1" style={{ color: "var(--text-dim)" }}><Calendar size={12} /> {tr("Від")}</span>
               <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
             </label>
             <label className="block min-w-0">
-              <span className="text-[11px] font-medium mb-1.5 flex items-center gap-1" style={{ color: "var(--text-dim)" }}><Calendar size={12} /> До</span>
+              <span className="text-[11px] font-medium mb-1.5 flex items-center gap-1" style={{ color: "var(--text-dim)" }}><Calendar size={12} /> {tr("До")}</span>
               <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
             </label>
           </Card>
         )}
         <div className="grid grid-cols-3 gap-3">
-          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>Дохід {periodLabel}</p><p className="font-display font-bold tabular" style={{ color: "var(--accent)" }}>{fmtMoney(periodIncome, baseCurrency)}</p></Card>
-          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>Витрати {periodLabel}</p><p className="font-display font-bold tabular" style={{ color: "var(--danger)" }}>{fmtMoney(periodExpense, baseCurrency)}</p></Card>
-          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>Чистий результат</p><p className="font-display font-bold tabular" style={{ color: periodNet >= 0 ? "var(--accent)" : "var(--danger)" }}>{fmtMoney(periodNet, baseCurrency)}</p></Card>
+          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Дохід")} {periodLabel}</p><p className="font-display font-bold tabular" style={{ color: "var(--accent)" }}>{fmtMoney(periodIncome, baseCurrency)}</p></Card>
+          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Витрати")} {periodLabel}</p><p className="font-display font-bold tabular" style={{ color: "var(--danger)" }}>{fmtMoney(periodExpense, baseCurrency)}</p></Card>
+          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Чистий результат")}</p><p className="font-display font-bold tabular" style={{ color: periodNet >= 0 ? "var(--accent)" : "var(--danger)" }}>{fmtMoney(periodNet, baseCurrency)}</p></Card>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="p-4">
-          <h3 className="font-display font-semibold mb-3 text-sm">Витрати за категоріями ({periodLabel})</h3>
+          <h3 className="font-display font-semibold mb-3 text-sm">{tr("Витрати за категоріями")} ({periodLabel})</h3>
           {periodBreakdown.length === 0 ? (
-            <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>Немає витрат за цей період</p>
+            <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>{tr("Немає витрат за цей період")}</p>
           ) : (
             <div className="flex items-center gap-4">
               <DonutChart data={periodBreakdown} />
               <div className="space-y-1.5 flex-1 min-w-0">
                 {periodBreakdown.slice(0, 5).map((c, i) => (
                   <div key={i} className="flex items-center justify-between text-xs gap-2">
-                    <span className="flex items-center gap-1.5 truncate"><span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />{c.name}</span>
+                    <span className="flex items-center gap-1.5 truncate"><span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />{tr(c.name)}</span>
                     <span className="tabular shrink-0" style={{ color: "var(--text-dim)" }}>{fmtMoney(c.value, baseCurrency)}</span>
                   </div>
                 ))}
@@ -1641,10 +2192,10 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
           )}
         </Card>
         <Card className="p-4">
-          <h3 className="font-display font-semibold mb-3 text-sm">Дохід і витрати за місяцями</h3>
+          <h3 className="font-display font-semibold mb-3 text-sm">{tr("Дохід і витрати за місяцями")}</h3>
           <div className="flex items-center gap-4 mb-2 text-xs" style={{ color: "var(--text-dim)" }}>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: "var(--accent)" }} />Дохід</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: "var(--danger)" }} />Витрати</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: "var(--accent)" }} />{tr("Дохід")}</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: "var(--danger)" }} />{tr("Витрати")}</span>
           </div>
           <MiniBars data={monthlySeries} baseCurrency={baseCurrency} />
         </Card>
@@ -1653,19 +2204,19 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       {nwLen >= 2 && (
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-semibold text-sm">Динаміка капіталу</h3>
+            <h3 className="font-display font-semibold text-sm">{tr("Динаміка капіталу")}</h3>
             <span className="text-xs font-semibold tabular flex items-center gap-1" style={{ color: nwDelta >= 0 ? "var(--accent)" : "var(--danger)" }}>
               {nwDelta >= 0 ? "▲" : "▼"} {fmtMoney(Math.abs(nwDelta), baseCurrency)}
             </span>
           </div>
           <TrendArea data={netWorthSeries} />
-          <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>Загальний капітал за останні 6 місяців · зміна за місяць</p>
+          <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>{tr("Загальний капітал за останні 6 місяців · зміна за місяць")}</p>
         </Card>
       )}
 
       {budgetStatus && budgetStatus.length > 0 && (
         <Card className="p-4">
-          <h3 className="font-display font-semibold text-sm mb-3">Бюджети за місяць</h3>
+          <h3 className="font-display font-semibold text-sm mb-3">{tr("Бюджети за місяць")}</h3>
           <div className="space-y-3.5">
             {budgetStatus.map((b) => {
               const over = b.pct > 100;
@@ -1673,7 +2224,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
               return (
                 <div key={b.id}>
                   <div className="flex items-center justify-between text-xs mb-1.5 gap-2">
-                    <span className="flex items-center gap-1.5 font-medium min-w-0"><Icon name={b.icon} size={13} style={{ color: b.color }} /><span className="truncate">{b.name}</span></span>
+                    <span className="flex items-center gap-1.5 font-medium min-w-0"><Icon name={b.icon} size={13} style={{ color: b.color }} /><span className="truncate">{tr(b.name)}</span></span>
                     <span className="tabular shrink-0" style={{ color: over ? "var(--danger)" : "var(--text-dim)" }}>{fmtMoney(b.spent, baseCurrency)} / {fmtMoney(b.budget, baseCurrency)}</span>
                   </div>
                   <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--surface2)" }}>
@@ -1689,8 +2240,8 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       {goals && goals.filter((g) => !g.archived).length > 0 && (
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-semibold text-sm flex items-center gap-2"><PiggyBank size={16} /> Цілі накопичень</h3>
-            <button onClick={() => setView("goals")} className="pill-link">Усі цілі <ChevronRight size={13} /></button>
+            <h3 className="font-display font-semibold text-sm flex items-center gap-2"><PiggyBank size={16} /> {tr("Цілі накопичень")}</h3>
+            <button onClick={() => setView("goals")} className="pill-link">{tr("Усі цілі")} <ChevronRight size={13} /></button>
           </div>
           <div className="space-y-3.5">
             {goals.filter((g) => !g.archived).slice(0, 3).map((g) => {
@@ -1699,7 +2250,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
               return (
                 <div key={g.id}>
                   <div className="flex items-center justify-between text-xs mb-1.5 gap-2">
-                    <span className="font-medium truncate">{g.name}</span>
+                    <span className="font-medium truncate">{tr(g.name)}</span>
                     <span className="tabular shrink-0" style={{ color: "var(--text-dim)" }}>{fmtMoney(saved, g.currency)} / {fmtMoney(g.target, g.currency)}</span>
                   </div>
                   <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--surface2)" }}>
@@ -1715,8 +2266,8 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       {crypto && crypto.length > 0 && (
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-semibold text-sm flex items-center gap-2"><Coins size={16} /> Крипто-портфель</h3>
-            <button onClick={() => setView("crypto")} className="pill-link">Відкрити <ChevronRight size={13} /></button>
+            <h3 className="font-display font-semibold text-sm flex items-center gap-2"><Coins size={16} /> {tr("Крипто-портфель")}</h3>
+            <button onClick={() => setView("crypto")} className="pill-link">{tr("Відкрити")} <ChevronRight size={13} /></button>
           </div>
           <p className="font-display font-bold text-xl tabular mb-3">{fmtMoney(cryptoTotalBase || 0, baseCurrency)}</p>
           <div className="space-y-2.5">
@@ -1737,19 +2288,19 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       {activeLoans.length > 0 && (
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-semibold text-sm flex items-center gap-2"><Banknote size={16} /> Позики надані</h3>
-            <button onClick={() => setView("loans")} className="pill-link">Усі позики <ChevronRight size={13} /></button>
+            <h3 className="font-display font-semibold text-sm flex items-center gap-2"><Banknote size={16} /> {tr("Позики надані")}</h3>
+            <button onClick={() => setView("loans")} className="pill-link">{tr("Усі позики")} <ChevronRight size={13} /></button>
           </div>
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div><p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>Загалом надано</p><p className="font-display font-bold tabular">{fmtMoney(totalLoanedOut, baseCurrency)}</p></div>
-            <div><p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>Прострочено</p><p className="font-display font-bold tabular" style={{ color: overdueTotal > 0 ? "var(--danger)" : "var(--text)" }}>{fmtMoney(overdueTotal, baseCurrency)}</p></div>
+            <div><p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>{tr("Загалом надано")}</p><p className="font-display font-bold tabular">{fmtMoney(totalLoanedOut, baseCurrency)}</p></div>
+            <div><p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>{tr("Прострочено")}</p><p className="font-display font-bold tabular" style={{ color: overdueTotal > 0 ? "var(--danger)" : "var(--text)" }}>{fmtMoney(overdueTotal, baseCurrency)}</p></div>
           </div>
           {upcomingLoans.length > 0 && (
             <div className="space-y-1.5">
               {upcomingLoans.map((l) => (
                 <div key={l.id} className="flex items-center justify-between text-xs">
                   <span style={{ color: "var(--text)" }}>{l.borrower}</span>
-                  <span style={{ color: "var(--text-dim)" }}>до {fmtDate(l.dueDate)}</span>
+                  <span style={{ color: "var(--text-dim)" }}>{tr("до")} {fmtDate(l.dueDate)}</span>
                 </div>
               ))}
             </div>
@@ -1759,12 +2310,12 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
 
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-semibold text-lg">Останні транзакції</h2>
-          <button onClick={() => setView("history")} className="pill-link">Уся історія <ChevronRight size={13} /></button>
+          <h2 className="font-display font-semibold text-lg">{tr("Останні транзакції")}</h2>
+          <button onClick={() => setView("history")} className="pill-link">{tr("Уся історія")} <ChevronRight size={13} /></button>
         </div>
         <Card className="divide-y" style={{ borderColor: "var(--border)" }}>
           {recent.map((tx) => <TxRow key={tx.id} tx={tx} categories={categories} pocketLabel={pocketLabel} />)}
-          {recent.length === 0 && <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>Ще немає транзакцій</p>}
+          {recent.length === 0 && <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>{tr("Ще немає транзакцій")}</p>}
         </Card>
       </div>
     </div>
@@ -1823,7 +2374,7 @@ function PocketCard({ pocket, balance, onClick, onLongPress, className = "" }) {
       </div>
       <p className="text-xs mt-1.5 tracking-wider" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{masked}</p>
       <div className="flex items-center justify-between gap-2 mt-3">
-        <p className="text-sm font-medium truncate" style={{ color: "rgba(255,255,255,0.75)" }}>{acc.name}</p>
+        <p className="text-sm font-medium truncate" style={{ color: "rgba(255,255,255,0.75)" }}>{tr(acc.name)}</p>
         {acc.bank && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(201,163,98,0.18)", color: "#E7CF9B" }}>{acc.bank}</span>}
       </div>
     </div>
@@ -1834,12 +2385,12 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
   let label = "", sub = "", amountStr = "", amountColor = "var(--text)";
   const cat = categories.find((c) => c.id === tx.categoryId);
 
-  if (tx.type === "income") { label = cat?.name || "Дохід"; sub = pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
-  else if (tx.type === "expense") { label = cat?.name || "Витрата"; sub = pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--danger)"; }
-  else if (tx.type === "transfer") { label = "Переказ"; sub = `${pocketLabel(tx.fromPocketId)} → ${pocketLabel(tx.toPocketId)}`; amountStr = `${fmtMoney(tx.fromAmount, tx.fromCurrency)}`; amountColor = "var(--accent2)"; }
-  else if (tx.type === "exchange") { label = "Обмін валюти"; sub = `${pocketLabel(tx.fromPocketId)} → ${pocketLabel(tx.toPocketId)}`; amountStr = `${fmtMoney(tx.fromAmount, tx.fromCurrency)} → ${fmtMoney(tx.toAmount, tx.toCurrency)}`; amountColor = "var(--warn)"; }
-  else if (tx.type === "loan_out") { label = "Позика надана"; sub = tx.note || pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--warn)"; }
-  else if (tx.type === "loan_return") { label = "Повернення позики"; sub = tx.note || pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
+  if (tx.type === "income") { label = cat?.name || tr("Дохід"); sub = pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
+  else if (tx.type === "expense") { label = cat?.name || tr("Витрата"); sub = pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--danger)"; }
+  else if (tx.type === "transfer") { label = tr("Переказ"); sub = `${pocketLabel(tx.fromPocketId)} → ${pocketLabel(tx.toPocketId)}`; amountStr = `${fmtMoney(tx.fromAmount, tx.fromCurrency)}`; amountColor = "var(--accent2)"; }
+  else if (tx.type === "exchange") { label = tr("Обмін валюти"); sub = `${pocketLabel(tx.fromPocketId)} → ${pocketLabel(tx.toPocketId)}`; amountStr = `${fmtMoney(tx.fromAmount, tx.fromCurrency)} → ${fmtMoney(tx.toAmount, tx.toCurrency)}`; amountColor = "var(--warn)"; }
+  else if (tx.type === "loan_out") { label = tr("Позика надана"); sub = tx.note || pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--warn)"; }
+  else if (tx.type === "loan_return") { label = tr("Повернення позики"); sub = tx.note || pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
 
   const TypeIcon = tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" ? ArrowUpRight : tx.type === "loan_return" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
 
@@ -1902,15 +2453,15 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
   return (
     <div className="space-y-5 animate-in">
       <div className="flex items-center justify-between">
-        <h1 className="font-display font-bold text-2xl">Рахунки</h1>
-        <Button onClick={() => setModal({ type: "account" })}><Plus size={16} /> Новий рахунок</Button>
+        <h1 className="font-display font-bold text-2xl">{tr("Рахунки")}</h1>
+        <Button onClick={() => setModal({ type: "account" })}><Plus size={16} /> {tr("Новий рахунок")}</Button>
       </div>
       <div className="flex gap-2 text-sm">
-        <button onClick={() => setShowArchived(false)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: !showArchived ? "var(--surface2)" : "transparent", color: !showArchived ? "var(--text)" : "var(--text-dim)" }}>Активні</button>
-        <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>Архів</button>
+        <button onClick={() => setShowArchived(false)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: !showArchived ? "var(--surface2)" : "transparent", color: !showArchived ? "var(--text)" : "var(--text-dim)" }}>{tr("Активні")}</button>
+        <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>{tr("Архів")}</button>
       </div>
       {!showArchived && list.length > 1 && (
-        <p className="text-xs" style={{ color: "var(--text-dim)" }}>Перетягни за ручку <span style={{ verticalAlign: "middle" }}>⠿</span>, щоб змінити порядок рахунків.</p>
+        <p className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Перетягни за ручку")} <span style={{ verticalAlign: "middle" }}>⠿</span>{tr(", щоб змінити порядок рахунків.")}</p>
       )}
       <div ref={listRef} className="space-y-4">
         {list.map((acc) => {
@@ -1934,7 +2485,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                     onClick={(e) => e.stopPropagation()}
                     className="p-1 -ml-1 mt-1 shrink-0 cursor-grab active:cursor-grabbing"
                     style={{ color: "var(--text-dim)", touchAction: "none" }}
-                    title="Перетягнути"
+                    title={tr("Перетягнути")}
                   ><GripVertical size={16} /></span>
                 )}
                 <button onClick={() => toggle(acc.id)} className="flex-1 min-w-0 flex items-start justify-between mb-1">
@@ -1943,8 +2494,8 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                       <Icon name={ACCOUNT_TYPES.find((t) => t.id === acc.type)?.icon} size={18} style={{ color: acc.color }} />
                     </div>
                     <div className="text-left min-w-0">
-                      <p className="text-sm font-semibold truncate">{acc.name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label} · {pks.filter(p=>!p.archived).length} валют{pks.filter(p=>!p.archived).length===1?"а":""}</p>
+                      <p className="text-sm font-semibold truncate">{tr(acc.name)}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)} · {pks.filter(p=>!p.archived).length} {tr(pks.filter(p=>!p.archived).length === 1 ? "валюта" : "валют")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 pl-2">
@@ -1959,9 +2510,9 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                 <button onClick={() => setConfirmDel(confirmDel === acc.id ? null : acc.id)} className="p-1.5 rounded-lg" style={{ color: "var(--danger)" }}><Trash2 size={14} /></button>
                 {confirmDel === acc.id && (
                   <div className="flex items-center gap-2 ml-1">
-                    <span className="text-xs" style={{ color: "var(--text-dim)" }}>Видалити рахунок?</span>
-                    <button onClick={() => { deleteAccount(acc.id); setConfirmDel(null); }} className="text-xs font-semibold px-2 py-1 rounded-md" style={{ background: "var(--danger)", color: "#fff" }}>Так</button>
-                    <button onClick={() => setConfirmDel(null)} className="text-xs font-medium px-2 py-1 rounded-md" style={{ background: "var(--surface2)", color: "var(--text)" }}>Ні</button>
+                    <span className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Видалити рахунок?")}</span>
+                    <button onClick={() => { deleteAccount(acc.id); setConfirmDel(null); }} className="text-xs font-semibold px-2 py-1 rounded-md" style={{ background: "var(--danger)", color: "#fff" }}>{tr("Так")}</button>
+                    <button onClick={() => setConfirmDel(null)} className="text-xs font-medium px-2 py-1 rounded-md" style={{ background: "var(--surface2)", color: "var(--text)" }}>{tr("Ні")}</button>
                   </div>
                 )}
                 {acc.bank && confirmDel !== acc.id && <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md shrink-0" style={{ background: "var(--surface2)", color: "var(--accent)" }}>{acc.bank}</span>}
@@ -1972,7 +2523,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                     <div key={p.id} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} className={`flex items-center justify-between gap-2 py-2 px-3 rounded-xl cursor-pointer hover:opacity-90 ${p.archived ? "opacity-50" : ""}`} style={{ background: "var(--surface2)" }}>
                       <div className="flex items-center gap-2 min-w-0">
                         <Badge color={acc.color}>{p.currency}</Badge>
-                        {p.name && <span className="text-xs font-medium truncate" style={{ color: "var(--text)" }}>{p.name}</span>}
+                        {p.name && <span className="text-xs font-medium truncate" style={{ color: "var(--text)" }}>{tr(p.name)}</span>}
                       </div>
                       <p className="font-semibold text-sm tabular shrink-0">{fmtMoney(pocketBalance(p.id), p.currency)}</p>
                       <div className="flex gap-2 shrink-0">
@@ -1983,7 +2534,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                   ))}
                   {!showArchived && (
                     <button onClick={() => setModal({ type: "pocket", payload: { accountId: acc.id } })} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed text-xs font-medium" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
-                      <Plus size={14} /> Додати валютний субрахунок
+                      <Plus size={14} /> {tr("Додати валютний субрахунок")}
                     </button>
                   )}
                 </div>
@@ -1992,7 +2543,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
             </div>
           );
         })}
-        {list.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>Немає рахунків у цій категорії</p>}
+        {list.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>{tr("Немає рахунків у цій категорії")}</p>}
       </div>
 
       {!showArchived && (
@@ -2000,8 +2551,8 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
           <Card className="p-4 flex items-center gap-3" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)", border: "1px solid var(--border)" }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(201,163,98,0.16)" }}><Coins size={18} style={{ color: "var(--accent)" }} /></div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>Крипто-портфель</p>
-              <p className="text-xs" style={{ color: "#A7B0C4" }}>{cryptoCount > 0 ? `${cryptoCount} актив${cryptoCount === 1 ? "" : (cryptoCount < 5 ? "и" : "ів")} · живі ціни` : "Додати активи · живі ціни"}</p>
+              <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>{tr("Крипто-портфель")}</p>
+              <p className="text-xs" style={{ color: "#A7B0C4" }}>{cryptoCount > 0 ? `${cryptoCount} ${tr(cryptoCount === 1 ? "актив" : "активи")} · ${tr("живі ціни")}` : tr("Додати активи · живі ціни")}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <p className="font-display font-bold text-base tabular" style={{ color: "#F3F0E8" }}>{fmtMoney(cryptoTotalBase || 0, baseCurrency)}</p>
@@ -2048,58 +2599,58 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
     }).sort(byRecent);
   }, [transactions, filterType, filterPocket, filterCategory, filterCurrency, dateFrom, dateTo, search, pocketLabel]);
 
-  const typeLabel = { all: "Усі типи", income: "Доходи", expense: "Витрати", transfer: "Перекази", exchange: "Обмін валют", loan_out: "Позики надані", loan_return: "Повернення позик" };
+  const typeLabel = { all: tr("Усі типи"), income: tr("Доходи"), expense: tr("Витрати"), transfer: tr("Перекази"), exchange: tr("Обмін валют"), loan_out: tr("Позики надані"), loan_return: tr("Повернення позик") };
 
   return (
     <div className="space-y-4 animate-in">
       <div className="flex items-center justify-between">
-        <h1 className="font-display font-bold text-2xl">Історія операцій</h1>
+        <h1 className="font-display font-bold text-2xl">{tr("Історія операцій")}</h1>
         <button onClick={() => setShowFilters(!showFilters)} className="p-2 rounded-lg border" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}><Filter size={16} /></button>
       </div>
 
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-dim)" }} />
-        <Input placeholder="Пошук за описом..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <Input placeholder={tr("Пошук за описом...")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
       {showFilters && (
         <Card className="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <Field label="Тип операції">
+          <Field label={tr("Тип операції")}>
             <Select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
               {Object.entries(typeLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </Select>
           </Field>
-          <Field label="Рахунок">
+          <Field label={tr("Рахунок")}>
             <Select value={filterPocket} onChange={(e) => setFilterPocket(e.target.value)}>
-              <option value="all">Усі рахунки</option>
+              <option value="all">{tr("Усі рахунки")}</option>
               {accounts.map((acc) => pockets.filter((p) => p.accountId === acc.id).map((p) => (
-                <option key={p.id} value={p.id}>{acc.name} · {p.currency}</option>
+                <option key={p.id} value={p.id}>{tr(acc.name)} · {p.currency}</option>
               )))}
             </Select>
           </Field>
-          <Field label="Категорія">
+          <Field label={tr("Категорія")}>
             <Select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-              <option value="all">Усі категорії</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="all">{tr("Усі категорії")}</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{tr(c.name)}</option>)}
             </Select>
           </Field>
-          <Field label="Валюта">
+          <Field label={tr("Валюта")}>
             <Select value={filterCurrency} onChange={(e) => setFilterCurrency(e.target.value)}>
-              <option value="all">Усі валюти</option>
+              <option value="all">{tr("Усі валюти")}</option>
               {(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}
             </Select>
           </Field>
-          <Field label="Період від"><Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></Field>
-          <Field label="Період до"><Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></Field>
+          <Field label={tr("Період від")}><Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></Field>
+          <Field label={tr("Період до")}><Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></Field>
         </Card>
       )}
 
       <Card className="divide-y overflow-hidden" style={{ borderColor: "var(--border)" }}>
         {filtered.map((tx) => {
           const acts = [];
-          if (tx.type === "income" || tx.type === "expense") acts.push({ icon: Edit3, label: "Ред.", bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } }) });
-          acts.push({ icon: Plus, label: "Копія", bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => duplicateTransaction(tx) });
-          acts.push({ icon: Trash2, label: "Видал.", bg: "var(--danger)", fg: "#fff", onClick: () => deleteTransaction(tx.id) });
+          if (tx.type === "income" || tx.type === "expense") acts.push({ icon: Edit3, label: tr("Ред."), bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } }) });
+          acts.push({ icon: Plus, label: tr("Копія"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => duplicateTransaction(tx) });
+          acts.push({ icon: Trash2, label: tr("Видал."), bg: "var(--danger)", fg: "#fff", onClick: () => deleteTransaction(tx.id) });
           return (
             <SwipeRow key={tx.id} actions={acts}>
               <div className="group flex items-center" style={{ background: "var(--surface)" }}>
@@ -2115,7 +2666,7 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
             </SwipeRow>
           );
         })}
-        {filtered.length === 0 && <p className="text-sm py-10 text-center" style={{ color: "var(--text-dim)" }}>Немає операцій за заданими фільтрами</p>}
+        {filtered.length === 0 && <p className="text-sm py-10 text-center" style={{ color: "var(--text-dim)" }}>{tr("Немає операцій за заданими фільтрами")}</p>}
       </Card>
     </div>
   );
@@ -2134,10 +2685,10 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archive
   const list = showArchived ? done : active;
 
   const statusInfo = {
-    active: { label: "Активна", color: "var(--accent2)" },
-    partial: { label: isIn ? "Частково погашена" : "Частково повернена", color: "var(--warn)" },
-    returned: { label: isIn ? "Погашена" : "Повернена", color: "var(--accent)" },
-    overdue: { label: "Прострочена", color: "var(--danger)" },
+    active: { label: tr("Активна"), color: "var(--accent2)" },
+    partial: { label: isIn ? tr("Частково погашена") : tr("Частково повернена"), color: "var(--warn)" },
+    returned: { label: isIn ? tr("Погашена") : tr("Повернена"), color: "var(--accent)" },
+    overdue: { label: tr("Прострочена"), color: "var(--danger)" },
   };
   const effectiveStatus = (l) => {
     if (l.status === "returned") return "returned";
@@ -2148,21 +2699,21 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archive
   return (
     <div className="space-y-5 animate-in">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h1 className="font-display font-bold text-2xl">Позики та борги</h1>
-        <Button onClick={() => setModal({ type: "loan", payload: { direction: dir } })}><Plus size={16} /> {isIn ? "Додати борг" : "Надати позику"}</Button>
+        <h1 className="font-display font-bold text-2xl">{tr("Позики та борги")}</h1>
+        <Button onClick={() => setModal({ type: "loan", payload: { direction: dir } })}><Plus size={16} /> {isIn ? tr("Додати борг") : tr("Надати позику")}</Button>
       </div>
 
       <div className="flex gap-1.5 p-1 rounded-xl" style={{ background: "var(--surface2)" }}>
-        <button onClick={() => setDir("out")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition" style={{ background: !isIn ? "var(--surface)" : "transparent", color: !isIn ? "var(--text)" : "var(--text-dim)" }}>Мені винні</button>
-        <button onClick={() => setDir("in")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition" style={{ background: isIn ? "var(--surface)" : "transparent", color: isIn ? "var(--text)" : "var(--text-dim)" }}>Я винен</button>
+        <button onClick={() => setDir("out")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition" style={{ background: !isIn ? "var(--surface)" : "transparent", color: !isIn ? "var(--text)" : "var(--text-dim)" }}>{tr("Мені винні")}</button>
+        <button onClick={() => setDir("in")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition" style={{ background: isIn ? "var(--surface)" : "transparent", color: isIn ? "var(--text)" : "var(--text-dim)" }}>{tr("Я винен")}</button>
       </div>
 
       <div className="flex gap-2 text-sm">
         <button onClick={() => setShowArchived(false)} className="px-3 py-1.5 rounded-lg font-medium inline-flex items-center gap-2" style={{ background: !showArchived ? "var(--surface2)" : "transparent", color: !showArchived ? "var(--text)" : "var(--text-dim)" }}>
-          Активні ({active.length})
+          {tr("Активні")} ({active.length})
           {overdueCount > 0 && <span className="min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none" style={{ background: "var(--danger)", color: "#fff" }}>{overdueCount}</span>}
         </button>
-        <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>Архів ({done.length})</button>
+        <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>{tr("Архів")} ({done.length})</button>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -2172,9 +2723,9 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archive
           const days = daysBetween(new Date(), loan.dueDate);
           const pk = getPocket(loan.pocketId);
           const loanActs = [
-            { icon: Edit3, label: "Ред.", bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "loanEdit", payload: loan }) },
-            { icon: Archive, label: loan.archived ? "Актив." : "Архів", bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => archiveLoan(loan.id) },
-            { icon: Trash2, label: "Видал.", bg: "var(--danger)", fg: "#fff", onClick: () => deleteLoan(loan.id) },
+            { icon: Edit3, label: tr("Ред."), bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "loanEdit", payload: loan }) },
+            { icon: Archive, label: loan.archived ? tr("Актив.") : tr("Архів"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => archiveLoan(loan.id) },
+            { icon: Trash2, label: tr("Видал."), bg: "var(--danger)", fg: "#fff", onClick: () => deleteLoan(loan.id) },
           ];
           return (
             <SwipeRow key={loan.id} actions={loanActs} rounded={true}>
@@ -2183,30 +2734,30 @@ function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archive
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><Users size={16} style={{ color: "var(--text-dim)" }} /></div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate">{loan.borrower}</p>
-                    <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{loan.note}</p>
+                    <p className="text-sm font-semibold truncate">{tr(loan.borrower)}</p>
+                    <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{tr(loan.note)}</p>
                   </div>
                 </div>
                 <Badge color={statusInfo[st].color}>{statusInfo[st].label}</Badge>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? "Сума боргу" : "Початкова сума"}</p><p className="font-semibold tabular">{fmtMoney(loan.amount, loan.currency)}</p></div>
-                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? "Залишок до сплати" : "Залишок боргу"}</p><p className="font-semibold tabular" style={{ color: remaining > 0 ? "var(--warn)" : "var(--accent)" }}>{fmtMoney(remaining, loan.currency)}</p></div>
-                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? "Погашено" : "Повернено"}</p><p className="font-semibold tabular">{fmtMoney(loan.returned, loan.currency)}</p></div>
-                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? "Термін сплати" : "Дата повернення"}</p><p className="font-semibold">{fmtDate(loan.dueDate)}</p></div>
+                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? tr("Сума боргу") : tr("Початкова сума")}</p><p className="font-semibold tabular">{fmtMoney(loan.amount, loan.currency)}</p></div>
+                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? tr("Залишок до сплати") : tr("Залишок боргу")}</p><p className="font-semibold tabular" style={{ color: remaining > 0 ? "var(--warn)" : "var(--accent)" }}>{fmtMoney(remaining, loan.currency)}</p></div>
+                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? tr("Погашено") : tr("Повернено")}</p><p className="font-semibold tabular">{fmtMoney(loan.returned, loan.currency)}</p></div>
+                <div><p className="text-xs" style={{ color: "var(--text-dim)" }}>{isIn ? tr("Термін сплати") : tr("Дата повернення")}</p><p className="font-semibold">{fmtDate(loan.dueDate)}</p></div>
               </div>
-              <p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>{isIn ? "Отримано на: " : "Видано з: "}{pk ? `${pk.account?.name} · ${pk.currency}` : "—"}</p>
+              <p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>{isIn ? tr("Отримано на: ") : tr("Видано з: ")}{pk ? `${pk.account?.name} · ${pk.currency}` : "—"}</p>
               <p className="text-xs mb-3" style={{ color: days < 0 ? "var(--danger)" : "var(--text-dim)" }}>
-                {days === 0 ? "Строк сьогодні" : days > 0 ? `Залишилось ${days} дн.` : `Прострочено на ${Math.abs(days)} дн.`}
+                {days === 0 ? tr("Строк сьогодні") : days > 0 ? tr(`Залишилось ${days} дн.`) : tr(`Прострочено на ${Math.abs(days)} дн.`)}
               </p>
               {loan.status !== "returned" && (
-                <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "loanReturn", payload: loan })}>{isIn ? "Зареєструвати погашення" : "Зареєструвати повернення"}</Button>
+                <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "loanReturn", payload: loan })}>{isIn ? tr("Зареєструвати погашення") : tr("Зареєструвати повернення")}</Button>
               )}
             </Card>
             </SwipeRow>
           );
         })}
-        {list.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>{isIn ? "Немає боргів у цій категорії" : "Немає позик у цій категорії"}</p>}
+        {list.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>{isIn ? tr("Немає боргів у цій категорії") : tr("Немає позик у цій категорії")}</p>}
       </div>
     </div>
   );
@@ -2220,18 +2771,18 @@ function CategoriesView({ categories, setModal, archiveCategory }) {
   return (
     <div className="space-y-5 animate-in">
       <div className="flex items-center justify-between">
-        <h1 className="font-display font-bold text-2xl">Категорії</h1>
-        <Button onClick={() => setModal({ type: "category", payload: { type: tab } })}><Plus size={16} /> Нова категорія</Button>
+        <h1 className="font-display font-bold text-2xl">{tr("Категорії")}</h1>
+        <Button onClick={() => setModal({ type: "category", payload: { type: tab } })}><Plus size={16} /> {tr("Нова категорія")}</Button>
       </div>
       <div className="flex gap-2 text-sm">
-        <button onClick={() => setTab("expense")} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: tab === "expense" ? "var(--surface2)" : "transparent", color: tab === "expense" ? "var(--text)" : "var(--text-dim)" }}>Витрати</button>
-        <button onClick={() => setTab("income")} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: tab === "income" ? "var(--surface2)" : "transparent", color: tab === "income" ? "var(--text)" : "var(--text-dim)" }}>Доходи</button>
+        <button onClick={() => setTab("expense")} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: tab === "expense" ? "var(--surface2)" : "transparent", color: tab === "expense" ? "var(--text)" : "var(--text-dim)" }}>{tr("Витрати")}</button>
+        <button onClick={() => setTab("income")} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: tab === "income" ? "var(--surface2)" : "transparent", color: tab === "income" ? "var(--text)" : "var(--text-dim)" }}>{tr("Доходи")}</button>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {list.map((c) => (
           <Card key={c.id} className={`p-4 flex items-center gap-3 ${c.archived ? "opacity-50" : ""}`}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${c.color}22` }}><Icon name={c.icon} size={16} style={{ color: c.color }} /></div>
-            <p className="text-sm font-medium flex-1 truncate">{c.name}</p>
+            <p className="text-sm font-medium flex-1 truncate">{tr(c.name)}</p>
             <button onClick={() => setModal({ type: "category", payload: c })} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
             <button onClick={() => archiveCategory(c.id)} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Archive size={14} /></button>
           </Card>
@@ -2250,12 +2801,12 @@ function GoalsView({ goals, setModal, baseCurrency, rates }) {
   return (
     <div className="space-y-5 animate-in max-w-2xl">
       <div className="flex items-center justify-between">
-        <h1 className="font-display font-bold text-2xl">Цілі накопичень</h1>
-        <Button onClick={() => setModal({ type: "goal", payload: null })}><Plus size={16} /> Нова ціль</Button>
+        <h1 className="font-display font-bold text-2xl">{tr("Цілі накопичень")}</h1>
+        <Button onClick={() => setModal({ type: "goal", payload: null })}><Plus size={16} /> {tr("Нова ціль")}</Button>
       </div>
       {active.length > 0 && (
         <Card className="p-4 flex items-center justify-between">
-          <span className="text-sm" style={{ color: "var(--text-dim)" }}>Накопичено загалом</span>
+          <span className="text-sm" style={{ color: "var(--text-dim)" }}>{tr("Накопичено загалом")}</span>
           <span className="font-display font-bold tabular text-sm">{fmtMoney(totalSaved, baseCurrency)} / {fmtMoney(totalTarget, baseCurrency)}</span>
         </Card>
       )}
@@ -2269,8 +2820,8 @@ function GoalsView({ goals, setModal, baseCurrency, rates }) {
             <Card key={g.id} className="p-5">
               <div className="flex items-start justify-between mb-3 gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold flex items-center gap-1.5">{done && <Check size={14} style={{ color: "var(--accent)" }} />}<span className="truncate">{g.name}</span></p>
-                  {g.note && <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{g.note}</p>}
+                  <p className="text-sm font-semibold flex items-center gap-1.5">{done && <Check size={14} style={{ color: "var(--accent)" }} />}<span className="truncate">{tr(g.name)}</span></p>
+                  {g.note && <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{tr(g.note)}</p>}
                 </div>
                 <button onClick={() => setModal({ type: "goal", payload: g })} className="p-1.5 rounded-lg shrink-0" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
               </div>
@@ -2280,13 +2831,13 @@ function GoalsView({ goals, setModal, baseCurrency, rates }) {
               </div>
               <div className="flex items-center justify-between text-xs mb-3">
                 <span className="font-semibold" style={{ color: "var(--accent)" }}>{Math.round(pct)}%</span>
-                <span style={{ color: "var(--text-dim)" }}>{done ? "Ціль досягнута 🎉" : "Залишилось " + fmtMoney(remaining, g.currency)}</span>
+                <span style={{ color: "var(--text-dim)" }}>{done ? tr("Ціль досягнута 🎉") : tr("Залишилось ") + fmtMoney(remaining, g.currency)}</span>
               </div>
-              <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "goalContribute", payload: g })}>Поповнити</Button>
+              <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "goalContribute", payload: g })}>{tr("Поповнити")}</Button>
             </Card>
           );
         })}
-        {active.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>Ще немає цілей. Створіть першу — і відстежуйте прогрес накопичень.</p>}
+        {active.length === 0 && <p className="text-sm col-span-full text-center py-10" style={{ color: "var(--text-dim)" }}>{tr("Ще немає цілей. Створіть першу — і відстежуйте прогрес накопичень.")}</p>}
       </div>
     </div>
   );
@@ -2302,33 +2853,33 @@ function GoalModal({ onClose, existing, addGoal, editGoal, deleteGoal, currencie
   const [error, setError] = useState("");
   const [confirmDel, setConfirmDel] = useState(false);
   const submit = () => {
-    if (!name.trim()) return setError("Введіть назву цілі");
+    if (!name.trim()) return setError(tr("Введіть назву цілі"));
     const t = parseFloat(target);
-    if (!(t > 0)) return setError("Вкажіть суму цілі");
+    if (!(t > 0)) return setError(tr("Вкажіть суму цілі"));
     const data = { name: name.trim(), target: t, currency, saved: Math.max(0, parseFloat(saved) || 0), note: note.trim() };
     if (isEdit) editGoal(existing.id, data); else addGoal(data);
     onClose();
   };
   return (
-    <Modal title={isEdit ? "Редагувати ціль" : "Нова ціль"} onClose={onClose}>
-      <Field label="Назва" error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder="Напр. Відпустка" /></Field>
+    <Modal title={isEdit ? tr("Редагувати ціль") : tr("Нова ціль")} onClose={onClose}>
+      <Field label={tr("Назва")} error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder={tr("Напр. Відпустка")} /></Field>
       <div className="grid grid-cols-3 gap-2">
-        <div className="col-span-2"><Field label="Сума цілі"><Input type="number" inputMode="decimal" value={target} onChange={(e) => { setTarget(e.target.value); setError(""); }} placeholder="0" /></Field></div>
-        <Field label="Валюта"><Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select></Field>
+        <div className="col-span-2"><Field label={tr("Сума цілі")}><Input type="number" inputMode="decimal" value={target} onChange={(e) => { setTarget(e.target.value); setError(""); }} placeholder="0" /></Field></div>
+        <Field label={tr("Валюта")}><Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select></Field>
       </div>
-      <Field label="Вже накопичено"><Input type="number" inputMode="decimal" value={saved} onChange={(e) => setSaved(e.target.value)} placeholder="0" /></Field>
-      <Field label="Нотатка (необовʼязково)"><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-      <Button className="w-full mt-2" onClick={submit}>{isEdit ? "Зберегти" : "Створити ціль"}</Button>
+      <Field label={tr("Вже накопичено")}><Input type="number" inputMode="decimal" value={saved} onChange={(e) => setSaved(e.target.value)} placeholder="0" /></Field>
+      <Field label={tr("Нотатка (необовʼязково)")}><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{isEdit ? tr("Зберегти") : tr("Створити ціль")}</Button>
       {isEdit && (confirmDel ? (
         <div className="flex items-center justify-between mt-3 text-sm">
-          <span style={{ color: "var(--text-dim)" }}>Видалити ціль?</span>
+          <span style={{ color: "var(--text-dim)" }}>{tr("Видалити ціль?")}</span>
           <div className="flex gap-2">
-            <button onClick={() => { deleteGoal(existing.id); onClose(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--danger)", color: "#fff" }}>Так</button>
-            <button onClick={() => setConfirmDel(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text)" }}>Ні</button>
+            <button onClick={() => { deleteGoal(existing.id); onClose(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--danger)", color: "#fff" }}>{tr("Так")}</button>
+            <button onClick={() => setConfirmDel(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text)" }}>{tr("Ні")}</button>
           </div>
         </div>
       ) : (
-        <button onClick={() => setConfirmDel(true)} className="w-full text-center mt-3 text-xs font-medium" style={{ color: "var(--danger)" }}>Видалити ціль</button>
+        <button onClick={() => setConfirmDel(true)} className="w-full text-center mt-3 text-xs font-medium" style={{ color: "var(--danger)" }}>{tr("Видалити ціль")}</button>
       ))}
     </Modal>
   );
@@ -2346,13 +2897,13 @@ function GoalContributeModal({ onClose, goal, contributeGoal }) {
   const saved = goal.saved || 0;
   return (
     <Modal title={goal.name} onClose={onClose}>
-      <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>Накопичено: <b style={{ color: "var(--text)" }}>{fmtMoney(saved, goal.currency)}</b> з {fmtMoney(goal.target, goal.currency)}</p>
+      <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>{tr("Накопичено:")} <b style={{ color: "var(--text)" }}>{fmtMoney(saved, goal.currency)}</b> {tr("з")} {fmtMoney(goal.target, goal.currency)}</p>
       <div className="flex gap-2 mb-3">
-        <button onClick={() => setMode("add")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium" style={{ background: mode === "add" ? "var(--accent)" : "var(--surface2)", color: mode === "add" ? "var(--accent-ink)" : "var(--text)" }}>Поповнити</button>
-        <button onClick={() => setMode("withdraw")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium" style={{ background: mode === "withdraw" ? "var(--danger)" : "var(--surface2)", color: mode === "withdraw" ? "#fff" : "var(--text)" }}>Зняти</button>
+        <button onClick={() => setMode("add")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium" style={{ background: mode === "add" ? "var(--accent)" : "var(--surface2)", color: mode === "add" ? "var(--accent-ink)" : "var(--text)" }}>{tr("Поповнити")}</button>
+        <button onClick={() => setMode("withdraw")} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium" style={{ background: mode === "withdraw" ? "var(--danger)" : "var(--surface2)", color: mode === "withdraw" ? "#fff" : "var(--text)" }}>{tr("Зняти")}</button>
       </div>
       <Field label={`Сума (${goal.currency})`}><Input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></Field>
-      <Button className="w-full mt-2" onClick={submit}>{mode === "add" ? "Поповнити ціль" : "Зняти кошти"}</Button>
+      <Button className="w-full mt-2" onClick={submit}>{mode === "add" ? tr("Поповнити ціль") : tr("Зняти кошти")}</Button>
     </Modal>
   );
 }
@@ -2377,21 +2928,21 @@ function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates
     setBusy(true);
     const res = await refreshCryptoPrices();
     setBusy(false);
-    if (setToast) setToast(res && res.ok ? "Ціни оновлено" : "Не вдалося оновити ціни");
+    if (setToast) setToast(res && res.ok ? tr("Ціни оновлено") : tr("Не вдалося оновити ціни"));
   };
-  const fmtUpd = cryptoUpdatedAt ? new Date(cryptoUpdatedAt).toLocaleString("uk-UA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "ще не оновлювались";
+  const fmtUpd = cryptoUpdatedAt ? new Date(cryptoUpdatedAt).toLocaleString(locale(), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : tr("ще не оновлювались");
   return (
     <div className="space-y-5 animate-in max-w-2xl">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h1 className="font-display font-bold text-2xl">Крипто-портфель</h1>
-        <Button onClick={() => setModal({ type: "crypto", payload: null })}><Plus size={16} /> Додати актив</Button>
+        <h1 className="font-display font-bold text-2xl">{tr("Крипто-портфель")}</h1>
+        <Button onClick={() => setModal({ type: "crypto", payload: null })}><Plus size={16} /> {tr("Додати актив")}</Button>
       </div>
       <Card className="p-5" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)" }}>
-        <p className="text-xs mb-1" style={{ color: "#A7B0C4" }}>Загальна вартість портфелю</p>
+        <p className="text-xs mb-1" style={{ color: "#A7B0C4" }}>{tr("Загальна вартість портфелю")}</p>
         <p className="font-display font-extrabold text-3xl tabular" style={{ color: "#F3F0E8" }}>{fmtMoney(total, baseCurrency)}</p>
         <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
-          <span className="text-[11px]" style={{ color: "#A7B0C4" }}>Оновлено: {fmtUpd}</span>
-          <Button variant="secondary" onClick={refresh} disabled={busy}><RefreshCw size={15} className={busy ? "spin" : ""} /> {busy ? "Оновлення…" : "Оновити ціни"}</Button>
+          <span className="text-[11px]" style={{ color: "#A7B0C4" }}>{tr("Оновлено: ")}{fmtUpd}</span>
+          <Button variant="secondary" onClick={refresh} disabled={busy}><RefreshCw size={15} className={busy ? "spin" : ""} /> {busy ? tr("Оновлення…") : tr("Оновити ціни")}</Button>
         </div>
       </Card>
       <div className="space-y-3">
@@ -2404,7 +2955,7 @@ function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates
                 <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[11px]" style={{ background: "var(--surface2)", color: "var(--accent)" }}>{c.symbol}</div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate">{c.amount} {c.symbol}</p>
-                  <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{c.name}{price > 0 ? ` · ${fmtMoney(convert(price, "USD", baseCurrency, rates), baseCurrency)}` : ""}</p>
+                  <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{tr(c.name)}{price > 0 ? ` · ${fmtMoney(convert(price, "USD", baseCurrency, rates), baseCurrency)}` : ""}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -2414,9 +2965,9 @@ function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates
             </Card>
           );
         })}
-        {crypto.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>Портфель порожній. Додайте перший актив — і бачте його вартість за живими цінами.</p>}
+        {crypto.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>{tr("Портфель порожній. Додайте перший актив — і бачте його вартість за живими цінами.")}</p>}
       </div>
-      <p className="text-[11px]" style={{ color: "var(--text-dim)" }}>Ціни надає CoinGecko й оновлюються за вашим запитом (потрібен інтернет). Кількість монет вводиться вручну.</p>
+      <p className="text-[11px]" style={{ color: "var(--text-dim)" }}>{tr("Ціни надає CoinGecko й оновлюються за вашим запитом (потрібен інтернет). Кількість монет вводиться вручну.")}</p>
     </div>
   );
 }
@@ -2430,30 +2981,30 @@ function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto })
   const [confirmDel, setConfirmDel] = useState(false);
   const submit = () => {
     const a = parseFloat(amount);
-    if (!(a > 0)) return setError("Вкажіть кількість");
+    if (!(a > 0)) return setError(tr("Вкажіть кількість"));
     const coin = CRYPTO_COINS.find((c) => c.id === coinId) || CRYPTO_COINS[0];
     const data = { coinId: coin.id, symbol: coin.symbol, name: coin.name, amount: a, note: note.trim() };
     if (isEdit) editCrypto(existing.id, data); else addCrypto(data);
     onClose();
   };
   return (
-    <Modal title={isEdit ? "Редагувати актив" : "Додати крипто-актив"} onClose={onClose}>
-      <Field label="Монета">
-        <Select value={coinId} onChange={(e) => setCoinId(e.target.value)}>{CRYPTO_COINS.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.symbol})</option>)}</Select>
+    <Modal title={isEdit ? tr("Редагувати актив") : tr("Додати крипто-актив")} onClose={onClose}>
+      <Field label={tr("Монета")}>
+        <Select value={coinId} onChange={(e) => setCoinId(e.target.value)}>{CRYPTO_COINS.map((c) => <option key={c.id} value={c.id}>{tr(c.name)} ({c.symbol})</option>)}</Select>
       </Field>
-      <Field label="Кількість" error={error}><Input type="number" step="any" inputMode="decimal" value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} placeholder="напр. 0.5" /></Field>
-      <Field label="Нотатка (необовʼязково)"><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-      <Button className="w-full mt-2" onClick={submit}>{isEdit ? "Зберегти" : "Додати"}</Button>
+      <Field label={tr("Кількість")} error={error}><Input type="number" step="any" inputMode="decimal" value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} placeholder={tr("напр. 0.5")} /></Field>
+      <Field label={tr("Нотатка (необовʼязково)")}><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{isEdit ? tr("Зберегти") : tr("Додати")}</Button>
       {isEdit && (confirmDel ? (
         <div className="flex items-center justify-between mt-3 text-sm">
-          <span style={{ color: "var(--text-dim)" }}>Видалити актив?</span>
+          <span style={{ color: "var(--text-dim)" }}>{tr("Видалити актив?")}</span>
           <div className="flex gap-2">
-            <button onClick={() => { deleteCrypto(existing.id); onClose(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--danger)", color: "#fff" }}>Так</button>
-            <button onClick={() => setConfirmDel(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text)" }}>Ні</button>
+            <button onClick={() => { deleteCrypto(existing.id); onClose(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--danger)", color: "#fff" }}>{tr("Так")}</button>
+            <button onClick={() => setConfirmDel(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text)" }}>{tr("Ні")}</button>
           </div>
         </div>
       ) : (
-        <button onClick={() => setConfirmDel(true)} className="w-full text-center mt-3 text-xs font-medium" style={{ color: "var(--danger)" }}>Видалити актив</button>
+        <button onClick={() => setConfirmDel(true)} className="w-full text-center mt-3 text-xs font-medium" style={{ color: "var(--danger)" }}>{tr("Видалити актив")}</button>
       ))}
     </Modal>
   );
@@ -2483,8 +3034,9 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
   const addCurrency = () => { if (addCur && !(addCur in localRates)) { setLocalRates({ ...localRates, [addCur]: "" }); setAddCur(""); } };
   const [ratesBusy, setRatesBusy] = useState(false);
   const [ratesMsg, setRatesMsg] = useState("");
+  const [ratesErr, setRatesErr] = useState(false);
   const updateRatesOnline = async () => {
-    setRatesBusy(true); setRatesMsg("");
+    setRatesBusy(true); setRatesMsg(""); setRatesErr(false);
     try {
       const resp = await fetch("https://open.er-api.com/v6/latest/UAH");
       const data = await resp.json();
@@ -2500,10 +3052,10 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
       });
       setLocalRates(newLocal);
       update({ rates: newRates, rateMode: localRateMode });
-      setRatesMsg("Оновлено: " + new Date().toLocaleDateString("uk-UA"));
-      setToast && setToast("Курси оновлено");
+      setRatesMsg(tr("Оновлено: ") + new Date().toLocaleDateString(locale()));
+      setToast && setToast(tr("Курси оновлено"));
     } catch (e) {
-      setRatesMsg("Не вдалося оновити — перевірте інтернет");
+      setRatesErr(true); setRatesMsg(tr("Не вдалося оновити — перевірте інтернет"));
     } finally { setRatesBusy(false); }
   };
   const removeCurrency = (c) => { const r = { ...localRates }; delete r[c]; setLocalRates(r); if (base === c) setBase("UAH"); if (crossFrom === c) setCrossFrom("UAH"); if (crossTo === c) setCrossTo("UAH"); };
@@ -2512,7 +3064,7 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
     Object.keys(localRates).forEach((k) => { if (k !== "UAH") parsed[k] = parseFloat(localRates[k]) || 0; });
     const finalBase = base === "UAH" || parsed[base] !== undefined ? base : "UAH";
     update({ rates: parsed, baseCurrency: finalBase, rateMode: localRateMode });
-    setToast && setToast("Налаштування збережено");
+    setToast && setToast(tr("Налаштування збережено"));
   };
 
   const [pinMode, setPinMode] = useState(false);
@@ -2520,21 +3072,21 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
   const [pin2, setPin2] = useState("");
   const [pinErr, setPinErr] = useState("");
   const savePinCode = () => {
-    if (!/^\d{4,6}$/.test(pin1)) return setPinErr("PIN має містити 4–6 цифр");
-    if (pin1 !== pin2) return setPinErr("Коди не збігаються");
+    if (!/^\d{4,6}$/.test(pin1)) return setPinErr(tr("PIN має містити 4–6 цифр"));
+    if (pin1 !== pin2) return setPinErr(tr("Коди не збігаються"));
     applyPin(pin1);
     setPinMode(false); setPin1(""); setPin2(""); setPinErr("");
-    setToast && setToast("PIN-код увімкнено");
+    setToast && setToast(tr("PIN-код увімкнено"));
   };
-  const removePin = () => { applyPin(null); setToast && setToast("PIN-код вимкнено"); };
+  const removePin = () => { applyPin(null); setToast && setToast(tr("PIN-код вимкнено")); };
 
   const [feedback, setFeedback] = useState("");
   const sendFeedback = () => {
-    const subject = encodeURIComponent("K\u00b3 Finance — відгук / побажання");
+    const subject = encodeURIComponent(tr("K\u00b3 Finance — відгук / побажання"));
     const body = encodeURIComponent(feedback.trim());
     window.location.href = "mailto:" + FEEDBACK_EMAIL + "?subject=" + subject + "&body=" + body;
     setFeedback("");
-    setToast && setToast("Відкрито поштовий застосунок");
+    setToast && setToast(tr("Відкрито поштовий застосунок"));
   };
   const [showTerms, setShowTerms] = useState(false);
 
@@ -2553,13 +3105,13 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
     setAuthErr(""); setAuthBusy(true);
     const { error } = await SB.auth.signUp({ email: email.trim(), password });
     setAuthBusy(false);
-    if (error) setAuthErr(error.message); else { setPassword(""); setToast("Акаунт створено"); }
+    if (error) setAuthErr(error.message); else { setPassword(""); setToast(tr("Акаунт створено")); }
   };
-  const signOut = async () => { await SB.auth.signOut(); setToast("Ви вийшли з акаунта"); };
+  const signOut = async () => { await SB.auth.signOut(); setToast(tr("Ви вийшли з акаунта")); };
 
   return (
     <div className="space-y-5 animate-in max-w-xl">
-      <h1 className="font-display font-bold text-2xl">Налаштування</h1>
+      <h1 className="font-display font-bold text-2xl">{tr("Налаштування")}</h1>
 
       <Card className="p-5 flex items-center justify-between" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)", border: "1px solid var(--border)" }}>
         <span className="font-display font-bold tracking-tight" style={{ fontSize: 26, color: "#F3F0E8" }}>
@@ -2570,101 +3122,101 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">Категорії</h3>
-        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Додавайте власні категорії витрат і доходів, редагуйте назви, іконки та кольори або ховайте зайві.</p>
-        <Button variant="secondary" onClick={() => setView && setView("categories")}><Tags size={15} /> Керувати категоріями</Button>
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("Категорії")}</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Додавайте власні категорії витрат і доходів, редагуйте назви, іконки та кольори або ховайте зайві.")}</p>
+        <Button variant="secondary" onClick={() => setView && setView("categories")}><Tags size={15} /> {tr("Керувати категоріями")}</Button>
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">Цілі накопичень</h3>
-        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Ставте фінансові цілі (відпустка, техніка, подушка безпеки) і відстежуйте прогрес накопичень.</p>
-        <Button variant="secondary" onClick={() => setView && setView("goals")}><PiggyBank size={15} /> Мої цілі</Button>
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("Цілі накопичень")}</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Ставте фінансові цілі (відпустка, техніка, подушка безпеки) і відстежуйте прогрес накопичень.")}</p>
+        <Button variant="secondary" onClick={() => setView && setView("goals")}><PiggyBank size={15} /> {tr("Мої цілі")}</Button>
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">Крипто-портфель</h3>
-        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Додайте свої крипто-активи (BTC, ETH, SOL…) і бачте вартість портфелю за живими ринковими цінами.</p>
-        <Button variant="secondary" onClick={() => setView && setView("crypto")}><Coins size={15} /> Відкрити портфель</Button>
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("Крипто-портфель")}</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Додайте свої крипто-активи (BTC, ETH, SOL…) і бачте вартість портфелю за живими ринковими цінами.")}</p>
+        <Button variant="secondary" onClick={() => setView && setView("crypto")}><Coins size={15} /> {tr("Відкрити портфель")}</Button>
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">Синхронізація між пристроями</h3>
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("Синхронізація між пристроями")}</h3>
         {!SB ? (
-          <p className="text-xs" style={{ color: "var(--text-dim)" }}>Хмарну синхронізацію не налаштовано. Додайте ключі Supabase у код застосунку, щоб увімкнути вхід і збереження в хмару.</p>
+          <p className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Хмарну синхронізацію не налаштовано. Додайте ключі Supabase у код застосунку, щоб увімкнути вхід і збереження в хмару.")}</p>
         ) : session ? (
           <div>
-            <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>Ви увійшли як <strong style={{ color: "var(--text)" }}>{session.user.email}</strong>. Дані зберігаються в хмару автоматично.</p>
-            <Button variant="secondary" onClick={signOut}>Вийти з акаунта</Button>
+            <p className="text-sm mb-3" style={{ color: "var(--text-dim)" }}>{tr("Ви увійшли як")} <strong style={{ color: "var(--text)" }}>{session.user.email}</strong>{tr(". Дані зберігаються в хмару автоматично.")}</p>
+            <Button variant="secondary" onClick={signOut}>{tr("Вийти з акаунта")}</Button>
           </div>
         ) : (
           <div>
-            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Увійдіть, щоб синхронізувати дані між своїми пристроями. На новому пристрої увійдіть тим самим акаунтом — дані підтягнуться.</p>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Увійдіть, щоб синхронізувати дані між своїми пристроями. На новому пристрої увійдіть тим самим акаунтом — дані підтягнуться.")}</p>
             <Field label="Email"><Input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setAuthErr(""); }} placeholder="you@example.com" /></Field>
-            <Field label="Пароль" error={authErr}><Input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setAuthErr(""); }} placeholder="мінімум 6 символів" /></Field>
+            <Field label={tr("Пароль")} error={authErr}><Input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setAuthErr(""); }} placeholder={tr("мінімум 6 символів")} /></Field>
             <div className="flex gap-2">
-              <Button onClick={signIn} disabled={authBusy} className="flex-1">Увійти</Button>
-              <Button variant="secondary" onClick={signUp} disabled={authBusy} className="flex-1">Створити акаунт</Button>
+              <Button onClick={signIn} disabled={authBusy} className="flex-1">{tr("Увійти")}</Button>
+              <Button variant="secondary" onClick={signUp} disabled={authBusy} className="flex-1">{tr("Створити акаунт")}</Button>
             </div>
           </div>
         )}
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">PIN-код</h3>
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("PIN-код")}</h3>
         {pin && !pinMode ? (
           <div>
-            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Увімкнено. Застосунок запитуватиме код при відкритті та після згортання.</p>
-            <p className="text-[11px] font-medium mb-1.5" style={{ color: "var(--text-dim)" }}>Запитувати PIN</p>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Увімкнено. Застосунок запитуватиме код при відкритті та після згортання.")}</p>
+            <p className="text-[11px] font-medium mb-1.5" style={{ color: "var(--text-dim)" }}>{tr("Запитувати PIN")}</p>
             <div className="flex gap-2 mb-3">
-              <button onClick={() => applyPinDelay(0)} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={{ background: pinDelay === 0 ? "var(--accent)" : "var(--surface2)", color: pinDelay === 0 ? "var(--accent-ink)" : "var(--text)", border: "1px solid var(--border)" }}>Одразу</button>
-              <button onClick={() => applyPinDelay(60)} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={{ background: pinDelay === 60 ? "var(--accent)" : "var(--surface2)", color: pinDelay === 60 ? "var(--accent-ink)" : "var(--text)", border: "1px solid var(--border)" }}>Через 1 хв</button>
+              <button onClick={() => applyPinDelay(0)} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={{ background: pinDelay === 0 ? "var(--accent)" : "var(--surface2)", color: pinDelay === 0 ? "var(--accent-ink)" : "var(--text)", border: "1px solid var(--border)" }}>{tr("Одразу")}</button>
+              <button onClick={() => applyPinDelay(60)} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={{ background: pinDelay === 60 ? "var(--accent)" : "var(--surface2)", color: pinDelay === 60 ? "var(--accent-ink)" : "var(--text)", border: "1px solid var(--border)" }}>{tr("Через 1 хв")}</button>
             </div>
             <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => { setPinMode(true); setPin1(""); setPin2(""); setPinErr(""); }}>Змінити</Button>
-              <Button variant="secondary" onClick={removePin}>Вимкнути</Button>
+              <Button variant="secondary" onClick={() => { setPinMode(true); setPin1(""); setPin2(""); setPinErr(""); }}>{tr("Змінити")}</Button>
+              <Button variant="secondary" onClick={removePin}>{tr("Вимкнути")}</Button>
             </div>
           </div>
         ) : pinMode ? (
           <div>
-            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Придумайте код із 4–6 цифр.</p>
-            <Field label="Новий PIN"><Input type="password" inputMode="numeric" maxLength={6} value={pin1} onChange={(e) => { setPin1(e.target.value.replace(/\D/g, "")); setPinErr(""); }} placeholder="••••" /></Field>
-            <Field label="Повторіть PIN" error={pinErr}><Input type="password" inputMode="numeric" maxLength={6} value={pin2} onChange={(e) => { setPin2(e.target.value.replace(/\D/g, "")); setPinErr(""); }} placeholder="••••" /></Field>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Придумайте код із 4–6 цифр.")}</p>
+            <Field label={tr("Новий PIN")}><Input type="password" inputMode="numeric" maxLength={6} value={pin1} onChange={(e) => { setPin1(e.target.value.replace(/\D/g, "")); setPinErr(""); }} placeholder="••••" /></Field>
+            <Field label={tr("Повторіть PIN")} error={pinErr}><Input type="password" inputMode="numeric" maxLength={6} value={pin2} onChange={(e) => { setPin2(e.target.value.replace(/\D/g, "")); setPinErr(""); }} placeholder="••••" /></Field>
             <div className="flex gap-2">
-              <Button onClick={savePinCode} className="flex-1">Зберегти</Button>
-              <Button variant="secondary" onClick={() => { setPinMode(false); setPinErr(""); }}>Скасувати</Button>
+              <Button onClick={savePinCode} className="flex-1">{tr("Зберегти")}</Button>
+              <Button variant="secondary" onClick={() => { setPinMode(false); setPinErr(""); }}>{tr("Скасувати")}</Button>
             </div>
           </div>
         ) : (
           <div>
-            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Захистіть застосунок кодом на вході. Код зберігається лише на цьому пристрої.</p>
-            <Button onClick={() => { setPinMode(true); setPin1(""); setPin2(""); setPinErr(""); }}>Встановити PIN</Button>
+            <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Захистіть застосунок кодом на вході. Код зберігається лише на цьому пристрої.")}</p>
+            <Button onClick={() => { setPinMode(true); setPin1(""); setPin2(""); setPinErr(""); }}>{tr("Встановити PIN")}</Button>
           </div>
         )}
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">Резервна копія</h3>
-        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Збережіть файл-копію на iPhone або відновіть дані з файлу. Хмарна копія — у блоці «Синхронізація» вище.</p>
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("Резервна копія")}</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Збережіть файл-копію на iPhone або відновіть дані з файлу. Хмарна копія — у блоці «Синхронізація» вище.")}</p>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="secondary" onClick={exportBackup}><ArrowDownRight size={15} /> Зберегти копію</Button>
+          <Button variant="secondary" onClick={exportBackup}><ArrowDownRight size={15} /> {tr("Зберегти копію")}</Button>
           <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer" style={{ background: "var(--surface2)", color: "var(--text)", border: "1px solid var(--border)" }}>
-            <ArrowUpRight size={15} /> Відновити з файлу
+            <ArrowUpRight size={15} /> {tr("Відновити з файлу")}
             <input type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) importBackup(f); e.target.value = ""; }} />
           </label>
-          <Button variant="secondary" onClick={exportCSV}><HistoryIcon size={15} /> Експорт у CSV</Button>
+          <Button variant="secondary" onClick={exportCSV}><HistoryIcon size={15} /> {tr("Експорт у CSV")}</Button>
         </div>
-        <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>Відновлення замінить поточні дані на цьому пристрої. CSV зручний для Excel і аналізу операцій.</p>
+        <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>{tr("Відновлення замінить поточні дані на цьому пристрої. CSV зручний для Excel і аналізу операцій.")}</p>
       </Card>
 
       <Card className="p-5">
-        <Field label="Базова валюта (для загального балансу)">
+        <Field label={tr("Базова валюта (для загального балансу)")}>
           <Select value={base} onChange={(e) => setBase(e.target.value)}>{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
         </Field>
 
-        <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>Курси валют — скільки <b style={{ color: "var(--text)" }}>UAH</b> коштує 1 одиниця валюти. Позначка <b style={{ color: "var(--text)" }}>«Авто»</b> оновлюється онлайн, <b style={{ color: "var(--text)" }}>«Вручну»</b> — залишає ваше значення. Крос-курси рахуються автоматично.</p>
+        <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>{tr("Курси валют — скільки")} <b style={{ color: "var(--text)" }}>UAH</b> {tr("коштує 1 одиниця валюти. Позначка")} <b style={{ color: "var(--text)" }}>{tr("«Авто»")}</b> {tr("оновлюється онлайн,")} <b style={{ color: "var(--text)" }}>{tr("«Вручну»")}</b> {tr("— залишає ваше значення. Крос-курси рахуються автоматично.")}</p>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <Button variant="secondary" onClick={updateRatesOnline} disabled={ratesBusy}><RefreshCw size={15} className={ratesBusy ? "spin" : ""} /> {ratesBusy ? "Оновлення…" : "Оновити курси онлайн"}</Button>
-          {ratesMsg && <span className="text-[11px]" style={{ color: ratesMsg.indexOf("Не вдалося") === 0 ? "var(--danger)" : "var(--text-dim)" }}>{ratesMsg}</span>}
+          <Button variant="secondary" onClick={updateRatesOnline} disabled={ratesBusy}><RefreshCw size={15} className={ratesBusy ? "spin" : ""} /> {ratesBusy ? tr("Оновлення…") : tr("Оновити курси онлайн")}</Button>
+          {ratesMsg && <span className="text-[11px]" style={{ color: ratesErr ? "var(--danger)" : "var(--text-dim)" }}>{ratesMsg}</span>}
         </div>
         <div className="grid grid-cols-2 gap-3">
           {activeCurs.filter((c) => c !== "UAH").map((c) => (
@@ -2672,8 +3224,8 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
               <div className="flex items-center justify-between mb-1 gap-1">
                 <span className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>1 {c} =</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => toggleRateMode(c)} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={localRateMode[c] === "manual" ? { background: "var(--surface2)", color: "var(--text-dim)", border: "1px solid var(--border)" } : { background: "var(--accent)", color: "var(--accent-ink)" }}>{localRateMode[c] === "manual" ? "Вручну" : "Авто"}</button>
-                  <button onClick={() => removeCurrency(c)} className="text-[11px] font-medium" style={{ color: "var(--danger)" }}>Прибрати</button>
+                  <button onClick={() => toggleRateMode(c)} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={localRateMode[c] === "manual" ? { background: "var(--surface2)", color: "var(--text-dim)", border: "1px solid var(--border)" } : { background: "var(--accent)", color: "var(--accent-ink)" }}>{localRateMode[c] === "manual" ? tr("Вручну") : tr("Авто")}</button>
+                  <button onClick={() => removeCurrency(c)} className="text-[11px] font-medium" style={{ color: "var(--danger)" }}>{tr("Прибрати")}</button>
                 </div>
               </div>
               <Input type="number" step="0.0001" inputMode="decimal" value={localRates[c] ?? ""} onChange={(e) => setLocalRates({ ...localRates, [c]: e.target.value })} placeholder="0" />
@@ -2683,41 +3235,41 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
         {addableCurs.length > 0 && (
           <div className="flex gap-2 items-end mt-3">
             <div className="flex-1 min-w-0">
-              <span className="text-[11px] font-medium mb-1 block" style={{ color: "var(--text-dim)" }}>Додати валюту</span>
+              <span className="text-[11px] font-medium mb-1 block" style={{ color: "var(--text-dim)" }}>{tr("Додати валюту")}</span>
               <Select value={addCur} onChange={(e) => setAddCur(e.target.value)}>
-                <option value="">— оберіть валюту —</option>
+                <option value="">{tr("— оберіть валюту —")}</option>
                 {addableCurs.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
             </div>
-            <Button variant="secondary" onClick={addCurrency} disabled={!addCur}><Plus size={15} /> Додати</Button>
+            <Button variant="secondary" onClick={addCurrency} disabled={!addCur}><Plus size={15} /> {tr("Додати")}</Button>
           </div>
         )}
 
         <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
-          <p className="text-xs font-semibold mb-2" style={{ color: "var(--text)" }}>Крос-курс валют</p>
+          <p className="text-xs font-semibold mb-2" style={{ color: "var(--text)" }}>{tr("Крос-курс валют")}</p>
           <div className="flex items-center gap-2">
             <Select value={crossFrom} onChange={(e) => setCrossFrom(e.target.value)} className="flex-1">{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
             <ArrowUpRight size={16} style={{ color: "var(--text-dim)", transform: "rotate(45deg)" }} />
             <Select value={crossTo} onChange={(e) => setCrossTo(e.target.value)} className="flex-1">{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
           </div>
           <p className="text-sm mt-2 font-semibold tabular" style={{ color: "var(--accent)" }}>
-            {crossRate > 0 ? `1 ${crossFrom} = ${crossRate.toLocaleString("uk-UA", { maximumFractionDigits: 4 })} ${crossTo}` : "Вкажіть курси обох валют, щоб побачити крос-курс"}
+            {crossRate > 0 ? `1 ${crossFrom} = ${crossRate.toLocaleString(locale(), { maximumFractionDigits: 4 })} ${crossTo}` : tr("Вкажіть курси обох валют, щоб побачити крос-курс")}
           </p>
         </div>
 
-        <Button onClick={save} className="mt-4">Зберегти налаштування</Button>
+        <Button onClick={save} className="mt-4">{tr("Зберегти налаштування")}</Button>
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-semibold text-sm mb-1">Зворотний зв'язок</h3>
-        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Поділіться побажанням, ідеєю чи повідомте про проблему — ми будемо вдячні за ваш відгук.</p>
-        <Textarea rows={3} value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Ваш відгук або побажання…" />
-        <Button className="mt-2" onClick={sendFeedback} disabled={!feedback.trim()}><ArrowUpRight size={15} /> Надіслати відгук</Button>
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("Зворотний зв'язок")}</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Поділіться побажанням, ідеєю чи повідомте про проблему — ми будемо вдячні за ваш відгук.")}</p>
+        <Textarea rows={3} value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder={tr("Ваш відгук або побажання…")} />
+        <Button className="mt-2" onClick={sendFeedback} disabled={!feedback.trim()}><ArrowUpRight size={15} /> {tr("Надіслати відгук")}</Button>
       </Card>
 
       <Card className="p-5">
         <button onClick={() => setShowTerms(!showTerms)} className="w-full flex items-center justify-between text-left">
-          <span className="font-display font-semibold text-sm">Угода користувача та конфіденційність</span>
+          <span className="font-display font-semibold text-sm">{tr("Угода користувача та конфіденційність")}</span>
           {showTerms ? <ChevronDown size={18} style={{ color: "var(--text-dim)" }} /> : <ChevronRight size={18} style={{ color: "var(--text-dim)" }} />}
         </button>
         {showTerms && (
@@ -2768,8 +3320,8 @@ function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteR
   const cancel = () => setEditing(null);
 
   const submit = () => {
-    if (!title.trim()) return setError("Введіть назву нагадування");
-    if (!date) return setError("Оберіть дату");
+    if (!title.trim()) return setError(tr("Введіть назву нагадування"));
+    if (!date) return setError(tr("Оберіть дату"));
     const data = { title: title.trim(), date, amount: amount === "" ? null : parseFloat(amount) || 0, currency, note: note.trim() };
     if (editing === "new") addReminder(data); else editReminder(editing.id, data);
     setEditing(null);
@@ -2784,30 +3336,30 @@ function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteR
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto animate-in" style={{ background: "var(--bg)" }}>
       <div className="sticky top-0 z-10 flex items-center justify-between px-5 border-b" style={{ background: "var(--bg)", borderColor: "var(--border)", paddingTop: "calc(1rem + env(safe-area-inset-top))", paddingBottom: "1rem" }}>
-        <h1 className="font-display font-bold text-xl flex items-center gap-2"><Bell size={20} /> Нагадування</h1>
+        <h1 className="font-display font-bold text-xl flex items-center gap-2"><Bell size={20} /> {tr("Нагадування")}</h1>
         <button onClick={onClose} className="p-2 rounded-lg" style={{ color: "var(--text-dim)" }}><X size={20} /></button>
       </div>
 
       <div className="px-5 py-5 max-w-xl mx-auto space-y-4">
         {editing ? (
           <Card className="p-5">
-            <h3 className="font-display font-semibold text-sm mb-3">{editing === "new" ? "Нове нагадування" : "Редагувати нагадування"}</h3>
-            <Field label="Що зробити" error={error}><Input value={title} onChange={(e) => { setTitle(e.target.value); setError(""); }} placeholder="Напр. Оплатити прибиральницю" /></Field>
-            <Field label="Дата"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-            <Field label="Сума (необов'язково)">
+            <h3 className="font-display font-semibold text-sm mb-3">{editing === "new" ? tr("Нове нагадування") : tr("Редагувати нагадування")}</h3>
+            <Field label={tr("Що зробити")} error={error}><Input value={title} onChange={(e) => { setTitle(e.target.value); setError(""); }} placeholder={tr("Напр. Оплатити прибиральницю")} /></Field>
+            <Field label={tr("Дата")}><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+            <Field label={tr("Сума (необов'язково)")}>
               <div className="flex gap-2">
                 <div className="flex-1 min-w-0"><Input type="number" step="0.01" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
                 <div className="w-20 shrink-0"><Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select></div>
               </div>
             </Field>
-            <Field label="Коментар"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
+            <Field label={tr("Коментар")}><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("Необов'язково")} /></Field>
             <div className="flex gap-2 mt-1">
-              <Button onClick={submit} className="flex-1">{editing === "new" ? "Створити" : "Зберегти"}</Button>
-              <Button variant="secondary" onClick={cancel}>Скасувати</Button>
+              <Button onClick={submit} className="flex-1">{editing === "new" ? tr("Створити") : tr("Зберегти")}</Button>
+              <Button variant="secondary" onClick={cancel}>{tr("Скасувати")}</Button>
             </div>
           </Card>
         ) : (
-          <Button onClick={openNew} className="w-full"><Plus size={16} /> Нове нагадування</Button>
+          <Button onClick={openNew} className="w-full"><Plus size={16} /> {tr("Нове нагадування")}</Button>
         )}
 
         <div className="space-y-2">
@@ -2821,13 +3373,13 @@ function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteR
                     {r.done && <Check size={12} color="#08110D" />}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${r.done ? "line-through" : ""}`} style={{ color: "var(--text)" }}>{r.title}</p>
+                    <p className={`text-sm font-medium ${r.done ? "line-through" : ""}`} style={{ color: "var(--text)" }}>{tr(r.title)}</p>
                     <p className="text-xs mt-0.5" style={{ color: overdue ? "var(--danger)" : "var(--text-dim)" }}>
                       {fmtDate(r.date)}
                       {r.amount != null ? ` · ${fmtMoney(r.amount, r.currency)}` : ""}
-                      {!r.done ? ` · ${days === 0 ? "сьогодні" : days > 0 ? `через ${days} дн.` : `прострочено на ${Math.abs(days)} дн.`}` : ""}
+                      {!r.done ? ` · ${days === 0 ? tr("сьогодні") : days > 0 ? tr(`через ${days} дн.`) : tr(`прострочено на ${Math.abs(days)} дн.`)}` : ""}
                     </p>
-                    {r.note ? <p className="text-xs mt-1" style={{ color: "var(--text-dim)" }}>{r.note}</p> : null}
+                    {r.note ? <p className="text-xs mt-1" style={{ color: "var(--text-dim)" }}>{tr(r.note)}</p> : null}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
@@ -2837,7 +3389,7 @@ function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteR
               </Card>
             );
           })}
-          {sorted.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>Немає нагадувань</p>}
+          {sorted.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>{tr("Немає нагадувань")}</p>}
         </div>
       </div>
     </div>
@@ -2870,7 +3422,7 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
     <div className="fixed inset-0 z-50 overflow-y-auto animate-in" style={{ background: "var(--bg)" }}>
       <div className="relative px-5 pb-8" style={{ background: `linear-gradient(160deg, ${acc.color}, ${acc.color}66 78%, var(--bg))`, paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
         <button onClick={onClose} className="p-2 rounded-full mb-6" style={{ background: "rgba(0,0,0,0.18)" }}><X size={18} color="#fff" /></button>
-        <p className="text-sm mb-1" style={{ color: "rgba(8,17,13,0.75)" }}>{acc.name} · {ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label}</p>
+        <p className="text-sm mb-1" style={{ color: "rgba(8,17,13,0.75)" }}>{tr(acc.name)} · {tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)}</p>
         <h1 className="font-display font-extrabold text-4xl tabular" style={{ color: "#08110D" }}>{fmtMoney(balance, pocket.currency)}</h1>
 
         <div className="mt-6 max-w-sm">
@@ -2880,15 +3432,15 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
 
       <div className="px-5 pt-6">
         <div className="grid grid-cols-4 gap-2 mb-6">
-          <RoundAction icon={Plus} label="Дохід" onClick={() => setModal({ type: "transaction", payload: { kind: "income", presetPocketId: pocketId } })} />
-          <RoundAction icon={Minus} label="Витрата" onClick={() => setModal({ type: "transaction", payload: { kind: "expense", presetPocketId: pocketId } })} />
-          <RoundAction icon={ArrowLeftRight} label="Переказ" onClick={() => setModal({ type: "transfer", payload: { presetPocketId: pocketId } })} />
-          <RoundAction icon={RefreshCw} label="Обмін" onClick={() => setModal({ type: "exchange", payload: { presetPocketId: pocketId } })} />
+          <RoundAction icon={Plus} label={tr("Дохід")} onClick={() => setModal({ type: "transaction", payload: { kind: "income", presetPocketId: pocketId } })} />
+          <RoundAction icon={Minus} label={tr("Витрата")} onClick={() => setModal({ type: "transaction", payload: { kind: "expense", presetPocketId: pocketId } })} />
+          <RoundAction icon={ArrowLeftRight} label={tr("Переказ")} onClick={() => setModal({ type: "transfer", payload: { presetPocketId: pocketId } })} />
+          <RoundAction icon={RefreshCw} label={tr("Обмін")} onClick={() => setModal({ type: "exchange", payload: { presetPocketId: pocketId } })} />
         </div>
 
         <Card className="divide-y mb-4" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center justify-between px-4 py-3">
-            <h3 className="font-display font-semibold text-sm">Операції по цьому рахунку</h3>
+            <h3 className="font-display font-semibold text-sm">{tr("Операції по цьому рахунку")}</h3>
           </div>
           {history.map((tx) => (
             <div key={tx.id} className="flex items-center">
@@ -2902,11 +3454,11 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
               </div>
             </div>
           ))}
-          {history.length === 0 && <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>Ще немає операцій по цьому рахунку</p>}
+          {history.length === 0 && <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>{tr("Ще немає операцій по цьому рахунку")}</p>}
         </Card>
 
         <button onClick={() => { archivePocket(pocketId); onClose(); }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium mb-8" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
-          <Archive size={14} /> Архівувати субрахунок
+          <Archive size={14} /> {tr("Архівувати субрахунок")}
         </button>
       </div>
     </div>
@@ -2932,20 +3484,20 @@ function CardMenuModal({ onClose, pocketId, pockets, getPocket, setModal, archiv
   );
 
   return (
-    <Modal title={`${acc.name} · ${pk.currency}`} onClose={onClose}>
+    <Modal title={`${tr(acc.name)} · ${pk.currency}`} onClose={onClose}>
       <div className="space-y-0.5">
-        <Row icon={ChevronRight} label="Відкрити рахунок" onClick={() => setModal({ type: "pocketDetail", payload: pocketId })} />
-        <Row icon={Edit3} label="Редагувати рахунок (назва, колір, тип)" onClick={() => setModal({ type: "account", payload: acc })} />
-        <Row icon={Coins} label="Змінити валюту / баланс" onClick={() => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk } })} />
-        <Row icon={Archive} label="Архівувати картку" onClick={() => { archivePocket(pocketId); onClose(); }} />
+        <Row icon={ChevronRight} label={tr("Відкрити рахунок")} onClick={() => setModal({ type: "pocketDetail", payload: pocketId })} />
+        <Row icon={Edit3} label={tr("Редагувати рахунок (назва, колір, тип)")} onClick={() => setModal({ type: "account", payload: acc })} />
+        <Row icon={Coins} label={tr("Змінити валюту / баланс")} onClick={() => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk } })} />
+        <Row icon={Archive} label={tr("Архівувати картку")} onClick={() => { archivePocket(pocketId); onClose(); }} />
         {!confirmDel ? (
-          <Row icon={Trash2} label="Видалити картку" danger onClick={() => setConfirmDel(true)} />
+          <Row icon={Trash2} label={tr("Видалити картку")} danger onClick={() => setConfirmDel(true)} />
         ) : (
           <div className="px-1 py-1">
-            <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>Картку буде видалено. Операції залишаться в історії.</p>
+            <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>{tr("Картку буде видалено. Операції залишаться в історії.")}</p>
             <div className="flex gap-2">
-              <Button variant="danger" className="flex-1" onClick={() => { deletePocket(pocketId); onClose(); }}>Видалити</Button>
-              <Button variant="secondary" onClick={() => setConfirmDel(false)}>Скасувати</Button>
+              <Button variant="danger" className="flex-1" onClick={() => { deletePocket(pocketId); onClose(); }}>{tr("Видалити")}</Button>
+              <Button variant="secondary" onClick={() => setConfirmDel(false)}>{tr("Скасувати")}</Button>
             </div>
           </div>
         )}
@@ -2966,37 +3518,37 @@ function AccountModal({ onClose, existing, addAccountWithPocket, editAccount, cu
   const [error, setError] = useState("");
 
   const submit = () => {
-    if (!name.trim()) return setError("Введіть назву рахунку");
+    if (!name.trim()) return setError(tr("Введіть назву рахунку"));
     if (existing) { editAccount(existing.id, { name: name.trim(), type, color, bank: bank.trim() }); }
     else { addAccountWithPocket({ name: name.trim(), type, color, bank: bank.trim() }, currency, balance, pocketName); }
     onClose();
   };
 
   return (
-    <Modal title={existing ? "Редагувати рахунок" : "Новий рахунок"} onClose={onClose}>
-      <Field label="Назва" error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder="Напр. Чорна картка" /></Field>
-      <Field label="Банк (необовʼязково) — для групування">
-        <Input value={bank} onChange={(e) => setBank(e.target.value)} placeholder="Напр. Монобанк, ПриватБанк" />
+    <Modal title={existing ? tr("Редагувати рахунок") : tr("Новий рахунок")} onClose={onClose}>
+      <Field label={tr("Назва")} error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder={tr("Напр. Чорна картка")} /></Field>
+      <Field label={tr("Банк (необовʼязково) — для групування")}>
+        <Input value={bank} onChange={(e) => setBank(e.target.value)} placeholder={tr("Напр. Монобанк, ПриватБанк")} />
       </Field>
-      <Field label="Тип рахунку">
-        <Select value={type} onChange={(e) => setType(e.target.value)}>{ACCOUNT_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</Select>
+      <Field label={tr("Тип рахунку")}>
+        <Select value={type} onChange={(e) => setType(e.target.value)}>{ACCOUNT_TYPES.map((t) => <option key={t.id} value={t.id}>{tr(t.label)}</option>)}</Select>
       </Field>
-      <Field label="Колір">
+      <Field label={tr("Колір")}>
         <div className="flex gap-2 flex-wrap">
           {ACCOUNT_COLORS.map((c) => <button key={c} onClick={() => setColor(c)} className="w-8 h-8 rounded-full" style={{ background: c, border: color === c ? "2px solid var(--text)" : "2px solid transparent" }} />)}
         </div>
       </Field>
       {!existing && (
         <>
-          <p className="text-xs mb-2 mt-1" style={{ color: "var(--text-dim)" }}>Створимо перший валютний субрахунок. Інші валюти можна додати пізніше.</p>
-          <Field label="Назва субрахунку (необовʼязково)"><Input value={pocketName} onChange={(e) => setPocketName(e.target.value)} placeholder="Напр. Основний" /></Field>
-          <Field label="Валюта">
+          <p className="text-xs mb-2 mt-1" style={{ color: "var(--text-dim)" }}>{tr("Створимо перший валютний субрахунок. Інші валюти можна додати пізніше.")}</p>
+          <Field label={tr("Назва субрахунку (необовʼязково)")}><Input value={pocketName} onChange={(e) => setPocketName(e.target.value)} placeholder={tr("Напр. Основний")} /></Field>
+          <Field label={tr("Валюта")}>
             <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select>
           </Field>
-          <Field label="Початковий баланс"><Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} /></Field>
+          <Field label={tr("Початковий баланс")}><Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} /></Field>
         </>
       )}
-      <Button className="w-full mt-2" onClick={submit}>{existing ? "Зберегти зміни" : "Створити рахунок"}</Button>
+      <Button className="w-full mt-2" onClick={submit}>{existing ? tr("Зберегти зміни") : tr("Створити рахунок")}</Button>
     </Modal>
   );
 }
@@ -3014,7 +3566,7 @@ function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocke
   const currencyChanged = existing && currency !== existing.currency;
 
   const submit = () => {
-    if (!currency) return setError("Оберіть валюту");
+    if (!currency) return setError(tr("Оберіть валюту"));
     if (existing) editPocket(existing.id, { currency, initialBalance: parseFloat(balance) || 0, name: name.trim() });
     else addPocket(accountId, currency, balance, name);
     onClose();
@@ -3022,20 +3574,20 @@ function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocke
 
   return (
     <Modal title={existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`} onClose={onClose}>
-      <Field label="Назва субрахунку (необовʼязково)">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Напр. Заначка, Зарплатна" />
+      <Field label={tr("Назва субрахунку (необовʼязково)")}>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("Напр. Заначка, Зарплатна")} />
       </Field>
-      <Field label="Валюта" error={error}>
+      <Field label={tr("Валюта")} error={error}>
         <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {availableCurrencies.map((c) => <option key={c} value={c}>{c}</option>)}
         </Select>
       </Field>
-      {currencyChanged && <p className="text-xs mb-3" style={{ color: "var(--warn)" }}>Зміна валюти не конвертує вже наявні операції — вони залишаться у своїх сумах.</p>}
-      <Field label={existing ? "Початковий баланс (без транзакцій)" : "Початковий баланс"}>
+      {currencyChanged && <p className="text-xs mb-3" style={{ color: "var(--warn)" }}>{tr("Зміна валюти не конвертує вже наявні операції — вони залишаться у своїх сумах.")}</p>}
+      <Field label={existing ? tr("Початковий баланс (без транзакцій)") : tr("Початковий баланс")}>
         <Input type="number" step="0.01" inputMode="decimal" value={balance} onChange={(e) => setBalance(e.target.value)} placeholder="0" />
       </Field>
-      {availableCurrencies.length === 0 && !existing && <p className="text-xs mb-3" style={{ color: "var(--danger)" }}>Усі доступні валюти вже додані до цього рахунку.</p>}
-      <Button className="w-full mt-2" onClick={submit} disabled={!existing && availableCurrencies.length === 0}>{existing ? "Зберегти зміни" : "Додати субрахунок"}</Button>
+      {availableCurrencies.length === 0 && !existing && <p className="text-xs mb-3" style={{ color: "var(--danger)" }}>{tr("Усі доступні валюти вже додані до цього рахунку.")}</p>}
+      <Button className="w-full mt-2" onClick={submit} disabled={!existing && availableCurrencies.length === 0}>{existing ? tr("Зберегти зміни") : tr("Додати субрахунок")}</Button>
     </Modal>
   );
 }
@@ -3052,7 +3604,7 @@ function CategoryModal({ onClose, existing, addCategory, editCategory }) {
   const iconOptions = Object.keys(ICONS);
 
   const submit = () => {
-    if (!name.trim()) return setError("Введіть назву категорії");
+    if (!name.trim()) return setError(tr("Введіть назву категорії"));
     const data = { name: name.trim(), type, icon, color };
     if (type === "expense") { const b = parseFloat(budget); data.budget = b > 0 ? b : null; } else { data.budget = null; }
     if (isEdit) editCategory(existing.id, data); else addCategory(data);
@@ -3060,15 +3612,15 @@ function CategoryModal({ onClose, existing, addCategory, editCategory }) {
   };
 
   return (
-    <Modal title={isEdit ? "Редагувати категорію" : "Нова категорія"} onClose={onClose}>
-      <Field label="Назва" error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} /></Field>
-      <Field label="Тип">
+    <Modal title={isEdit ? tr("Редагувати категорію") : tr("Нова категорія")} onClose={onClose}>
+      <Field label={tr("Назва")} error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} /></Field>
+      <Field label={tr("Тип")}>
         <Select value={type} onChange={(e) => setType(e.target.value)} disabled={isEdit}>
-          <option value="expense">Витрата</option>
-          <option value="income">Дохід</option>
+          <option value="expense">{tr("Витрата")}</option>
+          <option value="income">{tr("Дохід")}</option>
         </Select>
       </Field>
-      <Field label="Іконка">
+      <Field label={tr("Іконка")}>
         <div className="grid grid-cols-8 gap-2 max-h-32 overflow-y-auto">
           {iconOptions.map((k) => (
             <button key={k} onClick={() => setIcon(k)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: icon === k ? "var(--accent)" : "var(--surface2)" }}>
@@ -3077,15 +3629,15 @@ function CategoryModal({ onClose, existing, addCategory, editCategory }) {
           ))}
         </div>
       </Field>
-      <Field label="Колір">
+      <Field label={tr("Колір")}>
         <div className="flex gap-2 flex-wrap">{ACCOUNT_COLORS.map((c) => <button key={c} onClick={() => setColor(c)} className="w-8 h-8 rounded-full" style={{ background: c, border: color === c ? "2px solid var(--text)" : "2px solid transparent" }} />)}</div>
       </Field>
       {type === "expense" && (
-        <Field label="Місячний ліміт (бюджет), необовʼязково">
-          <Input type="number" inputMode="decimal" step="1" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="напр. 8000" />
+        <Field label={tr("Місячний ліміт (бюджет), необовʼязково")}>
+          <Input type="number" inputMode="decimal" step="1" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder={tr("напр. 8000")} />
         </Field>
       )}
-      <Button className="w-full mt-2" onClick={submit}>{isEdit ? "Зберегти зміни" : "Створити категорію"}</Button>
+      <Button className="w-full mt-2" onClick={submit}>{isEdit ? tr("Зберегти зміни") : tr("Створити категорію")}</Button>
     </Modal>
   );
 }
@@ -3116,39 +3668,39 @@ function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, po
 
   const submit = () => {
     const amt = parseFloat(amount);
-    if (!amt || amt <= 0) return setError("Введіть коректну суму");
-    if (!pocketId) return setError("Оберіть рахунок");
-    if (!categoryId) return setError("Оберіть категорію");
+    if (!amt || amt <= 0) return setError(tr("Введіть коректну суму"));
+    if (!pocketId) return setError(tr("Оберіть рахунок"));
+    if (!categoryId) return setError(tr("Оберіть категорію"));
     const data = { type: kind, amount: amt, currency, pocketId, categoryId, date, note, receipt };
     if (editing) editTransaction(editing.id, data); else addTransaction(data);
     onClose();
   };
 
   return (
-    <Modal title={editing ? "Редагувати операцію" : isIncome ? "Додати дохід" : "Додати витрату"} onClose={onClose}>
-      <Field label="Рахунок">
+    <Modal title={editing ? tr("Редагувати операцію") : isIncome ? tr("Додати дохід") : tr("Додати витрату")} onClose={onClose}>
+      <Field label={tr("Рахунок")}>
         <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} />
       </Field>
       <Field label={`Сума (${currency})`} error={error}>
         <Input type="number" step="0.01" value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} placeholder="0.00" />
       </Field>
-      <Field label="Категорія">
+      <Field label={tr("Категорія")}>
         <div className="grid grid-cols-4 gap-2">
           {cats.map((c) => (
             <button key={c.id} onClick={() => setCategoryId(c.id)} className="flex flex-col items-center gap-1 p-2 rounded-xl" style={{ background: categoryId === c.id ? "var(--surface2)" : "transparent", border: categoryId === c.id ? `1px solid ${c.color}` : "1px solid var(--border)" }}>
               <Icon name={c.icon} size={16} style={{ color: c.color }} />
-              <span className="text-[10px] text-center leading-tight" style={{ color: "var(--text)" }}>{c.name}</span>
+              <span className="text-[10px] text-center leading-tight" style={{ color: "var(--text)" }}>{tr(c.name)}</span>
             </button>
           ))}
         </div>
       </Field>
-      <Field label="Дата"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-      <Field label="Опис / коментар"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
-      <Field label="Фото чеку (необов'язково)">
+      <Field label={tr("Дата")}><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label={tr("Опис / коментар")}><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("Необов'язково")} /></Field>
+      <Field label={tr("Фото чеку (необов'язково)")}>
         <input type="file" accept="image/*" onChange={handleReceipt} className="text-xs" style={{ color: "var(--text-dim)" }} />
-        {receipt && <img src={receipt} alt="чек" className="mt-2 h-24 rounded-lg object-cover" />}
+        {receipt && <img src={receipt} alt={tr("чек")} className="mt-2 h-24 rounded-lg object-cover" />}
       </Field>
-      <Button className="w-full mt-2" onClick={submit}>{editing ? "Зберегти зміни" : "Зберегти"}</Button>
+      <Button className="w-full mt-2" onClick={submit}>{editing ? tr("Зберегти зміни") : tr("Зберегти")}</Button>
     </Modal>
   );
 }
@@ -3189,21 +3741,21 @@ function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, po
 
   const submit = () => {
     const amt = parseFloat(fromAmount);
-    if (!amt || amt <= 0) return setError("Введіть коректну суму списання");
-    if (!fromPocketId || !toPocketId) return setError("Оберіть рахунки");
-    if (fromPocketId === toPocketId) return setError("Оберіть різні рахунки");
+    if (!amt || amt <= 0) return setError(tr("Введіть коректну суму списання"));
+    if (!fromPocketId || !toPocketId) return setError(tr("Оберіть рахунки"));
+    if (fromPocketId === toPocketId) return setError(tr("Оберіть різні рахунки"));
     const to = parseFloat(toAmount);
-    if (!to || to <= 0) return setError("Сума зарахування має бути додатною");
+    if (!to || to <= 0) return setError(tr("Сума зарахування має бути додатною"));
     addTransaction({ type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? rate : 1, fee: parseFloat(fee) || 0, note });
     onClose();
   };
 
   return (
-    <Modal title={isExchange ? "Обмін валюти" : "Переказ між рахунками"} onClose={onClose}>
-      <Field label="Рахунок списання">
+    <Modal title={isExchange ? tr("Обмін валюти") : tr("Переказ між рахунками")} onClose={onClose}>
+      <Field label={tr("Рахунок списання")}>
         <PocketSelect accounts={accounts} pockets={pockets} value={fromPocketId} onChange={setFromPocketId} />
       </Field>
-      <Field label="Рахунок зарахування">
+      <Field label={tr("Рахунок зарахування")}>
         <PocketSelect accounts={accounts} pockets={pockets} value={toPocketId} onChange={setToPocketId} excludePocketId={fromPocketId} />
       </Field>
       <Field label={`Сума списання (${fromCurrency})`} error={error}>
@@ -3214,9 +3766,9 @@ function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, po
       )}
       <Field label={`Комісія (${crossCurrency ? toCurrency : fromCurrency}, необов'язково)`}><Input type="number" step="0.01" value={fee} onChange={(e) => setFee(e.target.value)} /></Field>
       <Field label={`Сума зарахування (${toCurrency})`}><Input type="number" step="0.01" value={toAmount} onChange={(e) => { setToAmount(e.target.value); setManualTo(true); }} /></Field>
-      <Field label="Дата"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-      <Field label="Коментар"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
-      <Button className="w-full mt-2" onClick={submit}>{isExchange ? "Обміняти" : "Переказати"}</Button>
+      <Field label={tr("Дата")}><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label={tr("Коментар")}><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("Необов'язково")} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{isExchange ? tr("Обміняти") : tr("Переказати")}</Button>
     </Modal>
   );
 }
@@ -3237,25 +3789,25 @@ function LoanModal({ onClose, accounts, pockets, addLoan, direction }) {
 
   const submit = () => {
     const amt = parseFloat(amount);
-    if (!borrower.trim()) return setError(isIn ? "Вкажіть, кому ви винні" : "Введіть ім'я позичальника");
-    if (!amt || amt <= 0) return setError("Введіть коректну суму");
-    if (!pocketId) return setError("Оберіть рахунок");
-    if (!dueDate) return setError(isIn ? "Вкажіть термін сплати" : "Вкажіть очікувану дату повернення");
+    if (!borrower.trim()) return setError(isIn ? tr("Вкажіть, кому ви винні") : tr("Введіть ім'я позичальника"));
+    if (!amt || amt <= 0) return setError(tr("Введіть коректну суму"));
+    if (!pocketId) return setError(tr("Оберіть рахунок"));
+    if (!dueDate) return setError(isIn ? tr("Вкажіть термін сплати") : tr("Вкажіть очікувану дату повернення"));
     addLoan({ borrower: borrower.trim(), amount: amt, currency, pocketId, dateGiven, dueDate, note, direction: isIn ? "in" : "out" }, pocketId, amt, currency, note);
     onClose();
   };
 
   return (
-    <Modal title={isIn ? "Додати борг (я винен)" : "Надати позику"} onClose={onClose}>
-      <Field label={isIn ? "Кому ви винні" : "Ім'я / назва позичальника"} error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} placeholder={isIn ? "Напр. Банк / Андрій" : "Напр. Олег К."} /></Field>
-      <Field label={isIn ? "Рахунок, куди надійшли кошти" : "Рахунок, з якого видано кошти"}>
+    <Modal title={isIn ? tr("Додати борг (я винен)") : tr("Надати позику")} onClose={onClose}>
+      <Field label={isIn ? tr("Кому ви винні") : tr("Ім'я / назва позичальника")} error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} placeholder={isIn ? tr("Напр. Банк / Андрій") : tr("Напр. Олег К.")} /></Field>
+      <Field label={isIn ? tr("Рахунок, куди надійшли кошти") : tr("Рахунок, з якого видано кошти")}>
         <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} />
       </Field>
       <Field label={`Сума (${currency})`}><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
-      <Field label={isIn ? "Дата отримання" : "Дата надання"}><Input type="date" value={dateGiven} onChange={(e) => setDateGiven(e.target.value)} /></Field>
-      <Field label={isIn ? "Термін сплати" : "Очікувана дата повернення"}><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
-      <Field label="Коментар / домовленість"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
-      <Button className="w-full mt-2" onClick={submit}>{isIn ? "Додати борг" : "Надати позику"}</Button>
+      <Field label={isIn ? tr("Дата отримання") : tr("Дата надання")}><Input type="date" value={dateGiven} onChange={(e) => setDateGiven(e.target.value)} /></Field>
+      <Field label={isIn ? tr("Термін сплати") : tr("Очікувана дата повернення")}><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
+      <Field label={tr("Коментар / домовленість")}><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("Необов'язково")} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{isIn ? tr("Додати борг") : tr("Надати позику")}</Button>
     </Modal>
   );
 }
@@ -3267,18 +3819,18 @@ function LoanEditModal({ onClose, loan, editLoan }) {
   const [note, setNote] = useState(loan.note || "");
   const [error, setError] = useState("");
   const submit = () => {
-    if (!borrower.trim()) return setError("Введіть імʼя позичальника");
-    if (!dueDate) return setError("Оберіть дату повернення");
+    if (!borrower.trim()) return setError(tr("Введіть імʼя позичальника"));
+    if (!dueDate) return setError(tr("Оберіть дату повернення"));
     editLoan(loan.id, { borrower: borrower.trim(), dueDate, note: note.trim() });
     onClose();
   };
   return (
-    <Modal title="Редагувати позику" onClose={onClose}>
-      <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>Суму, валюту й рахунок змінити не можна (вони пов'язані з операцією видачі). Можна відкоригувати позичальника, дату й коментар.</p>
-      <Field label="Кому позичено" error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} /></Field>
-      <Field label="Дата повернення"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
-      <Field label="Коментар / домовленість"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
-      <Button className="w-full mt-2" onClick={submit}>Зберегти</Button>
+    <Modal title={tr("Редагувати позику")} onClose={onClose}>
+      <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Суму, валюту й рахунок змінити не можна (вони пов'язані з операцією видачі). Можна відкоригувати позичальника, дату й коментар.")}</p>
+      <Field label={tr("Кому позичено")} error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} /></Field>
+      <Field label={tr("Дата повернення")}><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
+      <Field label={tr("Коментар / домовленість")}><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("Необов'язково")} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{tr("Зберегти")}</Button>
     </Modal>
   );
 }
@@ -3295,27 +3847,27 @@ function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn,
 
   const submit = () => {
     const amt = parseFloat(amount);
-    if (!amt || amt <= 0) return setError("Введіть коректну суму повернення");
-    if (amt > remaining + 0.005) return setError(`Сума не може перевищувати залишок боргу (${fmtMoney(remaining, loan.currency)})`);
-    if (!pocketId) return setError("Оберіть рахунок зарахування");
+    if (!amt || amt <= 0) return setError(tr("Введіть коректну суму повернення"));
+    if (amt > remaining + 0.005) return setError(tr(`Сума не може перевищувати залишок боргу (${fmtMoney(remaining, loan.currency)})`));
+    if (!pocketId) return setError(tr("Оберіть рахунок зарахування"));
     registerLoanReturn(loan.id, amt, pocketId, loan.currency, date, note);
     onClose();
   };
 
   return (
-    <Modal title={(loan.direction === "in" ? "Погашення боргу: " : "Повернення позики: ") + loan.borrower} onClose={onClose}>
+    <Modal title={(loan.direction === "in" ? tr("Погашення боргу: ") : tr("Повернення позики: ")) + loan.borrower} onClose={onClose}>
       <p className="text-sm mb-4 px-3 py-2 rounded-lg" style={{ background: "var(--surface2)", color: "var(--text-dim)" }}>
-        {loan.direction === "in" ? "Залишок до сплати: " : "Залишок боргу: "}<strong style={{ color: "var(--text)" }}>{fmtMoney(remaining, loan.currency)}</strong>
+        {loan.direction === "in" ? tr("Залишок до сплати: ") : tr("Залишок боргу: ")}<strong style={{ color: "var(--text)" }}>{fmtMoney(remaining, loan.currency)}</strong>
       </p>
-      <Field label={(loan.direction === "in" ? "Сума погашення" : "Сума повернення") + ` (${loan.currency})`} error={error}>
+      <Field label={(loan.direction === "in" ? tr("Сума погашення") : tr("Сума повернення")) + ` (${loan.currency})`} error={error}>
         <Input type="number" step="0.01" max={remaining} value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} />
       </Field>
-      <Field label={(loan.direction === "in" ? "Рахунок, з якого сплачуєте" : "Рахунок зарахування") + ` (валюта ${loan.currency})`}>
+      <Field label={(loan.direction === "in" ? tr("Рахунок, з якого сплачуєте") : tr("Рахунок зарахування")) + tr(` (валюта ${loan.currency})`)}>
         <PocketSelect accounts={accounts} pockets={active} value={pocketId} onChange={setPocketId} />
       </Field>
-      <Field label="Дата"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-      <Field label="Коментар"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Необов'язково" /></Field>
-      <Button className="w-full mt-2" onClick={submit}>{loan.direction === "in" ? "Зареєструвати погашення" : "Зареєструвати повернення"}</Button>
+      <Field label={tr("Дата")}><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label={tr("Коментар")}><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("Необов'язково")} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{loan.direction === "in" ? tr("Зареєструвати погашення") : tr("Зареєструвати повернення")}</Button>
     </Modal>
   );
 }
