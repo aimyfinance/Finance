@@ -45,7 +45,7 @@
 
 var _boot = document.getElementById("boot");
 var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo, useCallback = React.useCallback;
-var LI = {"LayoutDashboard":[["rect",{"width":7,"height":9,"x":3,"y":3,"rx":1}],["rect",{"width":7,"height":5,"x":14,"y":3,"rx":1}],["rect",{"width":7,"height":9,"x":14,"y":12,"rx":1}],["rect",{"width":7,"height":5,"x":3,"y":16,"rx":1}]],"Wallet":[["path",{"d":"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"}],["path",{"d":"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"}]],"History":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}],["path",{"d":"M12 7v5l4 2"}]],"Tags":[["path",{"d":"M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"}],["path",{"d":"M6 9.01V9"}],["path",{"d":"m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"}]],"Banknote":[["rect",{"width":20,"height":12,"x":2,"y":6,"rx":2}],["circle",{"cx":12,"cy":12,"r":2}],["path",{"d":"M6 12h.01M18 12h.01"}]],"Settings":[["path",{"d":"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"}],["circle",{"cx":12,"cy":12,"r":3}]],"Plus":[["path",{"d":"M5 12h14"}],["path",{"d":"M12 5v14"}]],"Minus":[["path",{"d":"M5 12h14"}]],"ArrowLeftRight":[["path",{"d":"M8 3 4 7l4 4"}],["path",{"d":"M4 7h16"}],["path",{"d":"m16 21 4-4-4-4"}],["path",{"d":"M20 17H4"}]],"RefreshCw":[["path",{"d":"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"}],["path",{"d":"M21 3v5h-5"}],["path",{"d":"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"}],["path",{"d":"M8 16H3v5"}]],"Sun":[["circle",{"cx":12,"cy":12,"r":4}],["path",{"d":"M12 2v2"}],["path",{"d":"M12 20v2"}],["path",{"d":"m4.93 4.93 1.41 1.41"}],["path",{"d":"m17.66 17.66 1.41 1.41"}],["path",{"d":"M2 12h2"}],["path",{"d":"M20 12h2"}],["path",{"d":"m6.34 17.66-1.41 1.41"}],["path",{"d":"m19.07 4.93-1.41 1.41"}]],"Moon":[["path",{"d":"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"}]],"X":[["path",{"d":"M18 6 6 18"}],["path",{"d":"m6 6 12 12"}]],"Trash2":[["path",{"d":"M3 6h18"}],["path",{"d":"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"}],["path",{"d":"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"}],["line",{"x1":10,"x2":10,"y1":11,"y2":17}],["line",{"x1":14,"x2":14,"y1":11,"y2":17}]],"Edit3":[["path",{"d":"M12 20h9"}],["path",{"d":"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"}]],"Search":[["circle",{"cx":11,"cy":11,"r":8}],["path",{"d":"m21 21-4.3-4.3"}]],"ShoppingCart":[["circle",{"cx":8,"cy":21,"r":1}],["circle",{"cx":19,"cy":21,"r":1}],["path",{"d":"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"}]],"Utensils":[["path",{"d":"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"}],["path",{"d":"M7 2v20"}],["path",{"d":"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"}]],"Bus":[["path",{"d":"M8 6v6"}],["path",{"d":"M15 6v6"}],["path",{"d":"M2 12h19.6"}],["path",{"d":"M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"}],["circle",{"cx":7,"cy":18,"r":2}],["path",{"d":"M9 18h5"}],["circle",{"cx":16,"cy":18,"r":2}]],"Plane":[["path",{"d":"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"}]],"Fuel":[["line",{"x1":3,"x2":15,"y1":22,"y2":22}],["line",{"x1":4,"x2":14,"y1":9,"y2":9}],["path",{"d":"M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"}],["path",{"d":"M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"}]],"Car":[["path",{"d":"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"}],["circle",{"cx":7,"cy":17,"r":2}],["path",{"d":"M9 17h6"}],["circle",{"cx":17,"cy":17,"r":2}]],"HeartPulse":[["path",{"d":"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"}],["path",{"d":"M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"}]],"Dumbbell":[["path",{"d":"m6.5 6.5 11 11"}],["path",{"d":"m21 21-1-1"}],["path",{"d":"m3 3 1 1"}],["path",{"d":"m18 22 4-4"}],["path",{"d":"m2 6 4-4"}],["path",{"d":"m3 10 7-7"}],["path",{"d":"m14 21 7-7"}]],"Shirt":[["path",{"d":"M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"}]],"GraduationCap":[["path",{"d":"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"}],["path",{"d":"M22 10v6"}],["path",{"d":"M6 12.5V16a6 3 0 0 0 12 0v-3.5"}]],"PartyPopper":[["path",{"d":"M5.8 11.3 2 22l10.7-3.79"}],["path",{"d":"M4 3h.01"}],["path",{"d":"M22 8h.01"}],["path",{"d":"M15 2h.01"}],["path",{"d":"M22 20h.01"}],["path",{"d":"m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L12 10"}],["path",{"d":"m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"}],["path",{"d":"m11 2 .33.82c.34.86-.2 1.82-1.11 1.98-.7.11-1.22.72-1.22 1.43V7"}],["path",{"d":"M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"}]],"Gift":[["rect",{"x":3,"y":8,"width":18,"height":4,"rx":1}],["path",{"d":"M12 8v13"}],["path",{"d":"M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"}],["path",{"d":"M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"}]],"Home":[["path",{"d":"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"}],["polyline",{"points":"9 22 9 12 15 12 15 22"}]],"Zap":[["path",{"d":"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"}]],"MoreHorizontal":[["circle",{"cx":12,"cy":12,"r":1}],["circle",{"cx":19,"cy":12,"r":1}],["circle",{"cx":5,"cy":12,"r":1}]],"Briefcase":[["path",{"d":"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"}],["rect",{"width":20,"height":14,"x":2,"y":6,"rx":2}]],"Building2":[["path",{"d":"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"}],["path",{"d":"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"}],["path",{"d":"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"}],["path",{"d":"M10 6h4"}],["path",{"d":"M10 10h4"}],["path",{"d":"M10 14h4"}],["path",{"d":"M10 18h4"}]],"TrendingUp":[["polyline",{"points":"22 7 13.5 15.5 8.5 10.5 2 17"}],["polyline",{"points":"16 7 22 7 22 13"}]],"TrendingDown":[["polyline",{"points":"22 17 13.5 8.5 8.5 13.5 2 7"}],["polyline",{"points":"16 17 22 17 22 11"}]],"RotateCcw":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}]],"Users":[["path",{"d":"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"}],["circle",{"cx":9,"cy":7,"r":4}],["path",{"d":"M22 21v-2a4 4 0 0 0-3-3.87"}],["path",{"d":"M16 3.13a4 4 0 0 1 0 7.75"}]],"AlertTriangle":[["path",{"d":"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"}],["path",{"d":"M12 9v4"}],["path",{"d":"M12 17h.01"}]],"CreditCard":[["rect",{"width":20,"height":14,"x":2,"y":5,"rx":2}],["line",{"x1":2,"x2":22,"y1":10,"y2":10}]],"Landmark":[["line",{"x1":3,"x2":21,"y1":22,"y2":22}],["line",{"x1":6,"x2":6,"y1":18,"y2":11}],["line",{"x1":10,"x2":10,"y1":18,"y2":11}],["line",{"x1":14,"x2":14,"y1":18,"y2":11}],["line",{"x1":18,"x2":18,"y1":18,"y2":11}],["polygon",{"points":"12 2 20 7 4 7"}]],"PiggyBank":[["path",{"d":"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"}],["path",{"d":"M2 9v1c0 1.1.9 2 2 2h1"}],["path",{"d":"M16 11h.01"}]],"LineChart":[["path",{"d":"M3 3v16a2 2 0 0 0 2 2h16"}],["path",{"d":"m19 9-5 5-4-4-3 3"}]],"ChevronRight":[["path",{"d":"m9 18 6-6-6-6"}]],"ChevronDown":[["path",{"d":"m6 9 6 6 6-6"}]],"Check":[["path",{"d":"M20 6 9 17l-5-5"}]],"Archive":[["rect",{"width":20,"height":5,"x":2,"y":3,"rx":1}],["path",{"d":"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"}],["path",{"d":"M10 12h4"}]],"Calendar":[["rect",{"width":18,"height":18,"x":3,"y":4,"rx":2}],["path",{"d":"M3 10h18"}],["path",{"d":"M8 2v4"}],["path",{"d":"M16 2v4"}]],"Filter":[["polygon",{"points":"22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"}]],"ArrowUpRight":[["path",{"d":"M7 7h10v10"}],["path",{"d":"M7 17 17 7"}]],"ArrowDownRight":[["path",{"d":"m7 7 10 10"}],["path",{"d":"M17 7v10H7"}]],"Coins":[["circle",{"cx":8,"cy":8,"r":6}],["path",{"d":"M18.09 10.37A6 6 0 1 1 10.34 18"}],["path",{"d":"M7 6h1v4"}],["path",{"d":"m16.71 13.88.7.71-2.82 2.82"}]],"Bell":[["path",{"d":"M10.268 21a2 2 0 0 0 3.464 0"}],["path",{"d":"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"}]],"GripVertical":[["circle",{"cx":9,"cy":12,"r":1}],["circle",{"cx":9,"cy":5,"r":1}],["circle",{"cx":9,"cy":19,"r":1}],["circle",{"cx":15,"cy":12,"r":1}],["circle",{"cx":15,"cy":5,"r":1}],["circle",{"cx":15,"cy":19,"r":1}]],"Lock":[["rect",{"width":18,"height":11,"x":3,"y":11,"rx":2,"ry":2}],["path",{"d":"M7 11V7a5 5 0 0 1 10 0v4"}]],"HelpCircle":[["circle",{"cx":12,"cy":12,"r":10}],["path",{"d":"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"}],["path",{"d":"M12 17h.01"}]]};
+var LI = {"LayoutDashboard":[["rect",{"width":7,"height":9,"x":3,"y":3,"rx":1}],["rect",{"width":7,"height":5,"x":14,"y":3,"rx":1}],["rect",{"width":7,"height":9,"x":14,"y":12,"rx":1}],["rect",{"width":7,"height":5,"x":3,"y":16,"rx":1}]],"Wallet":[["path",{"d":"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"}],["path",{"d":"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"}]],"History":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}],["path",{"d":"M12 7v5l4 2"}]],"Tags":[["path",{"d":"M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"}],["path",{"d":"M6 9.01V9"}],["path",{"d":"m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"}]],"Banknote":[["rect",{"width":20,"height":12,"x":2,"y":6,"rx":2}],["circle",{"cx":12,"cy":12,"r":2}],["path",{"d":"M6 12h.01M18 12h.01"}]],"Settings":[["path",{"d":"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"}],["circle",{"cx":12,"cy":12,"r":3}]],"Plus":[["path",{"d":"M5 12h14"}],["path",{"d":"M12 5v14"}]],"Minus":[["path",{"d":"M5 12h14"}]],"ArrowLeftRight":[["path",{"d":"M8 3 4 7l4 4"}],["path",{"d":"M4 7h16"}],["path",{"d":"m16 21 4-4-4-4"}],["path",{"d":"M20 17H4"}]],"RefreshCw":[["path",{"d":"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"}],["path",{"d":"M21 3v5h-5"}],["path",{"d":"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"}],["path",{"d":"M8 16H3v5"}]],"Sun":[["circle",{"cx":12,"cy":12,"r":4}],["path",{"d":"M12 2v2"}],["path",{"d":"M12 20v2"}],["path",{"d":"m4.93 4.93 1.41 1.41"}],["path",{"d":"m17.66 17.66 1.41 1.41"}],["path",{"d":"M2 12h2"}],["path",{"d":"M20 12h2"}],["path",{"d":"m6.34 17.66-1.41 1.41"}],["path",{"d":"m19.07 4.93-1.41 1.41"}]],"Moon":[["path",{"d":"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"}]],"X":[["path",{"d":"M18 6 6 18"}],["path",{"d":"m6 6 12 12"}]],"Trash2":[["path",{"d":"M3 6h18"}],["path",{"d":"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"}],["path",{"d":"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"}],["line",{"x1":10,"x2":10,"y1":11,"y2":17}],["line",{"x1":14,"x2":14,"y1":11,"y2":17}]],"Edit3":[["path",{"d":"M12 20h9"}],["path",{"d":"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"}]],"Search":[["circle",{"cx":11,"cy":11,"r":8}],["path",{"d":"m21 21-4.3-4.3"}]],"ShoppingCart":[["circle",{"cx":8,"cy":21,"r":1}],["circle",{"cx":19,"cy":21,"r":1}],["path",{"d":"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"}]],"Utensils":[["path",{"d":"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"}],["path",{"d":"M7 2v20"}],["path",{"d":"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"}]],"Bus":[["path",{"d":"M8 6v6"}],["path",{"d":"M15 6v6"}],["path",{"d":"M2 12h19.6"}],["path",{"d":"M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"}],["circle",{"cx":7,"cy":18,"r":2}],["path",{"d":"M9 18h5"}],["circle",{"cx":16,"cy":18,"r":2}]],"Plane":[["path",{"d":"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"}]],"Fuel":[["line",{"x1":3,"x2":15,"y1":22,"y2":22}],["line",{"x1":4,"x2":14,"y1":9,"y2":9}],["path",{"d":"M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"}],["path",{"d":"M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"}]],"Car":[["path",{"d":"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"}],["circle",{"cx":7,"cy":17,"r":2}],["path",{"d":"M9 17h6"}],["circle",{"cx":17,"cy":17,"r":2}]],"HeartPulse":[["path",{"d":"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"}],["path",{"d":"M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"}]],"Dumbbell":[["path",{"d":"m6.5 6.5 11 11"}],["path",{"d":"m21 21-1-1"}],["path",{"d":"m3 3 1 1"}],["path",{"d":"m18 22 4-4"}],["path",{"d":"m2 6 4-4"}],["path",{"d":"m3 10 7-7"}],["path",{"d":"m14 21 7-7"}]],"Shirt":[["path",{"d":"M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"}]],"GraduationCap":[["path",{"d":"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"}],["path",{"d":"M22 10v6"}],["path",{"d":"M6 12.5V16a6 3 0 0 0 12 0v-3.5"}]],"PartyPopper":[["path",{"d":"M5.8 11.3 2 22l10.7-3.79"}],["path",{"d":"M4 3h.01"}],["path",{"d":"M22 8h.01"}],["path",{"d":"M15 2h.01"}],["path",{"d":"M22 20h.01"}],["path",{"d":"m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L12 10"}],["path",{"d":"m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"}],["path",{"d":"m11 2 .33.82c.34.86-.2 1.82-1.11 1.98-.7.11-1.22.72-1.22 1.43V7"}],["path",{"d":"M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"}]],"Gift":[["rect",{"x":3,"y":8,"width":18,"height":4,"rx":1}],["path",{"d":"M12 8v13"}],["path",{"d":"M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"}],["path",{"d":"M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"}]],"Home":[["path",{"d":"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"}],["polyline",{"points":"9 22 9 12 15 12 15 22"}]],"Zap":[["path",{"d":"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"}]],"MoreHorizontal":[["circle",{"cx":12,"cy":12,"r":1}],["circle",{"cx":19,"cy":12,"r":1}],["circle",{"cx":5,"cy":12,"r":1}]],"Briefcase":[["path",{"d":"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"}],["rect",{"width":20,"height":14,"x":2,"y":6,"rx":2}]],"Building2":[["path",{"d":"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"}],["path",{"d":"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"}],["path",{"d":"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"}],["path",{"d":"M10 6h4"}],["path",{"d":"M10 10h4"}],["path",{"d":"M10 14h4"}],["path",{"d":"M10 18h4"}]],"TrendingUp":[["polyline",{"points":"22 7 13.5 15.5 8.5 10.5 2 17"}],["polyline",{"points":"16 7 22 7 22 13"}]],"TrendingDown":[["polyline",{"points":"22 17 13.5 8.5 8.5 13.5 2 7"}],["polyline",{"points":"16 17 22 17 22 11"}]],"RotateCcw":[["path",{"d":"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"}],["path",{"d":"M3 3v5h5"}]],"Users":[["path",{"d":"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"}],["circle",{"cx":9,"cy":7,"r":4}],["path",{"d":"M22 21v-2a4 4 0 0 0-3-3.87"}],["path",{"d":"M16 3.13a4 4 0 0 1 0 7.75"}]],"AlertTriangle":[["path",{"d":"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"}],["path",{"d":"M12 9v4"}],["path",{"d":"M12 17h.01"}]],"CreditCard":[["rect",{"width":20,"height":14,"x":2,"y":5,"rx":2}],["line",{"x1":2,"x2":22,"y1":10,"y2":10}]],"Landmark":[["line",{"x1":3,"x2":21,"y1":22,"y2":22}],["line",{"x1":6,"x2":6,"y1":18,"y2":11}],["line",{"x1":10,"x2":10,"y1":18,"y2":11}],["line",{"x1":14,"x2":14,"y1":18,"y2":11}],["line",{"x1":18,"x2":18,"y1":18,"y2":11}],["polygon",{"points":"12 2 20 7 4 7"}]],"PiggyBank":[["path",{"d":"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"}],["path",{"d":"M2 9v1c0 1.1.9 2 2 2h1"}],["path",{"d":"M16 11h.01"}]],"LineChart":[["path",{"d":"M3 3v16a2 2 0 0 0 2 2h16"}],["path",{"d":"m19 9-5 5-4-4-3 3"}]],"ChevronRight":[["path",{"d":"m9 18 6-6-6-6"}]],"ChevronDown":[["path",{"d":"m6 9 6 6 6-6"}]],"Check":[["path",{"d":"M20 6 9 17l-5-5"}]],"Archive":[["rect",{"width":20,"height":5,"x":2,"y":3,"rx":1}],["path",{"d":"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"}],["path",{"d":"M10 12h4"}]],"Calendar":[["rect",{"width":18,"height":18,"x":3,"y":4,"rx":2}],["path",{"d":"M3 10h18"}],["path",{"d":"M8 2v4"}],["path",{"d":"M16 2v4"}]],"Filter":[["polygon",{"points":"22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"}]],"ArrowUpRight":[["path",{"d":"M7 7h10v10"}],["path",{"d":"M7 17 17 7"}]],"ArrowDownRight":[["path",{"d":"m7 7 10 10"}],["path",{"d":"M17 7v10H7"}]],"Coins":[["circle",{"cx":8,"cy":8,"r":6}],["path",{"d":"M18.09 10.37A6 6 0 1 1 10.34 18"}],["path",{"d":"M7 6h1v4"}],["path",{"d":"m16.71 13.88.7.71-2.82 2.82"}]],"Bell":[["path",{"d":"M10.268 21a2 2 0 0 0 3.464 0"}],["path",{"d":"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"}]],"GripVertical":[["circle",{"cx":9,"cy":12,"r":1}],["circle",{"cx":9,"cy":5,"r":1}],["circle",{"cx":9,"cy":19,"r":1}],["circle",{"cx":15,"cy":12,"r":1}],["circle",{"cx":15,"cy":5,"r":1}],["circle",{"cx":15,"cy":19,"r":1}]],"Lock":[["rect",{"width":18,"height":11,"x":3,"y":11,"rx":2,"ry":2}],["path",{"d":"M7 11V7a5 5 0 0 1 10 0v4"}]],"HelpCircle":[["circle",{"cx":12,"cy":12,"r":10}],["path",{"d":"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"}],["path",{"d":"M12 17h.01"}]],"Star":[["polygon",{"points":"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"}]]};
 var _iconMap = {};
 Object.keys(LI).forEach(function (k) { _iconMap[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = LI[k]; });
 var _fallbackNode = [["circle", { "cx": 12, "cy": 12, "r": 9 }]];
@@ -117,6 +117,7 @@ var Bell = _icon('Bell');
 var GripVertical = _icon('GripVertical');
 var Lock = _icon('Lock');
 var HelpCircle = _icon('HelpCircle');
+var Star = _icon('Star');
 
 
 
@@ -564,6 +565,14 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Банк перейменовано": "Bank renamed",
+  "Перейменувати банк": "Rename bank",
+  "Назва банку": "Bank name",
+  "Введіть назву": "Enter a name",
+  "Нова назва застосується до всіх рахунків цього банку.": "The new name will apply to every account of this bank.",
+  "Показувати на головній": "Show on the home screen",
+  "Валюту й рахунок видачі змінити не можна. Зміна суми оновить і повʼязану операцію видачі.": "The currency and source account can't be changed. Changing the amount also updates the original transaction.",
+  "Сума не може бути меншою за вже повернене": "The amount can't be less than what has already been returned",
   "Додати активи": "Add assets",
   "Додати рахунок": "Add account",
   "Пошук: опис, категорія, рахунок...": "Search: note, category, account...",
@@ -1385,12 +1394,24 @@ function Input(props) {
   if (props.type === "number") {
     const { type, step, min, max, onChange, ...rest } = props;
     const handle = (e) => {
-      let v = String(e.target.value).replace(/,/g, ".").replace(/[^0-9.\-]/g, "");
-      const neg = v.startsWith("-");
+      const el = e.target;
+      const raw = el.value;
+      let v = String(raw).replace(/,/g, ".").replace(/[^0-9.\-]/g, "");
+      const neg = v.charAt(0) === "-";
       v = v.replace(/-/g, "");
       const parts = v.split(".");
       if (parts.length > 2) v = parts[0] + "." + parts.slice(1).join("");
-      e.target.value = (neg ? "-" : "") + v;
+      v = (neg ? "-" : "") + v;
+      // Rewrite the field only if normalization changed something — otherwise the
+      // caret would jump to the end on every keystroke (iOS Safari), making it
+      // impossible to edit a digit in the middle of the number.
+      if (v !== raw) {
+        const pos = el.selectionStart == null ? v.length : el.selectionStart;
+        const shift = raw.length - v.length;
+        el.value = v;
+        const np = Math.max(0, Math.min(v.length, pos - shift));
+        try { el.setSelectionRange(np, np); } catch (err) {}
+      }
       if (onChange) onChange(e);
     };
     return <input {...rest} type="text" inputMode="decimal" autoComplete="off" onChange={handle} style={st} className={cls} />;
@@ -1804,6 +1825,8 @@ function FinanceTracker() {
   const crypto = state.crypto || [];
   const includeLoansInTotal = state.includeLoansInTotal !== false;
   const cryptoPrices = state.cryptoPrices || {};
+  const cryptoFav = state.cryptoFav !== false;
+  const toggleCryptoFav = () => update({ cryptoFav: !(state.cryptoFav !== false) });
   const update = (patch) => setState((s) => ({ ...s, ...patch }));
   const notify = (msg) => setToast(msg);
 
@@ -1959,6 +1982,7 @@ function FinanceTracker() {
     notify(tr("Рахунок створено"));
   };
   const editAccount = (id, patch) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)) });
+  const renameBank = (oldName, newName) => { update({ accounts: accounts.map((a) => (a.bank === oldName ? { ...a, bank: newName } : a)) }); notify(tr("Банк перейменовано")); };
   const archiveAccount = (id) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, archived: !a.archived } : a)) });
   // Delete account + its pockets, but KEEP transactions (they remain in history, labelled tr("Видалений рахунок"))
   const deleteAccount = (id) => {
@@ -1982,6 +2006,7 @@ function FinanceTracker() {
     notify(tr("Валютний субрахунок додано"));
   };
   const editPocket = (id, patch) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
+  const toggleFavPocket = (id) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, fav: !p.fav } : p)) });
   const archivePocket = (id) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, archived: !p.archived } : p)) });
   // Delete a single currency card, keeping its transactions in history
   const deletePocket = (id) => { update({ pockets: pockets.filter((p) => p.id !== id) }); notify(tr("Картку видалено (операції збережено)")); };
@@ -2029,7 +2054,19 @@ function FinanceTracker() {
     notify(newStatus === "returned" ? (isDebt ? tr("Борг повністю погашено") : tr("Позику повністю повернено")) : (isDebt ? tr("Часткове погашення зареєстровано") : tr("Часткове повернення зареєстровано")));
   };
 
-  const editLoan = (id, patch) => update({ loans: loans.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
+  const editLoan = (id, patch) => {
+    const loan = loans.find((l) => l.id === id);
+    if (!loan) return;
+    const merged = { ...loan, ...patch };
+    if (patch.amount != null) {
+      merged.status = merged.returned >= merged.amount - 0.005 ? "returned" : (merged.returned > 0 ? "partial" : "active");
+    }
+    let txs = transactions;
+    if (patch.amount != null && patch.amount !== loan.amount) {
+      txs = transactions.map((t) => (t.loanId === id && (t.type === "loan_out" || t.type === "debt_take") ? { ...t, amount: patch.amount } : t));
+    }
+    update({ loans: loans.map((l) => (l.id === id ? merged : l)), transactions: txs });
+  };
   const archiveLoan = (id) => { update({ loans: loans.map((l) => (l.id === id ? { ...l, archived: !l.archived } : l)) }); };
   // Delete the loan record but keep its transactions in history (balances stay intact)
   const deleteLoan = (id) => { update({ loans: loans.filter((l) => l.id !== id) }); notify(tr("Позику видалено (операції збережено)")); };
@@ -2232,13 +2269,13 @@ function FinanceTracker() {
                 transactions={transactions} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
                 setModal={setModal} setView={setView} totalLoanedOut={totalLoanedOut} overdueTotal={overdueTotal} upcomingLoans={upcomingLoans} activeLoans={activeLoans}
                 budgetStatus={budgetStatus} netWorthSeries={netWorthSeries} goals={goals}
-                crypto={crypto} cryptoPrices={cryptoPrices} cryptoTotalBase={cryptoTotalBase} loansNetBase={loansNetBase} totalOwed={totalOwed} includeLoansInTotal={includeLoansInTotal}
+                crypto={crypto} cryptoPrices={cryptoPrices} cryptoTotalBase={cryptoTotalBase} cryptoFav={cryptoFav} loansNetBase={loansNetBase} totalOwed={totalOwed} includeLoansInTotal={includeLoansInTotal}
                 monthlyBudget={monthlyBudget} prevMonthExpense={prevMonthExpense} avgDailySpend={avgDailySpend} update={update}
               />
             )}
             {view === "accounts" && (
               <AccountsView accounts={accounts} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
-                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} setView={setView} cryptoTotalBase={cryptoTotalBase} cryptoCount={crypto.length} />
+                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} toggleFavPocket={toggleFavPocket} setView={setView} cryptoTotalBase={cryptoTotalBase} cryptoCount={crypto.length} />
             )}
             {view === "history" && (
               <HistoryView transactions={transactions} pockets={pockets} accounts={accounts} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
@@ -2254,7 +2291,7 @@ function FinanceTracker() {
               <GoalsView goals={goals} setModal={setModal} baseCurrency={baseCurrency} rates={rates} />
             )}
             {view === "crypto" && (
-              <CryptoView crypto={crypto} cryptoPrices={cryptoPrices} cryptoUpdatedAt={state.cryptoUpdatedAt} baseCurrency={baseCurrency} rates={rates} setModal={setModal} refreshCryptoPrices={refreshCryptoPrices} setToast={setToast} />
+              <CryptoView crypto={crypto} cryptoPrices={cryptoPrices} cryptoUpdatedAt={state.cryptoUpdatedAt} baseCurrency={baseCurrency} rates={rates} setModal={setModal} refreshCryptoPrices={refreshCryptoPrices} setToast={setToast} cryptoFav={cryptoFav} toggleCryptoFav={toggleCryptoFav} />
             )}
             {view === "settings" && (
               <SettingsView baseCurrency={baseCurrency} rates={rates} rateMode={state.rateMode || {}} includeLoansInTotal={includeLoansInTotal} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} exportCSV={exportCSV} setView={setView} />
@@ -2302,7 +2339,7 @@ function FinanceTracker() {
           transactions={transactions} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction}
           reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone}
           addGoal={addGoal} editGoal={editGoal} deleteGoal={deleteGoal} contributeGoal={contributeGoal} startTour={startTour}
-          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto}
+          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} renameBank={renameBank}
         />
       )}
 
@@ -2445,11 +2482,13 @@ function MonthBudgetEdit({ monthlyBudget, update, baseCurrency }) {
 
 /* ============================== DASHBOARD ============================== */
 
-function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
+function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
   const net = monthIncome - monthExpense;
   const recent = [...transactions].sort(byRecent).slice(0, 6);
   const activeAccounts = accounts.filter((a) => !a.archived);
   const allPocketCards = activeAccounts.flatMap((acc) => pockets.filter((p) => p.accountId === acc.id && !p.archived).map((p) => ({ ...p, account: acc })));
+  const favPocketCards = allPocketCards.filter((p) => p.fav);
+  const carouselPockets = favPocketCards.length > 0 ? favPocketCards : allPocketCards;
 
   /* ---- period selector for the income/expense/net widget ---- */
   const [period, setPeriod] = useState("month");
@@ -2529,9 +2568,10 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
           <button onClick={() => setView("accounts")} className="pill-link">{tr("Усі рахунки")} <ChevronRight size={13} /></button>
         </div>
         <div data-tour="accounts" className="flex gap-3 overflow-x-auto snap-x pt-1 pb-5 -mx-2 px-2">
-          {allPocketCards.map((p) => (
+          {carouselPockets.map((p) => (
             <PocketCard key={p.id} pocket={p} balance={pocketBalance(p.id)} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} onLongPress={() => setModal({ type: "cardMenu", payload: p.id })} className="w-64 shrink-0 snap-card" />
           ))}
+          {cryptoFav && (
           <button onClick={() => setView("crypto")} className="bank-card w-64 shrink-0 snap-card text-left cursor-pointer active:scale-[0.98] transition-transform" style={{ "--card-accent": "#C9A362" }}>
             <div className="bank-card-glow" />
             <div className="flex items-center justify-between gap-2 mb-8">
@@ -2550,6 +2590,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
             <p className="text-xs mt-1.5 tracking-wider" style={{ color: "rgba(255,255,255,0.35)" }}>{tr("живі ціни")} · CoinGecko</p>
             <p className="text-sm font-medium mt-3 truncate" style={{ color: "rgba(255,255,255,0.75)" }}>{crypto && crypto.length > 0 ? crypto.length + " " + tr(crypto.length === 1 ? "актив" : (crypto.length < 5 ? "активи" : "активів")) : tr("Додати активи")}</p>
           </button>
+          )}
           <button onClick={() => setModal({ type: "account" })} className="snap-card shrink-0 w-64 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 text-sm font-medium" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
             <Plus size={16} /> {tr("Новий рахунок")}
           </button>
@@ -2788,7 +2829,7 @@ function PocketCard({ pocket, balance, onClick, onLongPress, className = "" }) {
       <div className="flex items-center justify-between gap-2 mb-8">
         <span className="flex items-center gap-1.5 text-[11px] font-medium min-w-0" style={{ color: "rgba(255,255,255,0.55)" }}>
           <Icon name={typeInfo?.icon} size={13} style={{ color: "rgba(255,255,255,0.55)" }} />
-          <span className="truncate">{pocket.name ? pocket.name : typeInfo?.label}</span>
+          <span className="truncate">{tr(pocket.name ? pocket.name : (typeInfo ? typeInfo.label : ""))}</span>
         </span>
         <span className="font-display font-bold shrink-0 leading-none" style={{ fontSize: 17, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.96)" }}>
           K<sup style={{ color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 }}>3</sup>
@@ -2801,7 +2842,7 @@ function PocketCard({ pocket, balance, onClick, onLongPress, className = "" }) {
       <p className="text-xs mt-1.5 tracking-wider" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{masked}</p>
       <div className="flex items-center justify-between gap-2 mt-3">
         <p className="text-sm font-medium truncate" style={{ color: "rgba(255,255,255,0.75)" }}>{tr(acc.name)}</p>
-        {acc.bank && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(201,163,98,0.18)", color: "#E7CF9B" }}>{acc.bank}</span>}
+        {acc.bank && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(201,163,98,0.18)", color: "#E7CF9B" }}>{tr(acc.bank)}</span>}
       </div>
     </div>
   );
@@ -2831,7 +2872,7 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
 
 /* ============================== ACCOUNTS VIEW ============================== */
 
-function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts, setView, cryptoTotalBase, cryptoCount }) {
+function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts, toggleFavPocket, setView, cryptoTotalBase, cryptoCount }) {
   const [showArchived, setShowArchived] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [confirmDel, setConfirmDel] = useState(null);
@@ -2842,8 +2883,8 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
   const reorderRef = React.useRef(reorderAccounts);
   reorderRef.current = reorderAccounts;
   const list = accounts.filter((a) => (showArchived ? a.archived : !a.archived));
-  const [collapsedBanks, setCollapsedBanks] = useState({});
-  const toggleBank = (b) => setCollapsedBanks((m) => ({ ...m, [b]: !m[b] }));
+  const [expandedBanks, setExpandedBanks] = useState({});
+  const toggleBank = (b) => setExpandedBanks((m) => ({ ...m, [b]: !m[b] }));
   // Group by bank tag, preserving the user's account order (groups appear in first-seen order)
   const groups = [];
   const groupIdx = {};
@@ -2918,7 +2959,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
               </div>
               <div className="text-left min-w-0">
                 <p className="text-sm font-semibold truncate">{tr(acc.name)}</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)} · {pks.filter(p=>!p.archived).length} {tr(pks.filter(p=>!p.archived).length === 1 ? "валюта" : "валют")}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 pl-2">
@@ -2938,7 +2979,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
               <button onClick={() => setConfirmDel(null)} className="text-xs font-medium px-2 py-1 rounded-md" style={{ background: "var(--surface2)", color: "var(--text)" }}>{tr("Ні")}</button>
             </div>
           )}
-          {acc.bank && confirmDel !== acc.id && <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md shrink-0" style={{ background: "var(--surface2)", color: "var(--accent)" }}>{acc.bank}</span>}
+          {acc.bank && confirmDel !== acc.id && <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md shrink-0" style={{ background: "var(--surface2)", color: "var(--accent)" }}>{tr(acc.bank)}</span>}
         </div>
         {isOpen && (
           <div className="space-y-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
@@ -2950,7 +2991,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                 </div>
                 <p className="font-semibold text-sm tabular shrink-0">{fmtMoney(pocketBalance(p.id), p.currency)}</p>
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={(e) => { e.stopPropagation(); setModal({ type: "pocket", payload: { accountId: acc.id, existing: p } }); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Edit3 size={13} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); toggleFavPocket(p.id); }} className="p-1 rounded-md" style={{ color: p.fav ? "var(--accent)" : "var(--text-dim)" }}><Star size={13} fill={p.fav ? "currentColor" : "none"} /></button><button onClick={(e) => { e.stopPropagation(); setModal({ type: "pocket", payload: { accountId: acc.id, existing: p } }); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Edit3 size={13} /></button>
                   <button onClick={(e) => { e.stopPropagation(); archivePocket(p.id); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Archive size={13} /></button>
                 </div>
               </div>
@@ -2983,7 +3024,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
       <div ref={listRef} className="space-y-4">
         {groups.map((g) => {
           const bankTotal = g.accs.reduce((s, a) => s + accountTotalBase(a.id), 0);
-          const collapsed = g.bank ? collapsedBanks[g.bank] : false;
+          const collapsed = g.bank ? !expandedBanks[g.bank] : false;
           return (
             <div key={g.key} className="space-y-4">
               {showGroups && (
@@ -2992,13 +3033,16 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                     <button onClick={() => toggleBank(g.bank)} className="flex items-center justify-between gap-2 min-w-0 flex-1">
                       <span className="flex items-center gap-2 min-w-0">
                         <span className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><Banknote size={13} style={{ color: "var(--accent)" }} /></span>
-                        <span className="font-display font-semibold text-sm truncate">{g.bank}</span>
+                        <span className="font-display font-semibold text-sm truncate">{tr(g.bank)}</span>
                         <span className="text-[11px] shrink-0" style={{ color: "var(--text-dim)" }}>({g.accs.length})</span>
                       </span>
                       <span className="flex items-center gap-1.5 shrink-0">
                         <span className="text-xs font-semibold tabular" style={{ color: "var(--text-dim)" }}>{fmtMoney(bankTotal, baseCurrency)}</span>
                         <ChevronDown size={15} style={{ color: "var(--text-dim)", transform: collapsed ? "rotate(-90deg)" : "none", transition: "transform .15s" }} />
                       </span>
+                    </button>
+                    <button onClick={() => setModal({ type: "bankRename", payload: { bank: g.bank } })} className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--surface2)", color: "var(--text-dim)", border: "1px solid var(--border)" }} aria-label={tr("Перейменувати банк")}>
+                      <Edit3 size={13} />
                     </button>
                     <button onClick={() => setModal({ type: "account", payload: { bank: g.bank } })} className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--surface2)", color: "var(--accent)", border: "1px solid var(--border)" }} aria-label={tr("Додати рахунок")}>
                       <Plus size={14} />
@@ -3401,7 +3445,7 @@ function GoalContributeModal({ onClose, goal, contributeGoal }) {
 
 /* ============================== CRYPTO PORTFOLIO ============================== */
 
-function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates, setModal, refreshCryptoPrices, setToast }) {
+function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates, setModal, refreshCryptoPrices, setToast, cryptoFav, toggleCryptoFav }) {
   const [busy, setBusy] = useState(false);
   // Auto-load live prices on open if some are missing or the cache is stale (>10 min),
   // so the portfolio value (and the total capital) reflect the market without a manual tap.
@@ -3426,7 +3470,10 @@ function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates
     <div className="space-y-5 animate-in max-w-2xl">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h1 className="font-display font-bold text-2xl">{tr("Крипто-портфель")}</h1>
-        <Button onClick={() => setModal({ type: "crypto", payload: null })}><Plus size={16} /> {tr("Додати актив")}</Button>
+        <div className="flex items-center gap-2">
+          <button onClick={toggleCryptoFav} className="p-2 rounded-lg" style={{ color: cryptoFav ? "var(--accent)" : "var(--text-dim)" }} aria-label={tr("Показувати на головній")}><Star size={18} fill={cryptoFav ? "currentColor" : "none"} /></button>
+          <Button onClick={() => setModal({ type: "crypto", payload: null })}><Plus size={16} /> {tr("Додати актив")}</Button>
+        </div>
       </div>
       <Card className="p-5" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)" }}>
         <p className="text-xs mb-1" style={{ color: "#A7B0C4" }}>{tr("Загальна вартість портфелю")}</p>
@@ -3546,7 +3593,7 @@ function CoinPicker({ selected, onPick, onClose }) {
   );
 }
 
-function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto }) {
+function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto, renameBank }) {
   const isEdit = existing && existing.id;
   const [coin, setCoin] = useState(existing && existing.coinId
     ? { id: existing.coinId, symbol: existing.symbol, name: existing.name }
@@ -3903,6 +3950,7 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "goalContribute") return <GoalContributeModal onClose={close} goal={modal.payload} contributeGoal={contributeGoal} />;
   if (modal.type === "help") return <HelpModal onClose={close} startTour={startTour} />;
   if (modal.type === "crypto") return <CryptoModal onClose={close} existing={modal.payload} addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} />;
+  if (modal.type === "bankRename") return <BankRenameModal onClose={close} bank={modal.payload && modal.payload.bank} renameBank={renameBank} />;
   return null;
 }
 
@@ -4108,6 +4156,24 @@ function CardMenuModal({ onClose, pocketId, pockets, getPocket, setModal, archiv
 }
 
 /* ---------- Account Modal (creates account + its first currency pocket) ---------- */
+function BankRenameModal({ onClose, bank, renameBank }) {
+  const [name, setName] = useState(bank || "");
+  const [error, setError] = useState("");
+  const submit = () => {
+    const v = name.trim();
+    if (!v) return setError(tr("Введіть назву"));
+    if (v !== bank) renameBank(bank, v);
+    onClose();
+  };
+  return (
+    <Modal title={tr("Перейменувати банк")} onClose={onClose}>
+      <Field label={tr("Назва банку")} error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} /></Field>
+      <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>{tr("Нова назва застосується до всіх рахунків цього банку.")}</p>
+      <Button className="w-full mt-2" onClick={submit}>{tr("Зберегти")}</Button>
+    </Modal>
+  );
+}
+
 function AccountModal({ onClose, existing, presetBank, addAccountWithPocket, editAccount, currencies }) {
   const [name, setName] = useState(existing?.name || "");
   const [bank, setBank] = useState(existing?.bank || presetBank || "");
@@ -4115,7 +4181,7 @@ function AccountModal({ onClose, existing, presetBank, addAccountWithPocket, edi
   const [color, setColor] = useState(existing?.color || ACCOUNT_COLORS[0]);
   const [currency, setCurrency] = useState("UAH");
   const [pocketName, setPocketName] = useState("");
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState("0");
   const [error, setError] = useState("");
   const [bankError, setBankError] = useState("");
 
@@ -4149,7 +4215,12 @@ function AccountModal({ onClose, existing, presetBank, addAccountWithPocket, edi
           <Field label={tr("Валюта")}>
             <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select>
           </Field>
-          <Field label={tr("Початковий баланс")}><Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} /></Field>
+          <Field label={tr("Початковий баланс")}>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setBalance((v) => { const s = String(v); return s.charAt(0) === "-" ? s.slice(1) : "-" + s; })} className="w-11 shrink-0 rounded-lg text-base font-semibold" style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}>±</button>
+              <Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} />
+            </div>
+          </Field>
         </>
       )}
       <Button className="w-full mt-2" onClick={submit}>{existing ? tr("Зберегти зміни") : tr("Створити рахунок")}</Button>
@@ -4160,9 +4231,7 @@ function AccountModal({ onClose, existing, presetBank, addAccountWithPocket, edi
 /* ---------- Pocket Modal (add / edit a currency sub-account) ---------- */
 function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocket, editPocket, currencies }) {
   const account = accounts.find((a) => a.id === accountId);
-  const usedCurrencies = pockets.filter((p) => p.accountId === accountId && p.id !== existing?.id).map((p) => p.currency);
-  const pool = currencies || CURRENCIES;
-  const availableCurrencies = pool.filter((c) => !usedCurrencies.includes(c) || c === existing?.currency);
+  const availableCurrencies = currencies || CURRENCIES;
   const [currency, setCurrency] = useState(existing?.currency || availableCurrencies[0] || "UAH");
   const [name, setName] = useState(existing?.name || "");
   const [balance, setBalance] = useState(existing ? String(existing.initialBalance) : "0");
@@ -4188,10 +4257,12 @@ function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocke
       </Field>
       {currencyChanged && <p className="text-xs mb-3" style={{ color: "var(--warn)" }}>{tr("Зміна валюти не конвертує вже наявні операції — вони залишаться у своїх сумах.")}</p>}
       <Field label={existing ? tr("Початковий баланс (без транзакцій)") : tr("Початковий баланс")}>
-        <Input type="number" step="0.01" inputMode="decimal" value={balance} onChange={(e) => setBalance(e.target.value)} placeholder="0" />
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setBalance((v) => { const s = String(v); return s.charAt(0) === "-" ? s.slice(1) : "-" + s; })} className="w-11 shrink-0 rounded-lg text-base font-semibold" style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}>±</button>
+          <Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} placeholder="0" />
+        </div>
       </Field>
-      {availableCurrencies.length === 0 && !existing && <p className="text-xs mb-3" style={{ color: "var(--danger)" }}>{tr("Усі доступні валюти вже додані до цього рахунку.")}</p>}
-      <Button className="w-full mt-2" onClick={submit} disabled={!existing && availableCurrencies.length === 0}>{existing ? tr("Зберегти зміни") : tr("Додати субрахунок")}</Button>
+      <Button className="w-full mt-2" onClick={submit}>{existing ? tr("Зберегти зміни") : tr("Додати субрахунок")}</Button>
     </Modal>
   );
 }
@@ -4420,19 +4491,24 @@ function LoanModal({ onClose, accounts, pockets, addLoan, direction }) {
 /* ---------- Loan Edit Modal ---------- */
 function LoanEditModal({ onClose, loan, editLoan }) {
   const [borrower, setBorrower] = useState(loan.borrower);
+  const [amount, setAmount] = useState(String(loan.amount));
   const [dueDate, setDueDate] = useState(loan.dueDate);
   const [note, setNote] = useState(loan.note || "");
   const [error, setError] = useState("");
   const submit = () => {
     if (!borrower.trim()) return setError(tr("Введіть імʼя позичальника"));
+    const amt = parseFloat(String(amount).replace(",", "."));
+    if (!(amt > 0)) return setError(tr("Введіть коректну суму"));
+    if (amt < (loan.returned || 0) - 0.005) return setError(tr("Сума не може бути меншою за вже повернене"));
     if (!dueDate) return setError(tr("Оберіть дату повернення"));
-    editLoan(loan.id, { borrower: borrower.trim(), dueDate, note: note.trim() });
+    editLoan(loan.id, { borrower: borrower.trim(), amount: amt, dueDate, note: note.trim() });
     onClose();
   };
   return (
     <Modal title={tr("Редагувати позику")} onClose={onClose}>
-      <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Суму, валюту й рахунок змінити не можна (вони пов'язані з операцією видачі). Можна відкоригувати позичальника, дату й коментар.")}</p>
+      <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Валюту й рахунок видачі змінити не можна. Зміна суми оновить і повʼязану операцію видачі.")}</p>
       <Field label={tr("Кому позичено")} error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} /></Field>
+      <Field label={`Сума (${loan.currency})`}><Input type="number" value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} /></Field>
       <Field label={tr("Дата повернення")}><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
       <Field label={tr("Коментар / домовленість")}><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("Необов'язково")} /></Field>
       <Button className="w-full mt-2" onClick={submit}>{tr("Зберегти")}</Button>
