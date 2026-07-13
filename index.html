@@ -543,6 +543,24 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Вкажіть банк для цього типу рахунку": "Enter a bank for this account type",
+  "Банк": "Bank",
+  "Давно не було резервної копії": "It's been a while since your last backup",
+  "Збережіть копію даних, щоб нічого не втратити.": "Save a backup of your data so nothing gets lost.",
+  "Пізніше": "Later",
+  "Термін (необовʼязково)": "Deadline (optional)",
+  "Термін минув": "Deadline passed",
+  "До": "By",
+  "/міс": "/mo",
+  "Місяць у цифрах": "This month in numbers",
+  "Бюджет місяця": "Monthly budget",
+  "Порівняно з минулим місяцем": "vs last month",
+  "Середні витрати на день": "Average daily spend",
+  "Змінити бюджет": "Edit budget",
+  "Задати бюджет": "Set budget",
+  "Позики й борги в капіталі": "Loans & debts in total capital",
+  "Додає до загального капіталу гроші, які вам винні, і віднімає ваші борги — чесний net worth.": "Adds money owed to you to your total capital and subtracts your debts — an honest net worth.",
+  "Інші рахунки": "Other accounts",
   "Криптовалюта": "Cryptocurrency",
   "Популярні": "Popular",
   "Усі монети": "All coins",
@@ -1150,6 +1168,10 @@ function savePinDelay(sec) { try { if (window.localStorage) window.localStorage.
 
 /* First-run consent (stored on device) */
 const CONSENT_KEY = "ft_consent";
+/* Backup reminder: remember when the user last exported a backup */
+const BACKUP_AT_KEY = "ft_backup_at";
+function loadBackupAt() { try { const v = window.localStorage ? window.localStorage.getItem(BACKUP_AT_KEY) : null; return v ? new Date(v).getTime() : 0; } catch (e) { return 0; } }
+function saveBackupAt() { try { if (window.localStorage) window.localStorage.setItem(BACKUP_AT_KEY, new Date().toISOString()); } catch (e) {} }
 function loadConsent() { try { return window.localStorage ? window.localStorage.getItem(CONSENT_KEY) === "1" : false; } catch (e) { return false; } }
 function saveConsent() { try { if (window.localStorage) window.localStorage.setItem(CONSENT_KEY, "1"); } catch (e) {} }
 
@@ -1618,6 +1640,11 @@ function FinanceTracker() {
   const [consented, setConsented] = useState(() => loadConsent());
   const acceptConsent = () => { saveConsent(); setConsented(true); };
   const [tourStep, setTourStep] = useState(null);
+  const [backupDue, setBackupDue] = useState(() => {
+    const last = loadBackupAt();
+    return (Date.now() - last) > 21 * 24 * 3600 * 1000;
+  });
+  const dismissBackup = () => { saveBackupAt(); setBackupDue(false); };
   const [lang, setLang] = useState(() => loadLang());
   LANG = lang; // module-level, read by tr() in every child rendered after this
   const applyLang = (v) => { saveLang(v); setLang(v); };
@@ -1671,6 +1698,7 @@ function FinanceTracker() {
   const reminders = state.reminders || [];
   const goals = state.goals || [];
   const crypto = state.crypto || [];
+  const includeLoansInTotal = state.includeLoansInTotal !== false;
   const cryptoPrices = state.cryptoPrices || {};
   const update = (patch) => setState((s) => ({ ...s, ...patch }));
   const notify = (msg) => setToast(msg);
@@ -1761,6 +1789,16 @@ function FinanceTracker() {
   }, [transactions, baseCurrency, rates]);
 
   // Budgets: spent this month vs the category's monthly limit (limit interpreted in base currency)
+  // Overall month insights: total budget, previous-month comparison, daily average
+  const monthlyBudget = state.monthlyBudget || 0;
+  const prevMonthExpense = useMemo(() => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const key = d.toISOString().slice(0, 7);
+    return transactions.filter((t) => t.type === "expense" && monthKey(t.date) === key).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
+  }, [transactions, baseCurrency, rates]);
+  const dayOfMonth = now.getDate();
+  const avgDailySpend = dayOfMonth > 0 ? monthExpense / dayOfMonth : 0;
+
   const budgetStatus = useMemo(() =>
     categories.filter((c) => c.type === "expense" && !c.archived && c.budget > 0).map((c) => {
       const spent = monthTx.filter((t) => t.type === "expense" && t.categoryId === c.id).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
@@ -1920,6 +1958,7 @@ function FinanceTracker() {
   const cryptoValueUSD = (c) => (c.amount || 0) * (cryptoPrices[c.coinId] || 0);
   const cryptoTotalUSD = crypto.reduce((s, c) => s + cryptoValueUSD(c), 0);
   const cryptoTotalBase = convert(cryptoTotalUSD, "USD", baseCurrency, rates);
+  const loansNetBase = includeLoansInTotal ? (totalLoanedOut - totalOwed) : 0;
   const toggleReminderDone = (id) => update({ reminders: reminders.map((r) => (r.id === id ? { ...r, done: !r.done } : r)) });
 
   const overdueReminders = reminders.filter((r) => !r.done && new Date(r.date) < new Date(new Date().setHours(0, 0, 0, 0)));
@@ -1931,7 +1970,7 @@ function FinanceTracker() {
     try {
       const payload = { ...state, theme, _app: "AiMyFinance", _v: 2, _exportedAt: new Date().toISOString() };
       const res = await saveFile("k3-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(payload, null, 2), "application/json");
-      if (res !== "cancelled") notify(res === "downloaded" ? tr("Резервну копію збережено") : tr("Резервну копію збережено"));
+      if (res !== "cancelled") { saveBackupAt(); setBackupDue(false); notify(tr("Резервну копію збережено")); }
     } catch (e) { notify(tr("Не вдалося створити копію")); }
   };
 
@@ -1948,7 +1987,7 @@ function FinanceTracker() {
       });
       const csv = rows.map((r) => r.map((cell) => { const s = String(cell); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(",")).join("\n");
       const res = await saveFile("k3-transactions-" + new Date().toISOString().slice(0, 10) + ".csv", "\ufeff" + csv, "text/csv;charset=utf-8");
-      if (res !== "cancelled") notify(res === "downloaded" ? tr("CSV експортовано") : tr("CSV збережено"));
+      if (res !== "cancelled") { saveBackupAt(); setBackupDue(false); notify(res === "downloaded" ? tr("CSV експортовано") : tr("CSV збережено")); }
     } catch (e) { notify(tr("Не вдалося створити CSV")); }
   };
 
@@ -2068,6 +2107,19 @@ function FinanceTracker() {
           </div>
 
           <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
+            {backupDue && transactions.length >= 10 && view === "dashboard" && (
+              <div className="mb-4 flex items-start gap-3 rounded-2xl p-3.5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><ArrowDownRight size={15} style={{ color: "var(--accent)" }} /></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold">{tr("Давно не було резервної копії")}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: "var(--text-dim)" }}>{tr("Збережіть копію даних, щоб нічого не втратити.")}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Button variant="secondary" onClick={exportBackup}>{tr("Зберегти копію")}</Button>
+                    <button onClick={dismissBackup} className="text-[11px] font-medium px-2" style={{ color: "var(--text-dim)" }}>{tr("Пізніше")}</button>
+                  </div>
+                </div>
+              </div>
+            )}
             {view === "dashboard" && (
               <Dashboard
                 accounts={accounts} pockets={pockets} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
@@ -2076,7 +2128,8 @@ function FinanceTracker() {
                 transactions={transactions} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
                 setModal={setModal} setView={setView} totalLoanedOut={totalLoanedOut} overdueTotal={overdueTotal} upcomingLoans={upcomingLoans} activeLoans={activeLoans}
                 budgetStatus={budgetStatus} netWorthSeries={netWorthSeries} goals={goals}
-                crypto={crypto} cryptoPrices={cryptoPrices} cryptoTotalBase={cryptoTotalBase}
+                crypto={crypto} cryptoPrices={cryptoPrices} cryptoTotalBase={cryptoTotalBase} loansNetBase={loansNetBase} totalOwed={totalOwed} includeLoansInTotal={includeLoansInTotal}
+                monthlyBudget={monthlyBudget} prevMonthExpense={prevMonthExpense} avgDailySpend={avgDailySpend} update={update}
               />
             )}
             {view === "accounts" && (
@@ -2100,7 +2153,7 @@ function FinanceTracker() {
               <CryptoView crypto={crypto} cryptoPrices={cryptoPrices} cryptoUpdatedAt={state.cryptoUpdatedAt} baseCurrency={baseCurrency} rates={rates} setModal={setModal} refreshCryptoPrices={refreshCryptoPrices} setToast={setToast} />
             )}
             {view === "settings" && (
-              <SettingsView baseCurrency={baseCurrency} rates={rates} rateMode={state.rateMode || {}} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} exportCSV={exportCSV} setView={setView} />
+              <SettingsView baseCurrency={baseCurrency} rates={rates} rateMode={state.rateMode || {}} includeLoansInTotal={includeLoansInTotal} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} exportCSV={exportCSV} setView={setView} />
             )}
           </div>
         </main>
@@ -2269,9 +2322,24 @@ function TrendArea({ data, height = 130 }) {
   );
 }
 
+function MonthBudgetEdit({ monthlyBudget, update, baseCurrency }) {
+  const [editing, setEditing] = useState(false);
+  const [v, setV] = useState(monthlyBudget ? String(monthlyBudget) : "");
+  if (!editing) return (
+    <button onClick={() => { setV(monthlyBudget ? String(monthlyBudget) : ""); setEditing(true); }} className="pill-link">{monthlyBudget > 0 ? tr("Змінити бюджет") : tr("Задати бюджет")}</button>
+  );
+  const save = () => { const n = parseFloat(String(v).replace(",", ".")); update({ monthlyBudget: n > 0 ? n : 0 }); setEditing(false); };
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="w-28"><Input type="number" value={v} onChange={(e) => setV(e.target.value)} placeholder="0" /></span>
+      <Button variant="secondary" onClick={save}>OK</Button>
+    </span>
+  );
+}
+
 /* ============================== DASHBOARD ============================== */
 
-function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase }) {
+function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
   const net = monthIncome - monthExpense;
   const recent = [...transactions].sort(byRecent).slice(0, 6);
   const activeAccounts = accounts.filter((a) => !a.archived);
@@ -2332,11 +2400,13 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       <div data-tour="total">
         <p className="text-sm mb-1" style={{ color: "var(--text-dim)" }}>{tr("Загальний капітал")}</p>
         <h1 onClick={toggleHide} className="font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none" style={{ color: "var(--text)", WebkitUserSelect: "none" }} title={tr("Подвійний тап, щоб приховати")}>
-          {hideTotal ? "$$$$$$$" : fmtMoney(totalInBase + (cryptoTotalBase || 0), baseCurrency)}
+          {hideTotal ? "$$$$$$$" : fmtMoney(totalInBase + (cryptoTotalBase || 0) + (loansNetBase || 0), baseCurrency)}
         </h1>
         <div className="flex flex-wrap gap-2 mt-3">
           {Object.entries(byCurrencyTotals).map(([cur, val]) => <Badge key={cur} color="var(--accent2)">{hideTotal ? "••••" : fmtMoney(val, cur)}</Badge>)}
           {cryptoTotalBase > 0 && <Badge color="var(--accent)">{hideTotal ? "••••" : `₿ ${fmtMoney(cryptoTotalBase, baseCurrency)}`}</Badge>}
+          {includeLoansInTotal && totalLoanedOut > 0 && <Badge color="var(--warn)">{hideTotal ? "••••" : `↗ ${fmtMoney(totalLoanedOut, baseCurrency)}`}</Badge>}
+          {includeLoansInTotal && totalOwed > 0 && <Badge color="var(--danger)">{hideTotal ? "••••" : `↘ −${fmtMoney(totalOwed, baseCurrency)}`}</Badge>}
         </div>
       </div>
 
@@ -2426,6 +2496,45 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
           </div>
           <TrendArea data={netWorthSeries} />
           <p className="text-[11px] mt-2" style={{ color: "var(--text-dim)" }}>{tr("Загальний капітал за останні 6 місяців · зміна за місяць")}</p>
+        </Card>
+      )}
+
+      {period === "month" && (monthExpense > 0 || monthlyBudget > 0 || prevMonthExpense > 0) && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <h3 className="font-display font-semibold text-sm">{tr("Місяць у цифрах")}</h3>
+            <MonthBudgetEdit monthlyBudget={monthlyBudget} update={update} baseCurrency={baseCurrency} />
+          </div>
+          {monthlyBudget > 0 && (() => {
+            const pct = Math.min(100, (monthExpense / monthlyBudget) * 100);
+            const over = monthExpense > monthlyBudget;
+            const barColor = over ? "var(--danger)" : pct >= 80 ? "var(--warn)" : "var(--accent)";
+            return (
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="font-medium">{tr("Бюджет місяця")}</span>
+                  <span className="tabular" style={{ color: over ? "var(--danger)" : "var(--text-dim)" }}>{fmtMoney(monthExpense, baseCurrency)} / {fmtMoney(monthlyBudget, baseCurrency)}</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--surface2)" }}>
+                  <div style={{ width: pct + "%", height: "100%", background: barColor, borderRadius: 999, transition: "width .3s ease" }} />
+                </div>
+              </div>
+            );
+          })()}
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="rounded-xl p-3" style={{ background: "var(--surface2)" }}>
+              <p style={{ color: "var(--text-dim)" }}>{tr("Порівняно з минулим місяцем")}</p>
+              {prevMonthExpense > 0 ? (() => {
+                const diff = monthExpense - prevMonthExpense;
+                const pc = Math.round(Math.abs(diff) / prevMonthExpense * 100);
+                return <p className="font-semibold tabular mt-1" style={{ color: diff <= 0 ? "var(--accent)" : "var(--danger)" }}>{diff <= 0 ? "▼" : "▲"} {pc}% ({fmtMoney(Math.abs(diff), baseCurrency)})</p>;
+              })() : <p className="font-semibold mt-1" style={{ color: "var(--text-dim)" }}>—</p>}
+            </div>
+            <div className="rounded-xl p-3" style={{ background: "var(--surface2)" }}>
+              <p style={{ color: "var(--text-dim)" }}>{tr("Середні витрати на день")}</p>
+              <p className="font-semibold tabular mt-1">{fmtMoney(avgDailySpend, baseCurrency)}</p>
+            </div>
+          </div>
         </Card>
       )}
 
@@ -2631,6 +2740,17 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
   const reorderRef = React.useRef(reorderAccounts);
   reorderRef.current = reorderAccounts;
   const list = accounts.filter((a) => (showArchived ? a.archived : !a.archived));
+  const [collapsedBanks, setCollapsedBanks] = useState({});
+  const toggleBank = (b) => setCollapsedBanks((m) => ({ ...m, [b]: !m[b] }));
+  // Group by bank tag, preserving the user's account order (groups appear in first-seen order)
+  const groups = [];
+  const groupIdx = {};
+  list.forEach((acc) => {
+    const key = (acc.bank || "").trim() || "__nobank__";
+    if (groupIdx[key] == null) { groupIdx[key] = groups.length; groups.push({ key, bank: key === "__nobank__" ? null : key, accs: [] }); }
+    groups[groupIdx[key]].accs.push(acc);
+  });
+  const showGroups = !showArchived && groups.some((g) => g.bank);
 
   const toggle = (id) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
 
@@ -2665,6 +2785,86 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
     };
   }, []);
 
+  const renderAccount = (acc) => {
+    const pks = accountPockets(acc.id, true).filter((p) => showArchived ? true : true);
+    const isOpen = expanded[acc.id] ?? true;
+    return (
+      <div
+        key={acc.id}
+        data-acc-row={acc.id}
+        onDragOver={(e) => { if (dragIdRef.current) { e.preventDefault(); considerOver(acc.id); } }}
+        onDragEnd={endDrag}
+        style={{ opacity: dragId === acc.id ? 0.4 : 1, transition: "opacity .15s" }}
+      >
+      <Card className="p-5" style={dragId === acc.id ? { borderColor: "var(--accent)" } : {}}>
+        <div className="flex items-start gap-2">
+          {!showArchived && (
+            <span
+              draggable
+              onDragStart={(e) => { beginDrag(acc.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; }}
+              onTouchStart={(e) => { e.stopPropagation(); beginDrag(acc.id); }}
+              onClick={(e) => e.stopPropagation()}
+              className="p-1 -ml-1 mt-1 shrink-0 cursor-grab active:cursor-grabbing"
+              style={{ color: "var(--text-dim)", touchAction: "none" }}
+              title={tr("Перетягнути")}
+            ><GripVertical size={16} /></span>
+          )}
+          <button onClick={() => toggle(acc.id)} className="flex-1 min-w-0 flex items-start justify-between mb-1">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${acc.color}22` }}>
+                <Icon name={ACCOUNT_TYPES.find((t) => t.id === acc.type)?.icon} size={18} style={{ color: acc.color }} />
+              </div>
+              <div className="text-left min-w-0">
+                <p className="text-sm font-semibold truncate">{tr(acc.name)}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)} · {pks.filter(p=>!p.archived).length} {tr(pks.filter(p=>!p.archived).length === 1 ? "валюта" : "валют")}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 pl-2">
+              <p className="font-display font-bold text-base tabular">{fmtMoney(accountTotalBase(acc.id), baseCurrency)}</p>
+              <ChevronDown size={16} style={{ color: "var(--text-dim)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
+            </div>
+          </button>
+        </div>
+        <div className="flex items-center gap-1 mb-3">
+          <button onClick={() => setModal({ type: "account", payload: acc })} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
+          <button onClick={() => archiveAccount(acc.id)} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Archive size={14} /></button>
+          <button onClick={() => setConfirmDel(confirmDel === acc.id ? null : acc.id)} className="p-1.5 rounded-lg" style={{ color: "var(--danger)" }}><Trash2 size={14} /></button>
+          {confirmDel === acc.id && (
+            <div className="flex items-center gap-2 ml-1">
+              <span className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Видалити рахунок?")}</span>
+              <button onClick={() => { deleteAccount(acc.id); setConfirmDel(null); }} className="text-xs font-semibold px-2 py-1 rounded-md" style={{ background: "var(--danger)", color: "#fff" }}>{tr("Так")}</button>
+              <button onClick={() => setConfirmDel(null)} className="text-xs font-medium px-2 py-1 rounded-md" style={{ background: "var(--surface2)", color: "var(--text)" }}>{tr("Ні")}</button>
+            </div>
+          )}
+          {acc.bank && confirmDel !== acc.id && <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md shrink-0" style={{ background: "var(--surface2)", color: "var(--accent)" }}>{acc.bank}</span>}
+        </div>
+        {isOpen && (
+          <div className="space-y-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
+            {pks.map((p) => (
+              <div key={p.id} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} className={`flex items-center justify-between gap-2 py-2 px-3 rounded-xl cursor-pointer hover:opacity-90 ${p.archived ? "opacity-50" : ""}`} style={{ background: "var(--surface2)" }}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Badge color={acc.color}>{p.currency}</Badge>
+                  {p.name && <span className="text-xs font-medium truncate" style={{ color: "var(--text)" }}>{tr(p.name)}</span>}
+                </div>
+                <p className="font-semibold text-sm tabular shrink-0">{fmtMoney(pocketBalance(p.id), p.currency)}</p>
+                <div className="flex gap-2 shrink-0">
+                  <button onClick={(e) => { e.stopPropagation(); setModal({ type: "pocket", payload: { accountId: acc.id, existing: p } }); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Edit3 size={13} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); archivePocket(p.id); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Archive size={13} /></button>
+                </div>
+              </div>
+            ))}
+            {!showArchived && (
+              <button onClick={() => setModal({ type: "pocket", payload: { accountId: acc.id } })} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed text-xs font-medium" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
+                <Plus size={14} /> {tr("Додати валютний субрахунок")}
+              </button>
+            )}
+          </div>
+        )}
+      </Card>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5 animate-in">
       <div className="flex items-center justify-between">
@@ -2679,82 +2879,29 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
         <p data-tour="acclist" className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Перетягни за ручку")} <span style={{ verticalAlign: "middle" }}>⠿</span>{tr(", щоб змінити порядок рахунків.")}</p>
       )}
       <div ref={listRef} className="space-y-4">
-        {list.map((acc) => {
-          const pks = accountPockets(acc.id, true).filter((p) => showArchived ? true : true);
-          const isOpen = expanded[acc.id] ?? true;
+        {groups.map((g) => {
+          const bankTotal = g.accs.reduce((s, a) => s + accountTotalBase(a.id), 0);
+          const collapsed = g.bank ? collapsedBanks[g.bank] : false;
           return (
-            <div
-              key={acc.id}
-              data-acc-row={acc.id}
-              onDragOver={(e) => { if (dragIdRef.current) { e.preventDefault(); considerOver(acc.id); } }}
-              onDragEnd={endDrag}
-              style={{ opacity: dragId === acc.id ? 0.4 : 1, transition: "opacity .15s" }}
-            >
-            <Card className="p-5" style={dragId === acc.id ? { borderColor: "var(--accent)" } : {}}>
-              <div className="flex items-start gap-2">
-                {!showArchived && (
-                  <span
-                    draggable
-                    onDragStart={(e) => { beginDrag(acc.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; }}
-                    onTouchStart={(e) => { e.stopPropagation(); beginDrag(acc.id); }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="p-1 -ml-1 mt-1 shrink-0 cursor-grab active:cursor-grabbing"
-                    style={{ color: "var(--text-dim)", touchAction: "none" }}
-                    title={tr("Перетягнути")}
-                  ><GripVertical size={16} /></span>
-                )}
-                <button onClick={() => toggle(acc.id)} className="flex-1 min-w-0 flex items-start justify-between mb-1">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${acc.color}22` }}>
-                      <Icon name={ACCOUNT_TYPES.find((t) => t.id === acc.type)?.icon} size={18} style={{ color: acc.color }} />
-                    </div>
-                    <div className="text-left min-w-0">
-                      <p className="text-sm font-semibold truncate">{tr(acc.name)}</p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)} · {pks.filter(p=>!p.archived).length} {tr(pks.filter(p=>!p.archived).length === 1 ? "валюта" : "валют")}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 pl-2">
-                    <p className="font-display font-bold text-base tabular">{fmtMoney(accountTotalBase(acc.id), baseCurrency)}</p>
-                    <ChevronDown size={16} style={{ color: "var(--text-dim)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
-                  </div>
-                </button>
-              </div>
-              <div className="flex items-center gap-1 mb-3">
-                <button onClick={() => setModal({ type: "account", payload: acc })} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
-                <button onClick={() => archiveAccount(acc.id)} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Archive size={14} /></button>
-                <button onClick={() => setConfirmDel(confirmDel === acc.id ? null : acc.id)} className="p-1.5 rounded-lg" style={{ color: "var(--danger)" }}><Trash2 size={14} /></button>
-                {confirmDel === acc.id && (
-                  <div className="flex items-center gap-2 ml-1">
-                    <span className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Видалити рахунок?")}</span>
-                    <button onClick={() => { deleteAccount(acc.id); setConfirmDel(null); }} className="text-xs font-semibold px-2 py-1 rounded-md" style={{ background: "var(--danger)", color: "#fff" }}>{tr("Так")}</button>
-                    <button onClick={() => setConfirmDel(null)} className="text-xs font-medium px-2 py-1 rounded-md" style={{ background: "var(--surface2)", color: "var(--text)" }}>{tr("Ні")}</button>
-                  </div>
-                )}
-                {acc.bank && confirmDel !== acc.id && <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md shrink-0" style={{ background: "var(--surface2)", color: "var(--accent)" }}>{acc.bank}</span>}
-              </div>
-              {isOpen && (
-                <div className="space-y-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
-                  {pks.map((p) => (
-                    <div key={p.id} onClick={() => setModal({ type: "pocketDetail", payload: p.id })} className={`flex items-center justify-between gap-2 py-2 px-3 rounded-xl cursor-pointer hover:opacity-90 ${p.archived ? "opacity-50" : ""}`} style={{ background: "var(--surface2)" }}>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Badge color={acc.color}>{p.currency}</Badge>
-                        {p.name && <span className="text-xs font-medium truncate" style={{ color: "var(--text)" }}>{tr(p.name)}</span>}
-                      </div>
-                      <p className="font-semibold text-sm tabular shrink-0">{fmtMoney(pocketBalance(p.id), p.currency)}</p>
-                      <div className="flex gap-2 shrink-0">
-                        <button onClick={(e) => { e.stopPropagation(); setModal({ type: "pocket", payload: { accountId: acc.id, existing: p } }); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Edit3 size={13} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); archivePocket(p.id); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Archive size={13} /></button>
-                      </div>
-                    </div>
-                  ))}
-                  {!showArchived && (
-                    <button onClick={() => setModal({ type: "pocket", payload: { accountId: acc.id } })} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed text-xs font-medium" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
-                      <Plus size={14} /> {tr("Додати валютний субрахунок")}
-                    </button>
-                  )}
-                </div>
+            <div key={g.key} className="space-y-4">
+              {showGroups && (
+                g.bank ? (
+                  <button onClick={() => toggleBank(g.bank)} className="w-full flex items-center justify-between gap-2 px-1">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><Banknote size={13} style={{ color: "var(--accent)" }} /></span>
+                      <span className="font-display font-semibold text-sm truncate">{g.bank}</span>
+                      <span className="text-[11px] shrink-0" style={{ color: "var(--text-dim)" }}>({g.accs.length})</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-xs font-semibold tabular" style={{ color: "var(--text-dim)" }}>{fmtMoney(bankTotal, baseCurrency)}</span>
+                      <ChevronDown size={15} style={{ color: "var(--text-dim)", transform: collapsed ? "rotate(-90deg)" : "none", transition: "transform .15s" }} />
+                    </span>
+                  </button>
+                ) : (
+                  <p className="px-1 font-display font-semibold text-sm" style={{ color: "var(--text-dim)" }}>{tr("Інші рахунки")}</p>
+                )
               )}
-            </Card>
+              {!collapsed && g.accs.map((acc) => renderAccount(acc))}
             </div>
           );
         })}
@@ -3044,10 +3191,20 @@ function GoalsView({ goals, setModal, baseCurrency, rates }) {
               <div className="h-2.5 rounded-full overflow-hidden mb-2" style={{ background: "var(--surface2)" }}>
                 <div style={{ width: pct + "%", height: "100%", background: "var(--accent)", borderRadius: 999, transition: "width .3s ease" }} />
               </div>
-              <div className="flex items-center justify-between text-xs mb-3">
+              <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="font-semibold" style={{ color: "var(--accent)" }}>{Math.round(pct)}%</span>
                 <span style={{ color: "var(--text-dim)" }}>{done ? tr("Ціль досягнута 🎉") : tr("Залишилось ") + fmtMoney(remaining, g.currency)}</span>
               </div>
+              {!done && g.deadline && (() => {
+                const monthsLeft = Math.max(0, (new Date(g.deadline).getFullYear() - new Date().getFullYear()) * 12 + (new Date(g.deadline).getMonth() - new Date().getMonth()));
+                const overdue = new Date(g.deadline) < new Date();
+                const perMonth = monthsLeft > 0 ? remaining / monthsLeft : remaining;
+                return (
+                  <p className="text-[11px] mb-3" style={{ color: overdue ? "var(--danger)" : "var(--text-dim)" }}>
+                    {overdue ? tr("Термін минув") + " · " + fmtDate(g.deadline) : tr("До") + " " + fmtDate(g.deadline) + " · ≈ " + fmtMoney(perMonth, g.currency) + tr("/міс")}
+                  </p>
+                );
+              })()}
               <Button variant="secondary" className="w-full" onClick={() => setModal({ type: "goalContribute", payload: g })}>{tr("Поповнити")}</Button>
             </Card>
           );
@@ -3065,13 +3222,14 @@ function GoalModal({ onClose, existing, addGoal, editGoal, deleteGoal, currencie
   const [currency, setCurrency] = useState(existing?.currency || "UAH");
   const [saved, setSaved] = useState(existing?.saved != null ? String(existing.saved) : "0");
   const [note, setNote] = useState(existing?.note || "");
+  const [deadline, setDeadline] = useState(existing?.deadline || "");
   const [error, setError] = useState("");
   const [confirmDel, setConfirmDel] = useState(false);
   const submit = () => {
     if (!name.trim()) return setError(tr("Введіть назву цілі"));
     const t = parseFloat(target);
     if (!(t > 0)) return setError(tr("Вкажіть суму цілі"));
-    const data = { name: name.trim(), target: t, currency, saved: Math.max(0, parseFloat(saved) || 0), note: note.trim() };
+    const data = { name: name.trim(), target: t, currency, saved: Math.max(0, parseFloat(String(saved).replace(",", ".")) || 0), note: note.trim(), deadline: deadline || null };
     if (isEdit) editGoal(existing.id, data); else addGoal(data);
     onClose();
   };
@@ -3083,6 +3241,7 @@ function GoalModal({ onClose, existing, addGoal, editGoal, deleteGoal, currencie
         <Field label={tr("Валюта")}><Select value={currency} onChange={(e) => setCurrency(e.target.value)}>{(currencies || CURRENCIES).map((c) => <option key={c} value={c}>{c}</option>)}</Select></Field>
       </div>
       <Field label={tr("Вже накопичено")}><Input type="number" inputMode="decimal" value={saved} onChange={(e) => setSaved(e.target.value)} placeholder="0" /></Field>
+      <Field label={tr("Термін (необовʼязково)")}><Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></Field>
       <Field label={tr("Нотатка (необовʼязково)")}><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
       <Button className="w-full mt-2" onClick={submit}>{isEdit ? tr("Зберегти") : tr("Створити ціль")}</Button>
       {isEdit && (confirmDel ? (
@@ -3325,7 +3484,7 @@ function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto })
 
 /* ============================== SETTINGS VIEW ============================== */
 
-function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView }) {
+function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView }) {
   const [localRates, setLocalRates] = useState(() => {
     const o = {};
     Object.keys(rates).forEach((k) => { o[k] = String(rates[k]); });
@@ -3472,6 +3631,18 @@ function SettingsView({ baseCurrency, rates, rateMode, update, session, setToast
             </div>
           </div>
         )}
+      </Card>
+
+      <Card className="p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-display font-semibold text-sm mb-1">{tr("Позики й борги в капіталі")}</h3>
+            <p className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Додає до загального капіталу гроші, які вам винні, і віднімає ваші борги — чесний net worth.")}</p>
+          </div>
+          <button onClick={() => update({ includeLoansInTotal: !includeLoansInTotal })} className="shrink-0 w-12 h-7 rounded-full transition relative" style={{ background: includeLoansInTotal ? "var(--accent)" : "var(--surface2)", border: "1px solid var(--border)" }}>
+            <span className="absolute top-0.5 w-6 h-6 rounded-full transition-all" style={{ left: includeLoansInTotal ? 22 : 2, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.25)" }} />
+          </button>
+        </div>
       </Card>
 
       <Card className="p-5">
@@ -3829,9 +4000,12 @@ function AccountModal({ onClose, existing, addAccountWithPocket, editAccount, cu
   const [pocketName, setPocketName] = useState("");
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState("");
+  const [bankError, setBankError] = useState("");
 
+  const bankRequired = type === "card" || type === "bank" || type === "deposit";
   const submit = () => {
     if (!name.trim()) return setError(tr("Введіть назву рахунку"));
+    if (bankRequired && !bank.trim()) return setBankError(tr("Вкажіть банк для цього типу рахунку"));
     if (existing) { editAccount(existing.id, { name: name.trim(), type, color, bank: bank.trim() }); }
     else { addAccountWithPocket({ name: name.trim(), type, color, bank: bank.trim() }, currency, balance, pocketName); }
     onClose();
@@ -3840,11 +4014,11 @@ function AccountModal({ onClose, existing, addAccountWithPocket, editAccount, cu
   return (
     <Modal title={existing ? tr("Редагувати рахунок") : tr("Новий рахунок")} onClose={onClose}>
       <Field label={tr("Назва")} error={error}><Input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder={tr("Напр. Чорна картка")} /></Field>
-      <Field label={tr("Банк (необовʼязково) — для групування")}>
-        <Input value={bank} onChange={(e) => setBank(e.target.value)} placeholder={tr("Напр. Монобанк, ПриватБанк")} />
+      <Field label={bankRequired ? tr("Банк") : tr("Банк (необовʼязково) — для групування")} error={bankError}>
+        <Input value={bank} onChange={(e) => { setBank(e.target.value); setBankError(""); }} placeholder={tr("Напр. Монобанк, ПриватБанк")} />
       </Field>
       <Field label={tr("Тип рахунку")}>
-        <Select value={type} onChange={(e) => setType(e.target.value)}>{ACCOUNT_TYPES.map((t) => <option key={t.id} value={t.id}>{tr(t.label)}</option>)}</Select>
+        <Select value={type} onChange={(e) => { setType(e.target.value); setBankError(""); }}>{ACCOUNT_TYPES.map((t) => <option key={t.id} value={t.id}>{tr(t.label)}</option>)}</Select>
       </Field>
       <Field label={tr("Колір")}>
         <div className="flex gap-2 flex-wrap">
