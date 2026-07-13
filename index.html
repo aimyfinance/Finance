@@ -564,6 +564,7 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Додати рахунок": "Add account",
   "Пошук: опис, категорія, рахунок...": "Search: note, category, account...",
   "Вітаємо в K³ Finance!": "Welcome to K³ Finance!",
   "Рахунки й субрахунки": "Accounts & sub-accounts",
@@ -2990,17 +2991,22 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
             <div key={g.key} className="space-y-4">
               {showGroups && (
                 g.bank ? (
-                  <button onClick={() => toggleBank(g.bank)} className="w-full flex items-center justify-between gap-2 px-1">
-                    <span className="flex items-center gap-2 min-w-0">
-                      <span className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><Banknote size={13} style={{ color: "var(--accent)" }} /></span>
-                      <span className="font-display font-semibold text-sm truncate">{g.bank}</span>
-                      <span className="text-[11px] shrink-0" style={{ color: "var(--text-dim)" }}>({g.accs.length})</span>
-                    </span>
-                    <span className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs font-semibold tabular" style={{ color: "var(--text-dim)" }}>{fmtMoney(bankTotal, baseCurrency)}</span>
-                      <ChevronDown size={15} style={{ color: "var(--text-dim)", transform: collapsed ? "rotate(-90deg)" : "none", transition: "transform .15s" }} />
-                    </span>
-                  </button>
+                  <div className="w-full flex items-center gap-1.5 px-1">
+                    <button onClick={() => toggleBank(g.bank)} className="flex items-center justify-between gap-2 min-w-0 flex-1">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><Banknote size={13} style={{ color: "var(--accent)" }} /></span>
+                        <span className="font-display font-semibold text-sm truncate">{g.bank}</span>
+                        <span className="text-[11px] shrink-0" style={{ color: "var(--text-dim)" }}>({g.accs.length})</span>
+                      </span>
+                      <span className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-xs font-semibold tabular" style={{ color: "var(--text-dim)" }}>{fmtMoney(bankTotal, baseCurrency)}</span>
+                        <ChevronDown size={15} style={{ color: "var(--text-dim)", transform: collapsed ? "rotate(-90deg)" : "none", transition: "transform .15s" }} />
+                      </span>
+                    </button>
+                    <button onClick={() => setModal({ type: "account", payload: { bank: g.bank } })} className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--surface2)", color: "var(--accent)", border: "1px solid var(--border)" }} aria-label={tr("Додати рахунок")}>
+                      <Plus size={14} />
+                    </button>
+                  </div>
                 ) : (
                   <p className="px-1 font-display font-semibold text-sm" style={{ color: "var(--text-dim)" }}>{tr("Інші рахунки")}</p>
                 )
@@ -3884,7 +3890,7 @@ function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, upda
 
 function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto }) {
   const close = () => setModal(null);
-  if (modal.type === "account") return <AccountModal onClose={close} existing={modal.payload} addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} currencies={currencies} />;
+  if (modal.type === "account") return <AccountModal onClose={close} existing={modal.payload && modal.payload.id ? modal.payload : null} presetBank={modal.payload && !modal.payload.id ? (modal.payload.bank || "") : ""} addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} currencies={currencies} />;
   if (modal.type === "pocket") return <PocketModal onClose={close} accountId={modal.payload.accountId} existing={modal.payload.existing} accounts={accounts} pockets={pockets} addPocket={addPocket} editPocket={editPocket} currencies={currencies} />;
   if (modal.type === "cardMenu") return <CardMenuModal onClose={close} pocketId={modal.payload} pockets={pockets} getPocket={getPocket} setModal={setModal} archivePocket={archivePocket} deletePocket={deletePocket} movePocket={movePocket} />;
   if (modal.type === "category") return <CategoryModal onClose={close} existing={modal.payload} addCategory={addCategory} editCategory={editCategory} />;
@@ -4105,10 +4111,10 @@ function CardMenuModal({ onClose, pocketId, pockets, getPocket, setModal, archiv
 }
 
 /* ---------- Account Modal (creates account + its first currency pocket) ---------- */
-function AccountModal({ onClose, existing, addAccountWithPocket, editAccount, currencies }) {
+function AccountModal({ onClose, existing, presetBank, addAccountWithPocket, editAccount, currencies }) {
   const [name, setName] = useState(existing?.name || "");
-  const [bank, setBank] = useState(existing?.bank || "");
-  const [type, setType] = useState(existing?.type || "cash");
+  const [bank, setBank] = useState(existing?.bank || presetBank || "");
+  const [type, setType] = useState(existing?.type || (presetBank ? "card" : "cash"));
   const [color, setColor] = useState(existing?.color || ACCOUNT_COLORS[0]);
   const [currency, setCurrency] = useState("UAH");
   const [pocketName, setPocketName] = useState("");
