@@ -37,7 +37,7 @@
       <text x="61.2" y="41.5" text-anchor="middle" dominant-baseline="central" font-family="system-ui,sans-serif" font-weight="700" font-size="15" fill="#C9A362">3</text>
     </svg>
     <div style="font-family:system-ui,-apple-system,sans-serif;font-weight:800;font-size:24px;letter-spacing:-0.02em;color:#131B2B;">K<sup style="color:#B4893C;font-size:0.58em;font-weight:700;position:relative;top:-0.5em;">3</sup><span style="font-weight:600;margin-left:9px;">Finance</span></div>
-    <div style="font-family:system-ui,sans-serif;font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:#B4893C;">Your capital, under control</div>
+    <div style="font-family:system-ui,sans-serif;font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:#B4893C;">Your capital. Your command.</div>
   </div>
 </div>
 <div id="root"></div>
@@ -428,6 +428,27 @@ function byRecent(a, b) {
   return ca < cb ? 1 : ca > cb ? -1 : 0;
 }
 
+// --- Smart search: matches across fields and tolerates UA/EN transliteration ---
+const UA_TO_LAT = { "\u0430":"a","\u0431":"b","\u0432":"v","\u0433":"h","\u0491":"g","\u0434":"d","\u0435":"e","\u0454":"ye","\u0436":"zh","\u0437":"z","\u0438":"y","\u0456":"i","\u0457":"yi","\u0439":"i","\u043a":"k","\u043b":"l","\u043c":"m","\u043d":"n","\u043e":"o","\u043f":"p","\u0440":"r","\u0441":"s","\u0442":"t","\u0443":"u","\u0444":"f","\u0445":"kh","\u0446":"ts","\u0447":"ch","\u0448":"sh","\u0449":"shch","\u044c":"","\u044e":"yu","\u044f":"ya","\u044a":"","\u044b":"y","\u044d":"e","\u0451":"o" };
+// Fold a string to a comparable form: lowercase -> Latin transliteration -> phonetic folds
+// -> squeeze doubled letters. Applied to BOTH the text and the query, so
+// "\u0442\u0435\u043d\u0456\u0441", "tenis" and "tennis" all end up as "tenis".
+function searchFold(s) {
+  let x = String(s || "").toLowerCase().replace(/['\u2019\u02bc`]/g, "");
+  let out = "";
+  for (let i = 0; i < x.length; i++) { const ch = x[i]; out += UA_TO_LAT[ch] !== undefined ? UA_TO_LAT[ch] : ch; }
+  [["shch","sc"],["zh","j"],["kh","h"],["ts","c"],["ch","c"],["sh","s"],["ye","e"],["yi","i"],["yu","u"],["ya","a"],["yo","o"]].forEach(function (f) { out = out.split(f[0]).join(f[1]); });
+  return out.replace(/([a-z])\1+/g, "$1");
+}
+// Every word of the query must be found in the text: literally or in the folded form.
+function searchMatch(text, query) {
+  const hayRaw = String(text || "").toLowerCase();
+  const hayFold = searchFold(hayRaw);
+  return String(query || "").toLowerCase().split(/\s+/).filter(Boolean).every(function (tok) {
+    return hayRaw.indexOf(tok) !== -1 || hayFold.indexOf(searchFold(tok)) !== -1;
+  });
+}
+
 function Icon({ name, size = 18, className = "", style = {} }) {
   const C = ICONS[name] || MoreHorizontal;
   return <C size={size} className={className} style={style} />;
@@ -543,6 +564,17 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Пошук: опис, категорія, рахунок...": "Search: note, category, account...",
+  "Вітаємо в K³ Finance!": "Welcome to K³ Finance!",
+  "Рахунки й субрахунки": "Accounts & sub-accounts",
+  "Картки, готівка, депозити — з валютними субрахунками й групуванням за банками.": "Cards, cash and deposits — with currency sub-accounts and grouping by bank.",
+  "Бюджети та динаміка капіталу": "Budgets & net worth",
+  "Ліміти по категоріях, місяць у цифрах і графік росту вашого капіталу.": "Category limits, the month in numbers and a chart of your growing capital.",
+  "Живі ринкові ціни ваших монет — у загальному капіталі.": "Live market prices for your coins — counted in your total capital.",
+  "Кому винні ви й хто винен вам — із термінами та нагадуваннями.": "What you owe and what's owed to you — with due dates and reminders.",
+  "Зараз у застосунку — демонстраційні дані з випадковими цифрами. Замініть їх своїми: відредагуйте рахунки й баланси або видаліть зайве.": "The app currently shows demo data with random numbers. Replace it with your own: edit the accounts and balances, or delete what you don't need.",
+  "Ознайомитися з можливостями": "Explore the features",
+  "Почати користуватися": "Start using the app",
   "Вкажіть банк для цього типу рахунку": "Enter a bank for this account type",
   "Банк": "Bank",
   "Давно не було резервної копії": "It's been a while since your last backup",
@@ -564,7 +596,7 @@ const EN_DICT = {
   "Криптовалюта": "Cryptocurrency",
   "Популярні": "Popular",
   "Усі монети": "All coins",
-  "Ваш капітал — під контролем": "Your capital, under control",
+  "Ваш капітал. Ваш контроль.": "Your capital. Your command.",
   "Пошук монети (напр. Bitcoin, PEPE)": "Search a coin (e.g. Bitcoin, PEPE)",
   "Оберіть монету": "Choose a coin",
   "Пошук…": "Searching…",
@@ -1175,6 +1207,28 @@ function saveBackupAt() { try { if (window.localStorage) window.localStorage.set
 function loadConsent() { try { return window.localStorage ? window.localStorage.getItem(CONSENT_KEY) === "1" : false; } catch (e) { return false; } }
 function saveConsent() { try { if (window.localStorage) window.localStorage.setItem(CONSENT_KEY, "1"); } catch (e) {} }
 
+// Rebuild app state from a backup / cloud object: keeps ALL data fields (even ones
+// added in future versions), strips meta keys, and runs the usual migrations.
+function stateFromBackup(obj, fallbackRates, fallbackBase) {
+  const s = {};
+  Object.keys(obj).forEach(function (k) {
+    if (k === "theme" || k.charAt(0) === "_") return; // theme is applied separately; _meta dropped
+    s[k] = obj[k];
+  });
+  s.accounts = obj.accounts || [];
+  s.pockets = obj.pockets || [];
+  s.categories = obj.categories || [];
+  s.transactions = obj.transactions || [];
+  s.loans = obj.loans || [];
+  s.rates = obj.rates || fallbackRates;
+  s.baseCurrency = obj.baseCurrency || fallbackBase;
+  s.reminders = obj.reminders || [];
+  s.goals = obj.goals || [];
+  s.crypto = obj.crypto || [];
+  s.cryptoPrices = obj.cryptoPrices || {};
+  return migrateState(s);
+}
+
 /* ============================== CLOUD SYNC (Supabase) ============================== *//*
   Встав свої два значення зі Supabase (Project Settings → API).
   Якщо лишити порожніми — застосунок працює лише локально, без хмари.
@@ -1300,7 +1354,7 @@ function SplashLogo({ iconSize = 88 }) {
           K<sup style={{ color: "var(--accent)", fontSize: "0.6em", fontWeight: 700 }}>3</sup>
           <span style={{ fontWeight: 600, letterSpacing: "0.01em", marginLeft: 10 }}>Finance</span>
         </span>
-        <span className="font-display uppercase" style={{ fontSize: 10, letterSpacing: "0.3em", color: "var(--accent)" }}>{tr("Ваш капітал — під контролем")}</span>
+        <span className="font-display uppercase" style={{ fontSize: 10, letterSpacing: "0.3em", color: "var(--accent)" }}>{tr("Ваш капітал. Ваш контроль.")}</span>
       </div>
     </div>
   );
@@ -1421,7 +1475,7 @@ function LockScreen({ pin, onUnlock }) {
           K<sup style={{ color: "var(--accent)", fontSize: "0.6em", fontWeight: 700, position: "relative", top: "-0.5em" }}>3</sup>
           <span style={{ fontWeight: 600, marginLeft: 9 }}>Finance</span>
         </span>
-        <span className="font-display uppercase" style={{ fontSize: 10, letterSpacing: "0.3em", color: "var(--accent)" }}>{tr("Ваш капітал — під контролем")}</span>
+        <span className="font-display uppercase" style={{ fontSize: 10, letterSpacing: "0.3em", color: "var(--accent)" }}>{tr("Ваш капітал. Ваш контроль.")}</span>
       </div>
       <p className="text-sm mb-6" style={{ color: err ? "var(--danger)" : "var(--text-dim)" }}>{err ? tr("Невірний код, спробуйте ще") : tr("Введіть PIN-код")}</p>
       <div className="flex gap-3 mb-9">
@@ -1602,7 +1656,51 @@ function TourOverlay({ step, setStep, onClose, setView }) {
   );
 }
 
+/* First-run welcome: shown once after the consent screen */
+function WelcomeScreen({ onStart, onTour }) {
+  const rows = [
+    { icon: Wallet, t: "Рахунки й субрахунки", d: "Картки, готівка, депозити — з валютними субрахунками й групуванням за банками." },
+    { icon: TrendingUp, t: "Бюджети та динаміка капіталу", d: "Ліміти по категоріях, місяць у цифрах і графік росту вашого капіталу." },
+    { icon: Coins, t: "Крипто-портфель", d: "Живі ринкові ціни ваших монет — у загальному капіталі." },
+    { icon: Users, t: "Позики та борги", d: "Кому винні ви й хто винен вам — із термінами та нагадуваннями." },
+  ];
+  return (
+    <div className="fixed inset-0 z-[118] flex flex-col" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="flex-1 overflow-y-auto px-6 pt-10 pb-4 w-full max-w-lg mx-auto">
+        <div className="flex flex-col items-center text-center mb-7">
+          <AppIcon size={70} />
+          <h1 className="font-display font-bold text-2xl mt-4">{tr("Вітаємо в K³ Finance!")}</h1>
+          <p className="text-sm mt-1.5" style={{ color: "var(--text-dim)" }}>{tr("Ваш капітал. Ваш контроль.")}</p>
+        </div>
+        <div className="space-y-3 mb-6">
+          {rows.map((r, i) => {
+            const Ic = r.icon;
+            return (
+              <div key={i} className="flex items-start gap-3 rounded-2xl p-3.5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><Ic size={17} style={{ color: "var(--accent)" }} /></div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">{tr(r.t)}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{tr(r.d)}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex items-start gap-2.5 rounded-2xl p-3.5" style={{ background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" }}>
+          <span className="text-base leading-none mt-0.5">💡</span>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--text)" }}>{tr("Зараз у застосунку — демонстраційні дані з випадковими цифрами. Замініть їх своїми: відредагуйте рахунки й баланси або видаліть зайве.")}</p>
+        </div>
+      </div>
+      <div className="px-6 pb-6 pt-3 w-full max-w-lg mx-auto space-y-2" style={{ borderTop: "1px solid var(--border)" }}>
+        <Button className="w-full" onClick={onTour}>{tr("Ознайомитися з можливостями")}</Button>
+        <Button variant="secondary" className="w-full" onClick={onStart}>{tr("Почати користуватися")}</Button>
+      </div>
+    </div>
+  );
+}
+
 /* ============================== MAIN APP ============================== */
+
 function FinanceTracker() {
   const [state, setState] = useState(() => loadState() || buildDemoData());
   const [theme, setTheme] = useState(() => (loadState() && loadState().theme) || "light");
@@ -1638,10 +1736,13 @@ function FinanceTracker() {
   }, [pin, pinDelay]);
   const [splash, setSplash] = useState(() => !loadState());
   const [consented, setConsented] = useState(() => loadConsent());
+  const [welcome, setWelcome] = useState(() => !loadState());
   const acceptConsent = () => { saveConsent(); setConsented(true); };
+  const finishWelcome = () => setWelcome(false);
   const [tourStep, setTourStep] = useState(null);
   const [backupDue, setBackupDue] = useState(() => {
     const last = loadBackupAt();
+    if (!last) { saveBackupAt(); return false; } // first launch: start the clock, no nagging
     return (Date.now() - last) > 21 * 24 * 3600 * 1000;
   });
   const dismissBackup = () => { saveBackupAt(); setBackupDue(false); };
@@ -1649,6 +1750,7 @@ function FinanceTracker() {
   LANG = lang; // module-level, read by tr() in every child rendered after this
   const applyLang = (v) => { saveLang(v); setLang(v); };
   const startTour = () => { setView("dashboard"); setModal(null); setTimeout(() => setTourStep(0), 320); };
+  const welcomeTour = () => { setWelcome(false); startTour(); };
   useEffect(() => { if (splash) { const t = setTimeout(() => setSplash(false), 1300); return () => clearTimeout(t); } }, []);
 
   const stateRef = React.useRef(state);
@@ -1676,7 +1778,7 @@ function FinanceTracker() {
     cloudPull(session.user.id).then((cloud) => {
       if (cancelled) return;
       if (cloud && cloud.accounts) {
-        setState({ accounts: cloud.accounts, pockets: cloud.pockets, categories: cloud.categories, transactions: cloud.transactions, loans: cloud.loans, rates: cloud.rates, baseCurrency: cloud.baseCurrency, reminders: cloud.reminders || [] });
+        setState(stateFromBackup(cloud, rates, baseCurrency));
         if (cloud.theme) setTheme(cloud.theme);
         setToast(tr("Дані завантажено з хмари"));
       } else {
@@ -1997,7 +2099,7 @@ function FinanceTracker() {
       try {
         const obj = JSON.parse(reader.result);
         if (!obj || !obj.accounts || !obj.pockets) { notify(tr("Файл не схожий на резервну копію")); return; }
-        setState({ accounts: obj.accounts, pockets: obj.pockets, categories: obj.categories || [], transactions: obj.transactions || [], loans: obj.loans || [], rates: obj.rates || rates, baseCurrency: obj.baseCurrency || baseCurrency, reminders: obj.reminders || [] });
+        setState(stateFromBackup(obj, rates, baseCurrency));
         if (obj.theme) setTheme(obj.theme);
         notify(tr("Дані відновлено з копії"));
       } catch (e) { notify(tr("Не вдалося прочитати файл")); }
@@ -2209,6 +2311,8 @@ function FinanceTracker() {
           <SplashLogo />
         </div>
       )}
+
+      {consented && welcome && <WelcomeScreen onStart={finishWelcome} onTour={welcomeTour} />}
 
       {!consented && <ConsentScreen onAccept={acceptConsent} />}
 
@@ -2954,12 +3058,22 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
       if (dateFrom && t.date < dateFrom) return false;
       if (dateTo && t.date > dateTo) return false;
       if (search) {
-        const hay = `${t.note || ""} ${pocketLabel(t.pocketId || t.fromPocketId)}`.toLowerCase();
-        if (!hay.includes(search.toLowerCase())) return false;
+        const cat = categories.find((x) => x.id === t.categoryId);
+        const hay = [
+          t.note || "",
+          cat ? cat.name : "",
+          pocketLabel(t.pocketId || t.fromPocketId),
+          t.toPocketId ? pocketLabel(t.toPocketId) : "",
+          t.currency || t.fromCurrency || "",
+          t.toCurrency || "",
+          t.amount != null ? String(t.amount) : "",
+          t.fromAmount != null ? String(t.fromAmount) : "",
+        ].join(" ");
+        if (!searchMatch(hay, search)) return false;
       }
       return true;
     }).sort(byRecent);
-  }, [transactions, filterType, filterPocket, filterCategory, filterCurrency, dateFrom, dateTo, search, pocketLabel]);
+  }, [transactions, categories, filterType, filterPocket, filterCategory, filterCurrency, dateFrom, dateTo, search, pocketLabel]);
 
   const typeLabel = { all: tr("Усі типи"), income: tr("Доходи"), expense: tr("Витрати"), transfer: tr("Перекази"), exchange: tr("Обмін валют"), loan_out: tr("Позики надані"), loan_return: tr("Повернення позик") };
 
@@ -2972,7 +3086,7 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
 
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-dim)" }} />
-        <Input data-tour="histsearch" placeholder={tr("Пошук за описом...")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <Input data-tour="histsearch" placeholder={tr("Пошук: опис, категорія, рахунок...")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
       {showFilters && (
