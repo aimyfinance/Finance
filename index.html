@@ -486,11 +486,11 @@ function buildDemoData() {
   const accDeposit = { id: uid("acc"), name: "Депозит", type: "deposit", color: ACCOUNT_COLORS[3], bank: "ПриватБанк", archived: false, createdAt: "2026-01-05" };
   const accounts = [accCash, accCard, accDeposit];
 
-  const pCashUAH = { id: uid("pk"), accountId: accCash.id, currency: "UAH", initialBalance: 3200, name: "Гаманець", archived: false };
-  const pCashUSD = { id: uid("pk"), accountId: accCash.id, currency: "USD", initialBalance: 100, name: "Заначка", archived: false };
-  const pCardUAH = { id: uid("pk"), accountId: accCard.id, currency: "UAH", initialBalance: 18500, name: "Основний", archived: false };
-  const pCardUSD = { id: uid("pk"), accountId: accCard.id, currency: "USD", initialBalance: 950, name: "Валютний", archived: false };
-  const pDepositEUR = { id: uid("pk"), accountId: accDeposit.id, currency: "EUR", initialBalance: 600, name: "", archived: false };
+  const pCashUAH = { id: uid("pk"), accountId: accCash.id, currency: "UAH", initialBalance: 0, name: "Гаманець", archived: false };
+  const pCashUSD = { id: uid("pk"), accountId: accCash.id, currency: "USD", initialBalance: 0, name: "Заначка", archived: false };
+  const pCardUAH = { id: uid("pk"), accountId: accCard.id, currency: "UAH", initialBalance: 0, name: "Основний", archived: false };
+  const pCardUSD = { id: uid("pk"), accountId: accCard.id, currency: "USD", initialBalance: 0, name: "Валютний", archived: false };
+  const pDepositEUR = { id: uid("pk"), accountId: accDeposit.id, currency: "EUR", initialBalance: 0, name: "", archived: false };
   const pockets = [pCashUAH, pCashUSD, pCardUAH, pCardUSD, pDepositEUR];
 
   const rand = (min, max) => Math.round((min + Math.random() * (max - min)) * 100) / 100;
@@ -560,15 +560,11 @@ function buildDemoData() {
     { id: uid("rem"), title: "Заплатити за інтернет", date: iso(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5)), amount: 250, currency: "UAH", note: "", done: false },
   ];
 
-  return { accounts, pockets, categories: [...expenseCats, ...incomeCats], transactions, loans, rates, baseCurrency: "UAH", reminders, goals: [
-    { id: uid("goal"), name: "Відпустка", target: 40000, currency: "UAH", saved: 12500, note: "Море влітку", archived: false, createdAt: "2026-02-01" },
-    { id: uid("goal"), name: "Новий ноутбук", target: 1500, currency: "USD", saved: 400, note: "", archived: false, createdAt: "2026-03-10" },
-    { id: uid("goal"), name: "Подушка безпеки", target: 100000, currency: "UAH", saved: 63000, note: "6 місяців витрат", archived: false, createdAt: "2026-01-15" },
-  ], crypto: [
-    { id: uid("cx"), coinId: "bitcoin", symbol: "BTC", name: "Bitcoin", amount: 0.15, note: "" },
-    { id: uid("cx"), coinId: "ethereum", symbol: "ETH", name: "Ethereum", amount: 2, note: "" },
-    { id: uid("cx"), coinId: "solana", symbol: "SOL", name: "Solana", amount: 12, note: "" },
-  ], cryptoPrices: { bitcoin: 68000, ethereum: 3500, solana: 150 }, cryptoUpdatedAt: null };
+  // Clean starter build: new users begin with structure only — no sample activity.
+  // (The demo generator above is kept intact; remove these two lines to bring it back.)
+  transactions.length = 0;
+  loans.length = 0;
+  return { accounts, pockets, categories: [...expenseCats, ...incomeCats], transactions, loans, rates, baseCurrency: "UAH", reminders: [], goals: [], crypto: [], cryptoPrices: { bitcoin: 68000, ethereum: 3500, solana: 150 }, cryptoUpdatedAt: null };
 }
 
 /* ============================== PERSISTENCE ============================== */
