@@ -310,6 +310,8 @@ const ACCOUNT_TYPES = [
   { id: "invest", label: "Інвестиційний рахунок", icon: "LineChartIcon" },
   { id: "other", label: "Інший", icon: "Wallet" },
 ];
+// Short labels for the type filter chips in the Accounts view
+const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
 
 const ICONS = {
   ShoppingCart, Utensils, Bus, Plane, Fuel, Car, HeartPulse, Dumbbell, Shirt,
@@ -565,6 +567,11 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Усі": "All",
+  "Крипто": "Crypto",
+  "Картки": "Cards",
+  "Банківські": "Bank",
+  "Депозити": "Deposits",
   "Банк перейменовано": "Bank renamed",
   "Перейменувати банк": "Rename bank",
   "Назва банку": "Bank name",
@@ -2000,6 +2007,19 @@ function FinanceTracker() {
     arr.splice(to, 0, moved);
     update({ accounts: arr });
   };
+  // Move a whole bank group (all its accounts together) to another group's position
+  const reorderBanks = (fromKey, toKey) => {
+    if (fromKey === toKey) return;
+    const keyOf = (x) => ((x.bank || "").trim() || "__nobank__");
+    const order = []; const buckets = {};
+    accounts.forEach((x) => { const k = keyOf(x); if (!buckets[k]) { buckets[k] = []; order.push(k); } buckets[k].push(x); });
+    const from = order.indexOf(fromKey);
+    const to = order.indexOf(toKey);
+    if (from < 0 || to < 0) return;
+    const moved = order.splice(from, 1)[0];
+    order.splice(to, 0, moved);
+    update({ accounts: order.flatMap((k) => buckets[k]) });
+  };
 
   const addPocket = (accountId, currency, initialBalance, name) => {
     update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), archived: false }] });
@@ -2275,7 +2295,7 @@ function FinanceTracker() {
             )}
             {view === "accounts" && (
               <AccountsView accounts={accounts} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
-                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} toggleFavPocket={toggleFavPocket} setView={setView} cryptoTotalBase={cryptoTotalBase} cryptoCount={crypto.length} />
+                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} reorderBanks={reorderBanks} toggleFavPocket={toggleFavPocket} setView={setView} cryptoTotalBase={cryptoTotalBase} cryptoCount={crypto.length} />
             )}
             {view === "history" && (
               <HistoryView transactions={transactions} pockets={pockets} accounts={accounts} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
@@ -2872,7 +2892,7 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
 
 /* ============================== ACCOUNTS VIEW ============================== */
 
-function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts, toggleFavPocket, setView, cryptoTotalBase, cryptoCount }) {
+function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts, reorderBanks, toggleFavPocket, setView, cryptoTotalBase, cryptoCount }) {
   const [showArchived, setShowArchived] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [confirmDel, setConfirmDel] = useState(null);
@@ -2882,7 +2902,8 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
   const listRef = React.useRef(null);
   const reorderRef = React.useRef(reorderAccounts);
   reorderRef.current = reorderAccounts;
-  const list = accounts.filter((a) => (showArchived ? a.archived : !a.archived));
+  const [typeFilter, setTypeFilter] = useState("all");
+  const list = accounts.filter((a) => (showArchived ? a.archived : !a.archived) && (typeFilter === "all" || a.type === typeFilter));
   const [expandedBanks, setExpandedBanks] = useState({});
   const toggleBank = (b) => setExpandedBanks((m) => ({ ...m, [b]: !m[b] }));
   // Group by bank tag, preserving the user's account order (groups appear in first-seen order)
@@ -2906,18 +2927,35 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
     reorderRef.current(from, overId);
   };
 
+  const bankDragRef = React.useRef(null);
+  const lastBankOverRef = React.useRef(null);
+  const reorderBanksRef = React.useRef(reorderBanks);
+  reorderBanksRef.current = reorderBanks;
+  const considerBankOver = (overKey) => {
+    const from = bankDragRef.current;
+    if (!from || !overKey || overKey === from || lastBankOverRef.current === overKey) return;
+    lastBankOverRef.current = overKey;
+    reorderBanksRef.current(from, overKey);
+  };
+  const endBankDrag = () => { bankDragRef.current = null; lastBankOverRef.current = null; };
+
   React.useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     const onMove = (e) => {
-      if (!dragIdRef.current) return;
+      if (!dragIdRef.current && !bankDragRef.current) return;
       e.preventDefault();
       const t = e.touches ? e.touches[0] : e;
       const target = document.elementFromPoint(t.clientX, t.clientY);
+      if (bankDragRef.current) {
+        const bg = target && target.closest ? target.closest("[data-bank-row]") : null;
+        if (bg) considerBankOver(bg.getAttribute("data-bank-row"));
+        return;
+      }
       const row = target && target.closest ? target.closest("[data-acc-row]") : null;
       if (row) considerOver(row.getAttribute("data-acc-row"));
     };
-    const onEnd = () => { if (dragIdRef.current) endDrag(); };
+    const onEnd = () => { if (dragIdRef.current) endDrag(); if (bankDragRef.current) endBankDrag(); };
     el.addEventListener("touchmove", onMove, { passive: false });
     window.addEventListener("touchend", onEnd);
     window.addEventListener("touchcancel", onEnd);
@@ -3018,18 +3056,42 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
         <button onClick={() => setShowArchived(false)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: !showArchived ? "var(--surface2)" : "transparent", color: !showArchived ? "var(--text)" : "var(--text-dim)" }}>{tr("Активні")}</button>
         <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>{tr("Архів")}</button>
       </div>
+      {!showArchived && (
+        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5">
+          {[["all", "Усі"]].concat(ACCOUNT_TYPES.filter((t) => accounts.some((x) => !x.archived && x.type === t.id)).map((t) => [t.id, TYPE_CHIP[t.id] || t.label])).concat([["crypto", "Крипто"]]).map(([id, label]) => (
+            <button key={id} onClick={() => setTypeFilter(id)} className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition" style={{ background: typeFilter === id ? "var(--accent)" : "var(--surface2)", color: typeFilter === id ? "var(--accent-ink)" : "var(--text-dim)", border: "1px solid var(--border)" }}>{tr(label)}</button>
+          ))}
+        </div>
+      )}
       {!showArchived && list.length > 1 && (
         <p data-tour="acclist" className="text-xs" style={{ color: "var(--text-dim)" }}>{tr("Перетягни за ручку")} <span style={{ verticalAlign: "middle" }}>⠿</span>{tr(", щоб змінити порядок рахунків.")}</p>
       )}
+      {!showArchived && (typeFilter === "all" || typeFilter === "crypto") && (
+        <button data-tour="cryptocard" onClick={() => setView && setView("crypto")} className="w-full text-left">
+          <Card className="p-4 flex items-center gap-3" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)", border: "1px solid var(--border)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(201,163,98,0.16)" }}><Coins size={18} style={{ color: "var(--accent)" }} /></div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>{tr("Крипто-портфель")}</p>
+              <p className="text-xs" style={{ color: "#A7B0C4" }}>{cryptoCount > 0 ? `${cryptoCount} ${tr(cryptoCount === 1 ? "актив" : "активи")} · ${tr("живі ціни")}` : tr("Додати активи · живі ціни")}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <p className="font-display font-bold text-base tabular" style={{ color: "#F3F0E8" }}>{fmtMoney(cryptoTotalBase || 0, baseCurrency)}</p>
+              <ChevronRight size={16} style={{ color: "#A7B0C4" }} />
+            </div>
+          </Card>
+        </button>
+      )}
+
       <div ref={listRef} className="space-y-4">
         {groups.map((g) => {
           const bankTotal = g.accs.reduce((s, a) => s + accountTotalBase(a.id), 0);
           const collapsed = g.bank ? !expandedBanks[g.bank] : false;
           return (
-            <div key={g.key} className="space-y-4">
+            <div key={g.key} data-bank-row={g.key} className="space-y-4" onDragOver={(e) => { if (bankDragRef.current) { e.preventDefault(); considerBankOver(g.key); } }}>
               {showGroups && (
                 g.bank ? (
                   <div className="w-full flex items-center gap-1.5 px-1">
+                    <span draggable onDragStart={(e) => { bankDragRef.current = g.key; lastBankOverRef.current = g.key; try { e.dataTransfer.setData("text/plain", g.key); e.dataTransfer.effectAllowed = "move"; } catch (err) {} }} onDragEnd={endBankDrag} onTouchStart={() => { bankDragRef.current = g.key; lastBankOverRef.current = g.key; }} className="p-1 cursor-grab shrink-0" style={{ color: "var(--text-dim)", touchAction: "none" }}><GripVertical size={14} /></span>
                     <button onClick={() => toggleBank(g.bank)} className="flex items-center justify-between gap-2 min-w-0 flex-1">
                       <span className="flex items-center gap-2 min-w-0">
                         <span className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "var(--surface2)" }}><Banknote size={13} style={{ color: "var(--accent)" }} /></span>
@@ -3056,24 +3118,9 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
             </div>
           );
         })}
-        {list.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>{tr("Немає рахунків у цій категорії")}</p>}
+        {list.length === 0 && typeFilter !== "crypto" && <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>{tr("Немає рахунків у цій категорії")}</p>}
       </div>
 
-      {!showArchived && (
-        <button data-tour="cryptocard" onClick={() => setView && setView("crypto")} className="w-full text-left">
-          <Card className="p-4 flex items-center gap-3" style={{ background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)", border: "1px solid var(--border)" }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(201,163,98,0.16)" }}><Coins size={18} style={{ color: "var(--accent)" }} /></div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold" style={{ color: "#F3F0E8" }}>{tr("Крипто-портфель")}</p>
-              <p className="text-xs" style={{ color: "#A7B0C4" }}>{cryptoCount > 0 ? `${cryptoCount} ${tr(cryptoCount === 1 ? "актив" : "активи")} · ${tr("живі ціни")}` : tr("Додати активи · живі ціни")}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <p className="font-display font-bold text-base tabular" style={{ color: "#F3F0E8" }}>{fmtMoney(cryptoTotalBase || 0, baseCurrency)}</p>
-              <ChevronRight size={16} style={{ color: "#A7B0C4" }} />
-            </div>
-          </Card>
-        </button>
-      )}
     </div>
   );
 }
@@ -3944,7 +3991,7 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "loan") return <LoanModal onClose={close} accounts={accounts} pockets={pockets} addLoan={addLoan} direction={(modal.payload && modal.payload.direction) || "out"} />;
   if (modal.type === "loanReturn") return <LoanReturnModal onClose={close} loan={modal.payload} accounts={accounts} pockets={pockets} registerLoanReturn={registerLoanReturn} loanRemaining={loanRemaining} />;
   if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
-  if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
+  if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} pockets={pockets} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
   if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} currencies={currencies} />;
   if (modal.type === "goal") return <GoalModal onClose={close} existing={modal.payload} addGoal={addGoal} editGoal={editGoal} deleteGoal={deleteGoal} currencies={currencies} />;
   if (modal.type === "goalContribute") return <GoalContributeModal onClose={close} goal={modal.payload} contributeGoal={contributeGoal} />;
@@ -4055,36 +4102,57 @@ function RoundAction({ icon: Ic, label, onClick }) {
   );
 }
 
-function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocketLabel, transactions, categories, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket }) {
-  const pocket = getPocket(pocketId);
+function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocketLabel, transactions, categories, pockets, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket }) {
+  const [pid, setPid] = useState(pocketId);
+  const pocket = getPocket(pid);
   if (!pocket || !pocket.account) return null;
   const acc = pocket.account;
-  const balance = pocketBalance(pocketId);
+  const balance = pocketBalance(pid);
+  const siblings = (pockets || []).filter((x) => x.accountId === acc.id && !x.archived);
 
   const history = useMemo(() =>
     transactions
-      .filter((t) => t.pocketId === pocketId || t.fromPocketId === pocketId || t.toPocketId === pocketId)
+      .filter((t) => t.pocketId === pid || t.fromPocketId === pid || t.toPocketId === pid)
       .sort(byRecent),
-  [transactions, pocketId]);
+  [transactions, pid]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto animate-in" style={{ background: "var(--bg)" }}>
-      <div className="relative px-5 pb-8" style={{ background: `linear-gradient(160deg, ${acc.color}, ${acc.color}66 78%, var(--bg))`, paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
-        <button onClick={onClose} className="p-2 rounded-full mb-6" style={{ background: "rgba(0,0,0,0.18)" }}><X size={18} color="#fff" /></button>
-        <p className="text-sm mb-1" style={{ color: "rgba(8,17,13,0.75)" }}>{tr(acc.name)} · {tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)}</p>
-        <h1 className="font-display font-extrabold text-4xl tabular" style={{ color: "#08110D" }}>{fmtMoney(balance, pocket.currency)}</h1>
-
-        <div className="mt-6 max-w-sm">
-          <PocketCard pocket={pocket} balance={balance} />
+      <div className="relative px-5 pb-6 overflow-hidden" style={{ background: "linear-gradient(160deg, #2B3757 0%, #1A2742 55%, #0E1626 100%)", paddingTop: "calc(1rem + env(safe-area-inset-top))", borderBottom: "3px solid #C9A362" }}>
+        <div className="absolute pointer-events-none" style={{ top: -70, right: -50, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,163,98,0.16), transparent 65%)" }} />
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={onClose} className="p-2 rounded-full" style={{ background: "rgba(255,255,255,0.10)" }}><X size={18} color="#fff" /></button>
+          <span className="font-display font-bold leading-none" style={{ fontSize: 20, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.96)" }}>K<sup style={{ color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 }}>3</sup></span>
         </div>
+        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+          <p className="text-xs" style={{ color: "#A7B0C4" }}>{tr(acc.name)} · {tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)}</p>
+          {acc.bank && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "rgba(201,163,98,0.18)", color: "#E7CF9B" }}>{tr(acc.bank)}</span>}
+        </div>
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <h1 className="font-display font-extrabold text-4xl tabular" style={{ color: "#F3F0E8" }}>{fmtMoney(balance, pocket.currency)}</h1>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}>{pocket.currency}</span>
+        </div>
+        {pocket.name && <p className="text-sm mt-1 font-medium" style={{ color: "rgba(255,255,255,0.72)" }}>{tr(pocket.name)}</p>}
+        {siblings.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto mt-4 -mx-1 px-1 pb-0.5">
+            {siblings.map((s) => {
+              const on = s.id === pid;
+              return (
+                <button key={s.id} onClick={() => setPid(s.id)} className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition" style={{ background: on ? "#C9A362" : "rgba(255,255,255,0.10)", color: on ? "#131B2B" : "#E7E3D8", border: on ? "1px solid #C9A362" : "1px solid rgba(255,255,255,0.16)" }}>
+                  {s.currency}{s.name ? " · " + tr(s.name) : ""}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="px-5 pt-6">
         <div className="grid grid-cols-4 gap-2 mb-6">
-          <RoundAction icon={Plus} label={tr("Дохід")} onClick={() => setModal({ type: "transaction", payload: { kind: "income", presetPocketId: pocketId } })} />
-          <RoundAction icon={Minus} label={tr("Витрата")} onClick={() => setModal({ type: "transaction", payload: { kind: "expense", presetPocketId: pocketId } })} />
-          <RoundAction icon={ArrowLeftRight} label={tr("Переказ")} onClick={() => setModal({ type: "transfer", payload: { presetPocketId: pocketId } })} />
-          <RoundAction icon={RefreshCw} label={tr("Обмін")} onClick={() => setModal({ type: "exchange", payload: { presetPocketId: pocketId } })} />
+          <RoundAction icon={Plus} label={tr("Дохід")} onClick={() => setModal({ type: "transaction", payload: { kind: "income", presetPocketId: pid } })} />
+          <RoundAction icon={Minus} label={tr("Витрата")} onClick={() => setModal({ type: "transaction", payload: { kind: "expense", presetPocketId: pid } })} />
+          <RoundAction icon={ArrowLeftRight} label={tr("Переказ")} onClick={() => setModal({ type: "transfer", payload: { presetPocketId: pid } })} />
+          <RoundAction icon={RefreshCw} label={tr("Обмін")} onClick={() => setModal({ type: "exchange", payload: { presetPocketId: pid } })} />
         </div>
 
         <Card className="divide-y mb-4" style={{ borderColor: "var(--border)" }}>
@@ -4106,7 +4174,7 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
           {history.length === 0 && <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>{tr("Ще немає операцій по цьому рахунку")}</p>}
         </Card>
 
-        <button onClick={() => { archivePocket(pocketId); onClose(); }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium mb-8" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
+        <button onClick={() => { archivePocket(pid); onClose(); }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium mb-8" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
           <Archive size={14} /> {tr("Архівувати субрахунок")}
         </button>
       </div>
