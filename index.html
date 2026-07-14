@@ -575,6 +575,7 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Дохід і витрати": "Income and expenses",
   "Автооновлення курсів": "Auto-refresh rates",
   "Діє для валют і крипти, поки застосунок відкритий; також оновлює при поверненні в застосунок. Ручні курси не змінюються.": "Applies to currencies and crypto while the app is open; also refreshes when you return to the app. Manual rates stay untouched.",
   "Вимкнено": "Off",
@@ -2666,13 +2667,19 @@ function MiniBars({ data, height = 190 }) {
   const max = Math.max(1, ...values);
   const labelH = 22;
   const barsH = height - labelH;
+  // Bars shrink as buckets grow (7 days → 31 days → months) so the chart never overflows
+  const n = data.length;
+  const bw = n > 24 ? 3 : n > 16 ? 5 : n > 9 ? 7 : 10;
+  const pairGap = n > 24 ? 1 : n > 16 ? 2 : 3;
+  const groupGap = n > 24 ? 2 : n > 16 ? 4 : 8;
+  const rad = bw >= 7 ? "4px 4px 0 0" : "2px 2px 0 0";
   return (
     <div style={{ width: "100%" }}>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: barsH }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: groupGap, height: barsH }}>
         {data.map((d, i) => (
-          <div key={i} style={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 3, height: "100%" }}>
-            <div style={{ width: 10, height: `${Math.max(2, (d.income / max) * 100)}%`, background: "var(--accent)", borderRadius: "4px 4px 0 0" }} />
-            <div style={{ width: 10, height: `${Math.max(2, (d.expense / max) * 100)}%`, background: "var(--danger)", borderRadius: "4px 4px 0 0" }} />
+          <div key={i} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: pairGap, height: "100%" }}>
+            <div style={{ width: bw, height: `${Math.max(2, (d.income / max) * 100)}%`, background: "var(--accent)", borderRadius: rad }} />
+            <div style={{ width: bw, height: `${Math.max(2, (d.expense / max) * 100)}%`, background: "var(--danger)", borderRadius: rad }} />
           </div>
         ))}
       </div>
@@ -2771,6 +2778,69 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
       m[key] = (m[key] || 0) + txToBase(t, baseCurrency, rates);
     });
     return Object.entries(m).map(([name, value]) => ({ name, value, color: (categories.find((c) => c.name === name) || {}).color || "#8B93A3" })).sort((a, b) => b.value - a.value);
+  })();
+
+  // The income/expense chart follows the same period pills; bucket size adapts to the span
+  const periodSeries = (() => {
+    const out = [];
+    const dayISO = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const sumRange = (a, b) => {
+      let inc = 0, exp = 0;
+      transactions.forEach((t) => {
+        if (t.type !== "income" && t.type !== "expense") return;
+        if (t.date < a || t.date > b) return;
+        const v = txToBase(t, baseCurrency, rates);
+        if (t.type === "income") inc += v; else exp += v;
+      });
+      return { income: Math.round(inc), expense: Math.round(exp) };
+    };
+    const pushDay = (d, label) => { const iso = dayISO(d); out.push({ month: label, ...sumRange(iso, iso) }); };
+    if (period === "day") {
+      for (let i2 = 6; i2 >= 0; i2--) {
+        const d = new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate() - i2);
+        pushDay(d, String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0"));
+      }
+    } else if (period === "month") {
+      const last = new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0).getDate();
+      const step = Math.ceil(last / 8);
+      for (let day = 1; day <= last; day++) {
+        const d = new Date(nowD.getFullYear(), nowD.getMonth(), day);
+        pushDay(d, day === 1 || day % step === 0 ? String(day) : "");
+      }
+    } else if (period === "year") {
+      for (let m2 = 0; m2 < 12; m2++) {
+        const a2 = dayISO(new Date(nowD.getFullYear(), m2, 1));
+        const b2 = dayISO(new Date(nowD.getFullYear(), m2 + 1, 0));
+        out.push({ month: MONTHS_UA[m2], ...sumRange(a2, b2) });
+      }
+    } else {
+      if (!pStart || !pEnd || pStart > pEnd) return out;
+      const s = new Date(pStart + "T00:00:00");
+      const e = new Date(pEnd + "T00:00:00");
+      const days = Math.round((e - s) / 86400000) + 1;
+      if (days <= 31) {
+        const step = Math.max(1, Math.ceil(days / 8));
+        for (let i2 = 0; i2 < days; i2++) {
+          const d = new Date(s.getFullYear(), s.getMonth(), s.getDate() + i2);
+          pushDay(d, i2 === 0 || i2 % step === 0 ? String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0") : "");
+        }
+      } else if (days <= 130) {
+        for (let i2 = 0; i2 < days; i2 += 7) {
+          const a2 = new Date(s.getFullYear(), s.getMonth(), s.getDate() + i2);
+          const b2 = new Date(s.getFullYear(), s.getMonth(), s.getDate() + Math.min(i2 + 6, days - 1));
+          out.push({ month: String(a2.getDate()).padStart(2, "0") + "." + String(a2.getMonth() + 1).padStart(2, "0"), ...sumRange(dayISO(a2), dayISO(b2)) });
+        }
+      } else {
+        const cur = new Date(s.getFullYear(), s.getMonth(), 1);
+        while (cur <= e) {
+          const a2 = dayISO(new Date(cur.getFullYear(), cur.getMonth(), 1));
+          const b2 = dayISO(new Date(cur.getFullYear(), cur.getMonth() + 1, 0));
+          out.push({ month: MONTHS_UA[cur.getMonth()], ...sumRange(a2 < pStart ? pStart : a2, b2 > pEnd ? pEnd : b2) });
+          cur.setMonth(cur.getMonth() + 1);
+        }
+      }
+    }
+    return out;
   })();
 
   const [hideTotal, setHideTotal] = useState(() => {
@@ -2941,12 +3011,12 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
           )}
         </Card>
         <Card className="p-4">
-          <h3 className="font-display font-semibold mb-3 text-sm">{tr("Дохід і витрати за місяцями")}</h3>
+          <h3 className="font-display font-semibold mb-3 text-sm">{tr("Дохід і витрати")} ({periodLabel})</h3>
           <div className="flex items-center gap-4 mb-2 text-xs" style={{ color: "var(--text-dim)" }}>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: "var(--accent)" }} />{tr("Дохід")}</span>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: "var(--danger)" }} />{tr("Витрати")}</span>
           </div>
-          <MiniBars data={monthlySeries} baseCurrency={baseCurrency} />
+          <MiniBars data={periodSeries.length ? periodSeries : monthlySeries} baseCurrency={baseCurrency} />
         </Card>
       </div>
 
