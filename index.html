@@ -312,6 +312,9 @@ const ACCOUNT_TYPES = [
 ];
 // Short labels for the type filter chips in the Accounts view
 const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
+// On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
+// gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
+const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
 
 const ICONS = {
   ShoppingCart, Utensils, Bus, Plane, Fuel, Car, HeartPulse, Dumbbell, Shirt,
@@ -567,6 +570,33 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Як імпортувати виписку": "How to import a statement",
+  "Історія → «Імпорт» (або Налаштування → «Імпорт виписки»). Оберіть рахунок і CSV-файл — застосунок сам розпізнає колонки, розкладе операції за категоріями й позначить можливі дублікати. Вам лишається перевірити й підтвердити.": "History → “Import” (or Settings → “Statement import”). Pick the account and a CSV file — the app detects the columns, sorts transactions into categories and flags possible duplicates. You just review and confirm.",
+  "Як імпортувати виписку з банку?": "How do I import a bank statement?",
+  "Вивантажте виписку у форматі CSV із застосунку чи сайту банку. В Історії натисніть «Імпорт», оберіть рахунок і файл. Дата, сума й опис розпізнаються автоматично, витрати розкладаються за категоріями, можливі дублікати позначаються — перевірте список і натисніть «Імпортувати».": "Export a CSV statement from your bank's app or website. In History tap “Import”, choose the account and the file. Date, amount and description are detected automatically, expenses are sorted into categories, possible duplicates are flagged — review the list and tap “Import”.",
+  "Вивантажте з банку виписку у форматі CSV. Натисніть «Імпорт», оберіть рахунок і файл — застосунок сам розпізнає колонки (дата, сума, опис) і розкладе операції за категоріями. Мінус — витрата, плюс — дохід. Перевірте список, зніміть галочки із зайвого й підтвердіть.": "Export a CSV statement from your bank. Tap “Import”, choose the account and the file — the app detects the columns (date, amount, description) and sorts the transactions into categories. Minus = expense, plus = income. Review the list, untick anything extra and confirm.",
+  "Імпорт виписки (CSV)": "Statement import (CSV)",
+  "Завантажте CSV-виписку з банку — застосунок сам розпізнає колонки й розкладе витрати за категоріями.": "Upload a CSV statement from your bank — the app detects the columns and sorts expenses into categories.",
+  "Імпортувати виписку": "Import a statement",
+  "Імпорт": "Import",
+  "Файл виписки (CSV)": "Statement file (CSV)",
+  "Обрати файл": "Choose a file",
+  "Рахунок, куди імпортувати": "Account to import into",
+  "Колонка з датою": "Date column",
+  "Колонка з сумою": "Amount column",
+  "Колонка з описом": "Description column",
+  "Стовпець": "Column",
+  "Продовжити": "Continue",
+  "рядків": "rows",
+  "Знайдено операцій:": "Transactions found:",
+  "Мінус — витрата, плюс — дохід. Зніміть галочки із зайвого.": "Minus = expense, plus = income. Untick anything you don't need.",
+  "Дублікат?": "Duplicate?",
+  "Імпортувати": "Import",
+  "Імпортовано операцій: ": "Imported transactions: ",
+  "Не обрано жодної операції": "No transactions selected",
+  "Без категорії": "No category",
+  "У файлі не знайдено рядків з датою та сумою.": "No rows with a date and an amount were found.",
+  "Не вдалося розпізнати файл. Перевірте, що це CSV.": "Could not parse the file. Make sure it's a CSV.",
   "Поза рахунками": "Outside accounts",
   "Списано з рахунку": "Debited from the account",
   "Зараховано на рахунок": "Credited to the account",
@@ -1588,6 +1618,7 @@ function HelpModal({ onClose, startTour }) {
   const guide = [
     { q: tr("Рахунки та субрахунки"), a: tr("Рахунок — це контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з власними назвами (напр. «Основний», «Заначка»). Додайте тег банку, щоб згрупувати кілька карток одного банку.") },
     { q: tr("Операції"), a: tr("Додавайте доходи й витрати кнопками на головному екрані. Курс валюти фіксується на момент операції, тож зміна курсу не змінює минулі суми.") },
+    { q: tr("Імпорт виписки (CSV)"), a: tr("Історія → «Імпорт» (або Налаштування → «Імпорт виписки»). Оберіть рахунок і CSV-файл — застосунок сам розпізнає колонки, розкладе операції за категоріями й позначить можливі дублікати. Вам лишається перевірити й підтвердити.") },
     { q: tr("Перекази та обмін валют"), a: tr("«Переказ» — між своїми рахунками. «Обмін валют» — між різними валютами за вашим курсом; баланси перерахуються автоматично.") },
     { q: tr("Бюджети"), a: tr("У категорії витрат задайте місячний ліміт — на головному зʼявиться прогрес-бар із попередженням при наближенні до межі.") },
     { q: tr("Цілі накопичень"), a: tr("Створюйте фінансові цілі (Налаштування → «Мої цілі»), поповнюйте їх і стежте за прогресом.") },
@@ -1600,6 +1631,7 @@ function HelpModal({ onClose, startTour }) {
     { q: tr("Як додати свою категорію?"), a: tr("Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт.") },
     { q: tr("Як налаштувати PIN-код?"), a: tr("Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати.") },
     { q: tr("Як оновити курси валют?"), a: tr("Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними.") },
+    { q: tr("Як імпортувати виписку з банку?"), a: tr("Вивантажте виписку у форматі CSV із застосунку чи сайту банку. В Історії натисніть «Імпорт», оберіть рахунок і файл. Дата, сума й опис розпізнаються автоматично, витрати розкладаються за категоріями, можливі дублікати позначаються — перевірте список і натисніть «Імпортувати».") },
     { q: tr("Чому нова операція не зверху?"), a: tr("Операції сортуються за датою. Переконайтесь, що дата — сьогодні; операції одного дня показуються найновішою згори.") },
     { q: tr("Кілька карток одного банку?"), a: tr("Створіть окремий рахунок для кожної картки й впишіть однаковий «Банк» — вони позначаться тегом банку.") },
     { q: tr("Чи можна повернути видалене?"), a: tr("Видалення рахунку/категорії зберігає повʼязані операції в історії, але саму позицію відновити не можна — робіть резервні копії.") },
@@ -2071,6 +2103,12 @@ function FinanceTracker() {
   const editTransaction = (id, patch) => update({ transactions: transactions.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
   const deleteTransaction = (id) => { update({ transactions: transactions.filter((t) => t.id !== id) }); notify(tr("Операцію видалено")); };
   const duplicateTransaction = (tx) => { update({ transactions: [{ ...tx, id: uid("tx"), createdAt: new Date().toISOString(), date: new Date().toISOString().slice(0, 10) }, ...transactions] }); notify(tr("Операцію дубльовано")); };
+  const importTransactions = (rows) => {
+    if (!rows || !rows.length) return;
+    const stamped = rows.map((r) => ({ id: uid("tx"), createdAt: new Date().toISOString(), fx: r.currency ? (rates[r.currency] || 1) : 1, ...r }));
+    update({ transactions: [...stamped, ...transactions] });
+    notify(tr("Імпортовано операцій: ") + stamped.length);
+  };
 
   const addLoan = (loan, sourcePocketId, amount, currency, note) => {
     const isDebt = loan.direction === "in";
@@ -2340,7 +2378,7 @@ function FinanceTracker() {
               <CryptoView crypto={crypto} cryptoPrices={cryptoPrices} cryptoUpdatedAt={state.cryptoUpdatedAt} baseCurrency={baseCurrency} rates={rates} setModal={setModal} refreshCryptoPrices={refreshCryptoPrices} setToast={setToast} cryptoFav={cryptoFav} toggleCryptoFav={toggleCryptoFav} />
             )}
             {view === "settings" && (
-              <SettingsView baseCurrency={baseCurrency} rates={rates} rateMode={state.rateMode || {}} includeLoansInTotal={includeLoansInTotal} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} exportCSV={exportCSV} setView={setView} />
+              <SettingsView baseCurrency={baseCurrency} rates={rates} rateMode={state.rateMode || {}} includeLoansInTotal={includeLoansInTotal} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} exportCSV={exportCSV} setView={setView} setModal={setModal} />
             )}
           </div>
         </main>
@@ -2385,7 +2423,7 @@ function FinanceTracker() {
           transactions={transactions} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction}
           reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone}
           addGoal={addGoal} editGoal={editGoal} deleteGoal={deleteGoal} contributeGoal={contributeGoal} startTour={startTour}
-          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} renameBank={renameBank}
+          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} renameBank={renameBank} importTransactions={importTransactions}
         />
       )}
 
@@ -3039,13 +3077,16 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
   const savedChipOrder = chipOrder || [];
   const orderedChipIds = savedChipOrder.filter((id) => chipPool.includes(id)).concat(chipPool.filter((id) => savedChipOrder.indexOf(id) === -1));
   const chips = [["all", "Усі"]].concat(orderedChipIds.map((id) => [id, id === "crypto" ? "Крипто" : (TYPE_CHIP[id] || ((ACCOUNT_TYPES.find((t) => t.id === id) || {}).label || id))]));
+  const liveOrderRef = React.useRef(orderedChipIds);
+  liveOrderRef.current = orderedChipIds; // re-synced on every render; mutated immediately between renders
   const reorderChips = (fromId, toId) => {
     if (fromId === toId) return;
-    const arr = [...orderedChipIds];
+    const arr = [...liveOrderRef.current];
     const fi = arr.indexOf(fromId); const ti = arr.indexOf(toId);
     if (fi < 0 || ti < 0) return;
     const m = arr.splice(fi, 1)[0];
     arr.splice(ti, 0, m);
+    liveOrderRef.current = arr; // so the very next dragover computes from the fresh order
     saveChipOrder(arr);
   };
   const chipsRowRef = React.useRef(null);
@@ -3222,7 +3263,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
             <button
               key={id}
               data-chip={id}
-              draggable={id !== "all"}
+              draggable={id !== "all" && !TOUCH_DEVICE}
               onDragStart={(e) => { if (id === "all") return; chipDragRef.current = id; chipLastOverRef.current = id; setChipDragId(id); try { e.dataTransfer.setData("text/plain", id); e.dataTransfer.effectAllowed = "move"; } catch (err) {} }}
               onDragEnd={endChipDrag}
               onDragOver={(e) => { if (chipDragRef.current) { e.preventDefault(); considerChipOver(id); } }}
@@ -3309,6 +3350,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
 
 function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies }) {
   const [search, setSearch] = useState("");
+  const [showImportHint, setShowImportHint] = useState(false);
   const [filterType, setFilterType] = useState("all");
   const [filterPocket, setFilterPocket] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
@@ -3355,8 +3397,23 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
     <div className="space-y-4 animate-in">
       <div className="flex items-center justify-between">
         <h1 className="font-display font-bold text-2xl">{tr("Історія операцій")}</h1>
-        <button onClick={() => setShowFilters(!showFilters)} className="p-2 rounded-lg border" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}><Filter size={16} /></button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setModal({ type: "statementImport" })} className="px-3 py-2 rounded-lg border text-xs font-medium flex items-center gap-1.5" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}><ArrowDownRight size={14} /> {tr("Імпорт")}</button>
+          <button onClick={() => setShowImportHint((v) => !v)} aria-label={tr("Як імпортувати виписку")} className="w-8 h-8 rounded-lg border flex items-center justify-center font-display font-bold text-[13px] shrink-0" style={{ borderColor: showImportHint ? "var(--accent)" : "var(--border)", color: showImportHint ? "var(--accent)" : "var(--text-dim)", background: showImportHint ? "rgba(201,163,98,0.10)" : "transparent" }}>і</button>
+          <button onClick={() => setShowFilters(!showFilters)} className="p-2 rounded-lg border" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}><Filter size={16} /></button>
+        </div>
       </div>
+
+      {showImportHint && (
+        <div className="flex items-start gap-2.5 rounded-2xl p-3.5 animate-in" style={{ background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" }}>
+          <span className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[11px]" style={{ background: "rgba(201,163,98,0.22)", color: "var(--accent)" }}>і</span>
+          <div className="min-w-0 flex-1 text-xs leading-relaxed" style={{ color: "var(--text)" }}>
+            <p className="font-semibold mb-1">{tr("Як імпортувати виписку")}</p>
+            <p>{tr("Вивантажте з банку виписку у форматі CSV. Натисніть «Імпорт», оберіть рахунок і файл — застосунок сам розпізнає колонки (дата, сума, опис) і розкладе операції за категоріями. Мінус — витрата, плюс — дохід. Перевірте список, зніміть галочки із зайвого й підтвердіть.")}</p>
+          </div>
+          <button onClick={() => setShowImportHint(false)} className="p-1 shrink-0" style={{ color: "var(--text-dim)" }}><X size={14} /></button>
+        </div>
+      )}
 
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-dim)" }} />
@@ -3820,7 +3877,7 @@ function CoinPicker({ selected, onPick, onClose }) {
   );
 }
 
-function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto, renameBank }) {
+function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions }) {
   const isEdit = existing && existing.id;
   const [coin, setCoin] = useState(existing && existing.coinId
     ? { id: existing.coinId, symbol: existing.symbol, name: existing.name }
@@ -3873,9 +3930,289 @@ function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto, r
   );
 }
 
+/* ============================== CSV STATEMENT IMPORT ============================== */
+
+// Merchant keyword → default category name. Checked in order (more specific first);
+// matching runs on searchFold'ed text, so UA / EN / transliteration all work.
+const IMPORT_KEYWORDS = [
+  ["bolt food", "Ресторани"], ["glovo", "Ресторани"], ["mcdonald", "Ресторани"], ["kfc", "Ресторани"], ["pizza", "Ресторани"], ["піц", "Ресторани"], ["суші", "Ресторани"], ["sushi", "Ресторани"], ["кафе", "Ресторани"], ["cafe", "Ресторани"], ["coffee", "Ресторани"], ["ресторан", "Ресторани"], ["restaurant", "Ресторани"],
+  ["атб", "Продукти"], ["atb", "Продукти"], ["сільпо", "Продукти"], ["silpo", "Продукти"], ["novus", "Продукти"], ["ашан", "Продукти"], ["auchan", "Продукти"], ["varus", "Продукти"], ["варус", "Продукти"], ["фора", "Продукти"], ["lidl", "Продукти"], ["супермарк", "Продукти"], ["маркет", "Продукти"], ["market", "Продукти"], ["продукт", "Продукти"], ["grocery", "Продукти"],
+  ["uklon", "Транспорт"], ["uber", "Транспорт"], ["bolt", "Транспорт"], ["таксі", "Транспорт"], ["taxi", "Транспорт"], ["укрзалізниц", "Транспорт"], ["parking", "Транспорт"], ["паркінг", "Транспорт"], ["парков", "Транспорт"], ["автобус", "Транспорт"],
+  ["wog", "Паливо"], ["okko", "Паливо"], ["окко", "Паливо"], ["shell", "Паливо"], ["socar", "Паливо"], ["azs", "Паливо"], ["азс", "Паливо"], ["amic", "Паливо"], ["fuel", "Паливо"],
+  ["аптек", "Здоров'я"], ["apteka", "Здоров'я"], ["pharm", "Здоров'я"], ["клінік", "Здоров'я"], ["clinic", "Здоров'я"], ["synevo", "Здоров'я"], ["синево", "Здоров'я"], ["dila", "Здоров'я"], ["стомат", "Здоров'я"],
+  ["netflix", "Розваги"], ["spotify", "Розваги"], ["youtube", "Розваги"], ["megogo", "Розваги"], ["steam", "Розваги"], ["кіно", "Розваги"], ["cinema", "Розваги"], ["playstation", "Розваги"],
+  ["zara", "Одяг"], ["reserved", "Одяг"], ["sinsay", "Одяг"], ["intertop", "Одяг"], ["waikiki", "Одяг"], ["одяг", "Одяг"], ["взутт", "Одяг"],
+  ["booking", "Подорожі"], ["airbnb", "Подорожі"], ["wizz", "Подорожі"], ["ryanair", "Подорожі"], ["skyup", "Подорожі"], ["hotel", "Подорожі"], ["готел", "Подорожі"], ["аеропорт", "Подорожі"], ["airport", "Подорожі"],
+  ["епіцентр", "Дім"], ["epicentr", "Дім"], ["ikea", "Дім"], ["jysk", "Дім"], ["leroy", "Дім"],
+  ["sportlife", "Спорт"], ["gym", "Спорт"], ["fitness", "Спорт"], ["фітнес", "Спорт"], ["спортзал", "Спорт"],
+  ["prometheus", "Освіта"], ["coursera", "Освіта"], ["udemy", "Освіта"], ["школ", "Освіта"],
+  ["комунал", "Комунальні послуги"], ["yasno", "Комунальні послуги"], ["нафтогаз", "Комунальні послуги"], ["водоканал", "Комунальні послуги"], ["київенерго", "Комунальні послуги"], ["електроенерг", "Комунальні послуги"],
+  ["зарплат", "Зарплата"], ["salary", "Зарплата"], ["аванс", "Зарплата"],
+];
+
+function guessCategory(desc, amount, categories) {
+  const hay = searchFold(desc || "");
+  const wantType = amount < 0 ? "expense" : "income";
+  for (let i = 0; i < IMPORT_KEYWORDS.length; i++) {
+    const kw = searchFold(IMPORT_KEYWORDS[i][0]);
+    if (kw && hay.indexOf(kw) !== -1) {
+      const cat = categories.find((x) => !x.archived && x.type === wantType && x.name === IMPORT_KEYWORDS[i][1]);
+      if (cat) return cat.id;
+    }
+  }
+  const fb = categories.find((x) => !x.archived && x.type === wantType && (x.name === "Інше" || x.name === "Інший"));
+  return fb ? fb.id : "";
+}
+
+// --- tiny CSV toolkit ---
+function detectDelimiter(text) {
+  const line = (text.split(/\r?\n/).find((l) => l.trim() !== "") || "");
+  let best = ",", bestN = -1;
+  [";", ",", "\t"].forEach((d) => {
+    let n = 0, q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') q = !q;
+      else if (!q && ch === d) n++;
+    }
+    if (n > bestN) { bestN = n; best = d; }
+  });
+  return best;
+}
+
+function parseCSV(text, delim) {
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += ch;
+    }
+    else if (ch === '"') q = true;
+    else if (ch === delim) { row.push(cell); cell = ""; }
+    else if (ch === "\n") { row.push(cell); cell = ""; if (row.some((x) => x.trim() !== "")) rows.push(row); row = []; }
+    else if (ch === "\r") { /* skip */ }
+    else cell += ch;
+  }
+  row.push(cell);
+  if (row.some((x) => x.trim() !== "")) rows.push(row);
+  return rows;
+}
+
+function isoDate(y, mo, d) {
+  const M = Number(mo), D = Number(d);
+  if (M < 1 || M > 12 || D < 1 || D > 31) return null;
+  return y + "-" + mo + "-" + d;
+}
+function parseDateCell(s) {
+  const v = String(s || "");
+  let m = /(\d{2})[.\/](\d{2})[.\/](\d{4})/.exec(v);
+  if (m) return isoDate(m[3], m[2], m[1]);
+  m = /(\d{4})-(\d{2})-(\d{2})/.exec(v);
+  if (m) return isoDate(m[1], m[2], m[3]);
+  m = /(\d{2})[.\/](\d{2})[.\/](\d{2})(?!\d)/.exec(v);
+  if (m) return isoDate("20" + m[3], m[2], m[1]);
+  return null;
+}
+function parseAmountCell(s) {
+  if (s == null) return null;
+  let t = String(s).replace(/[\s\u00A0\u202F]/g, "").replace(/\u2212/g, "-").replace(/\+/g, "").replace(/грн|uah|usd|eur|pln|₴|\$|€|zł/gi, "");
+  if (!t || t === "-") return null;
+  if (/,\d{1,2}$/.test(t)) t = t.replace(/\./g, "").replace(",", ".");
+  else t = t.replace(/,/g, "");
+  if (!/^-?\d+(\.\d+)?$/.test(t)) return null;
+  const n = parseFloat(t);
+  return isFinite(n) ? n : null;
+}
+
+function StatementImportModal({ onClose, accounts, pockets, categories, transactions, importTransactions, pocketBalance }) {
+  const activePockets = pockets.filter((p) => !p.archived);
+  const [stage, setStage] = useState("file");
+  const [pocketId, setPocketId] = useState(activePockets[0]?.id || "");
+  const [fileName, setFileName] = useState("");
+  const [headerRow, setHeaderRow] = useState(null);
+  const [dataRows, setDataRows] = useState([]);
+  const [cols, setCols] = useState(0);
+  const [map, setMap] = useState({ date: 0, amount: 1, desc: 2 });
+  const [rows, setRows] = useState([]);
+  const [error, setError] = useState("");
+  const fileRef = React.useRef(null);
+
+  const readFile = (file, enc) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result || ""));
+    r.onerror = () => rej(new Error("read"));
+    r.readAsText(file, enc);
+  });
+
+  const handleFile = async (file) => {
+    if (!file) return;
+    setError("");
+    try {
+      let text = await readFile(file, "utf-8");
+      // Legacy bank exports are often windows-1251; re-read if UTF-8 came back mangled
+      if ((text.match(/\uFFFD/g) || []).length > 3) text = await readFile(file, "windows-1251");
+      text = text.replace(/^\uFEFF/, "");
+      const parsed = parseCSV(text, detectDelimiter(text));
+      if (!parsed.length) { setError(tr("Не вдалося розпізнати файл. Перевірте, що це CSV.")); return; }
+      const hasDate0 = parsed[0].some((v) => parseDateCell(v));
+      const header = !hasDate0 && parsed.length > 1 ? parsed[0] : null;
+      const data = header ? parsed.slice(1) : parsed;
+      if (!data.length) { setError(tr("У файлі не знайдено рядків з датою та сумою.")); return; }
+      const colCount = Math.max.apply(null, data.map((r) => r.length));
+      const n = Math.min(data.length, 40);
+      const score = [];
+      for (let ci = 0; ci < colCount; ci++) {
+        let d = 0, a = 0, len = 0, filled = 0;
+        for (let ri = 0; ri < n; ri++) {
+          const v = String(data[ri][ci] == null ? "" : data[ri][ci]).trim();
+          if (!v) continue;
+          filled++;
+          if (parseDateCell(v)) d++;
+          else if (parseAmountCell(v) !== null) a++;
+          else len += v.length;
+        }
+        score.push({ ci, d: filled ? d / filled : 0, a: filled ? a / filled : 0, len: filled ? len / filled : 0 });
+      }
+      const dateCol = score.slice().sort((x, y) => y.d - x.d)[0];
+      const amtCol = score.filter((s) => s.ci !== dateCol.ci).sort((x, y) => y.a - x.a)[0];
+      const descCol = score.filter((s) => s.ci !== dateCol.ci && s.ci !== (amtCol ? amtCol.ci : -1)).sort((x, y) => y.len - x.len)[0];
+      setFileName(file.name || "statement.csv");
+      setHeaderRow(header);
+      setDataRows(data);
+      setCols(colCount);
+      setMap({
+        date: dateCol ? dateCol.ci : 0,
+        amount: amtCol ? amtCol.ci : Math.min(1, colCount - 1),
+        desc: descCol ? descCol.ci : Math.min(2, colCount - 1),
+      });
+      setStage("map");
+    } catch (e) { setError(tr("Не вдалося прочитати файл")); }
+  };
+
+  const colName = (ci) => ((headerRow && String(headerRow[ci] || "").trim()) || (tr("Стовпець") + " " + (ci + 1)));
+  const sample = (ci) => { for (let i = 0; i < dataRows.length; i++) { const v = String(dataRows[i][ci] == null ? "" : dataRows[i][ci]).trim(); if (v) return v; } return ""; };
+
+  const buildPreview = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const out = [];
+    dataRows.forEach((r, i) => {
+      const dISO = parseDateCell(String(r[map.date] == null ? "" : r[map.date]));
+      const amt = parseAmountCell(String(r[map.amount] == null ? "" : r[map.amount]));
+      const desc = String(r[map.desc] == null ? "" : r[map.desc]).trim();
+      if (!dISO || amt === null || amt === 0) return;
+      const date = dISO > today ? today : dISO;
+      const dup = transactions.some((t) => t.date === date && t.pocketId === pocketId && t.amount != null && Math.abs(t.amount - Math.abs(amt)) < 0.005 && t.type === (amt < 0 ? "expense" : "income"));
+      out.push({ key: i, date, amount: amt, desc, categoryId: guessCategory(desc, amt, categories), include: !dup, dup });
+    });
+    if (!out.length) { setError(tr("У файлі не знайдено рядків з датою та сумою.")); return; }
+    setError("");
+    setRows(out);
+    setStage("preview");
+  };
+
+  const setRow = (key, patch) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  const selCount = rows.filter((r) => r.include).length;
+  const pkCur = (pockets.find((p) => p.id === pocketId) || {}).currency || "";
+
+  const doImport = () => {
+    const sel = rows.filter((r) => r.include);
+    if (!sel.length) return setError(tr("Не обрано жодної операції"));
+    importTransactions(sel.map((r) => ({
+      type: r.amount < 0 ? "expense" : "income",
+      date: r.date,
+      amount: Math.round(Math.abs(r.amount) * 100) / 100,
+      currency: pkCur || "UAH",
+      pocketId,
+      categoryId: r.categoryId || null,
+      note: r.desc,
+    })));
+    onClose();
+  };
+
+  const expenseCats = categories.filter((x) => !x.archived && x.type === "expense");
+  const incomeCats = categories.filter((x) => !x.archived && x.type === "income");
+
+  return (
+    <Modal title={tr("Імпорт виписки (CSV)")} onClose={onClose} wide>
+      {stage === "file" && (
+        <>
+          <p className="text-xs mb-4" style={{ color: "var(--text-dim)" }}>{tr("Завантажте CSV-виписку з банку — застосунок сам розпізнає колонки й розкладе витрати за категоріями.")}</p>
+          <Field label={tr("Рахунок, куди імпортувати")}>
+            <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} pocketBalance={pocketBalance} />
+          </Field>
+          <Field label={tr("Файл виписки (CSV)")} error={error}>
+            <input ref={fileRef} type="file" accept=".csv,text/csv,text/plain" onChange={(e) => handleFile(e.target.files && e.target.files[0])} style={{ display: "none" }} />
+            <Button variant="secondary" className="w-full" onClick={() => fileRef.current && fileRef.current.click()}><ArrowDownRight size={15} /> {fileName || tr("Обрати файл")}</Button>
+          </Field>
+        </>
+      )}
+
+      {stage === "map" && (
+        <>
+          <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{fileName} · {dataRows.length} {tr("рядків")}</p>
+          <Field label={tr("Колонка з датою")}>
+            <Select value={String(map.date)} onChange={(e) => setMap({ ...map, date: Number(e.target.value) })}>
+              {Array.from({ length: cols }).map((_, ci) => <option key={ci} value={ci}>{colName(ci)} — {sample(ci).slice(0, 22)}</option>)}
+            </Select>
+          </Field>
+          <Field label={tr("Колонка з сумою")}>
+            <Select value={String(map.amount)} onChange={(e) => setMap({ ...map, amount: Number(e.target.value) })}>
+              {Array.from({ length: cols }).map((_, ci) => <option key={ci} value={ci}>{colName(ci)} — {sample(ci).slice(0, 22)}</option>)}
+            </Select>
+          </Field>
+          <Field label={tr("Колонка з описом")}>
+            <Select value={String(map.desc)} onChange={(e) => setMap({ ...map, desc: Number(e.target.value) })}>
+              {Array.from({ length: cols }).map((_, ci) => <option key={ci} value={ci}>{colName(ci)} — {sample(ci).slice(0, 22)}</option>)}
+            </Select>
+          </Field>
+          <div className="flex gap-2 mt-2">
+            <Button variant="secondary" className="flex-1" onClick={() => { setStage("file"); setError(""); }}>{tr("Назад")}</Button>
+            <Button className="flex-1" onClick={buildPreview}>{tr("Продовжити")}</Button>
+          </div>
+          {error && <p className="text-xs mt-2" style={{ color: "var(--danger)" }}>{error}</p>}
+        </>
+      )}
+
+      {stage === "preview" && (
+        <>
+          <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>{tr("Знайдено операцій:")} {rows.length} · {tr("Мінус — витрата, плюс — дохід. Зніміть галочки із зайвого.")}</p>
+          <div className="rounded-xl overflow-y-auto mb-3" style={{ border: "1px solid var(--border)", maxHeight: "44vh" }}>
+            {rows.map((r) => (
+              <div key={r.key} className="px-3 py-2.5" style={{ borderBottom: "1px solid var(--border)", opacity: r.include ? 1 : 0.55 }}>
+                <div className="flex items-center gap-2.5">
+                  <input type="checkbox" checked={r.include} onChange={(e) => setRow(r.key, { include: e.target.checked })} style={{ width: 17, height: 17, accentColor: "var(--accent)", flexShrink: 0 }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{r.desc || "—"}</p>
+                    <p className="text-[11px]" style={{ color: "var(--text-dim)" }}>{fmtDate(r.date)}{r.dup && <span style={{ color: "var(--warn)" }}> · {tr("Дублікат?")}</span>}</p>
+                  </div>
+                  <p className="text-sm font-semibold tabular shrink-0" style={{ color: r.amount < 0 ? "var(--danger)" : "var(--accent)" }}>{r.amount < 0 ? "−" : "+"}{fmtMoney(Math.abs(r.amount), pkCur)}</p>
+                </div>
+                {r.include && (
+                  <div className="mt-2 pl-7">
+                    <Select value={r.categoryId || ""} onChange={(e) => setRow(r.key, { categoryId: e.target.value })}>
+                      <option value="">{tr("Без категорії")}</option>
+                      {(r.amount < 0 ? expenseCats : incomeCats).map((cat) => <option key={cat.id} value={cat.id}>{tr(cat.name)}</option>)}
+                    </Select>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="secondary" className="flex-1" onClick={() => { setStage("map"); setError(""); }}>{tr("Назад")}</Button>
+            <Button className="flex-1" onClick={doImport}>{tr("Імпортувати")} ({selCount})</Button>
+          </div>
+          {error && <p className="text-xs mt-2" style={{ color: "var(--danger)" }}>{error}</p>}
+        </>
+      )}
+    </Modal>
+  );
+}
+
 /* ============================== SETTINGS VIEW ============================== */
 
-function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView }) {
+function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView, setModal }) {
   const [localRates, setLocalRates] = useState(() => {
     const o = {};
     Object.keys(rates).forEach((k) => { o[k] = String(rates[k]); });
@@ -4084,6 +4421,12 @@ function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, upda
       </Card>
 
       <Card className="p-5">
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("Імпорт виписки (CSV)")}</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Завантажте CSV-виписку з банку — застосунок сам розпізнає колонки й розкладе витрати за категоріями.")}</p>
+        <Button variant="secondary" onClick={() => setModal && setModal({ type: "statementImport" })}><ArrowDownRight size={15} /> {tr("Імпортувати виписку")}</Button>
+      </Card>
+
+      <Card className="p-5">
         <Field label={tr("Базова валюта (для загального балансу)")}>
           <Select value={base} onChange={(e) => setBase(e.target.value)}>{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
         </Field>
@@ -4171,6 +4514,7 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "loan") return <LoanModal onClose={close} accounts={accounts} pockets={pockets} addLoan={addLoan} direction={(modal.payload && modal.payload.direction) || "out"} pocketBalance={pocketBalance} />;
   if (modal.type === "loanReturn") return <LoanReturnModal onClose={close} loan={modal.payload} accounts={accounts} pockets={pockets} registerLoanReturn={registerLoanReturn} loanRemaining={loanRemaining} pocketBalance={pocketBalance} />;
   if (modal.type === "txDetail") return <TxDetailModal onClose={close} tx={modal.payload} categories={categories} pocketLabel={pocketLabel} setModal={setModal} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} />;
+  if (modal.type === "statementImport") return <StatementImportModal onClose={close} accounts={accounts} pockets={pockets} categories={categories} transactions={transactions} importTransactions={importTransactions} pocketBalance={pocketBalance} />;
   if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
   if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} pockets={pockets} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
   if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} currencies={currencies} />;
