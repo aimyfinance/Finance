@@ -567,6 +567,27 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Поза рахунками": "Outside accounts",
+  "Списано з рахунку": "Debited from the account",
+  "Зараховано на рахунок": "Credited to the account",
+  "Вкажіть суму в валюті рахунку": "Enter the amount in the account currency",
+  "Борг зменшиться, але баланси рахунків не зміняться — напр., повернули криптою, товаром чи готівкою поза обліком.": "The debt will decrease, but account balances won't change — e.g. repaid in crypto, goods, or cash outside the app.",
+  "Деталі операції": "Transaction details",
+  "Списано": "Debited",
+  "Зараховано": "Credited",
+  "Курс": "Rate",
+  "Комісія": "Fee",
+  "З рахунку": "From account",
+  "На рахунок": "To account",
+  "Зафіксований курс": "Locked rate",
+  "Редагувати": "Edit",
+  "Дублювати": "Duplicate",
+  "Видалити операцію": "Delete transaction",
+  "Видалити операцію?": "Delete this transaction?",
+  "Отримання боргу": "Debt received",
+  "Погашення боргу": "Debt repayment",
+  "Тап — склад суми · подвійний тап — приховати": "Tap — breakdown · double-tap — hide",
+  "Обрані": "Favourites",
   "Усі": "All",
   "Крипто": "Crypto",
   "Картки": "Cards",
@@ -2059,17 +2080,22 @@ function FinanceTracker() {
     notify(isDebt ? tr("Борг додано") : tr("Позику створено"));
   };
 
-  const registerLoanReturn = (loanId, returnAmount, returnPocketId, currency, date, note) => {
+  const registerLoanReturn = (loanId, debtAmount, returnPocketId, receivedAmount, receivedCurrency, date, note) => {
     const loan = loans.find((l) => l.id === loanId);
     if (!loan) return;
     const isDebt = loan.direction === "in";
     const remaining = loanRemaining(loan);
-    const amt = Math.min(returnAmount, remaining);
+    const amt = Math.min(debtAmount, remaining);
     const newReturned = Math.round((loan.returned + amt) * 100) / 100;
     const newStatus = newReturned >= loan.amount - 0.005 ? "returned" : "partial";
+    const defNote = (isDebt ? tr("Погашення боргу: ") : tr("Повернення позики: ")) + loan.borrower;
+    // If no pocket is chosen, only the debt shrinks (repaid outside the app: crypto, cash, goods…)
+    const txs = returnPocketId
+      ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: receivedAmount != null ? receivedAmount : amt, currency: receivedCurrency || loan.currency, pocketId: returnPocketId, loanId, note: note || defNote }]
+      : [];
     update({
       loans: loans.map((l) => (l.id === loanId ? { ...l, returned: newReturned, status: newStatus } : l)),
-      transactions: [{ id: uid("tx"), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency, pocketId: returnPocketId, loanId, note: note || ((isDebt ? tr("Погашення боргу: ") : tr("Повернення позики: ")) + loan.borrower) }, ...transactions],
+      transactions: [...txs, ...transactions],
     });
     notify(newStatus === "returned" ? (isDebt ? tr("Борг повністю погашено") : tr("Позику повністю повернено")) : (isDebt ? tr("Часткове погашення зареєстровано") : tr("Часткове повернення зареєстровано")));
   };
@@ -2382,20 +2408,34 @@ function FinanceTracker() {
 
 /* ============================== POCKET SELECT ============================== */
 /* Renders a <select> of all active pockets, grouped by parent account */
-function PocketSelect({ accounts, pockets, value, onChange, excludePocketId, className }) {
+function PocketSelect({ accounts, pockets, value, onChange, excludePocketId, className, tint, pocketBalance }) {
   const activeAccounts = accounts.filter((a) => !a.archived);
+  const pks = (acc) => pockets.filter((p) => p.accountId === acc.id && !p.archived && p.id !== excludePocketId);
+  const optLabel = (acc, p) => {
+    const base = p.name ? `${tr(acc.name)} · ${tr(p.name)} · ${p.currency}` : `${tr(acc.name)} · ${p.currency}`;
+    return pocketBalance ? `${base} — ${fmtMoney(pocketBalance(p.id), p.currency)}` : base;
+  };
+  // Favourites float to the top; the rest is grouped by bank for a compact, scannable list
+  const favs = [];
+  activeAccounts.forEach((acc) => pks(acc).forEach((p) => { if (p.fav) favs.push([acc, p]); }));
+  const order = []; const buckets = {};
+  activeAccounts.forEach((acc) => { const k = (acc.bank || "").trim() || "__nb__"; if (!buckets[k]) { buckets[k] = []; order.push(k); } buckets[k].push(acc); });
+  const st = inputStyle();
+  if (tint === "out") { st.border = "1px solid rgba(192,86,79,0.55)"; st.background = "rgba(192,86,79,0.07)"; }
+  if (tint === "in") { st.border = "1px solid rgba(111,169,140,0.60)"; st.background = "rgba(111,169,140,0.08)"; }
   return (
-    <Select value={value} onChange={(e) => onChange(e.target.value)} className={className}>
-      {activeAccounts.map((acc) => {
-        const accPockets = pockets.filter((p) => p.accountId === acc.id && !p.archived && p.id !== excludePocketId);
-        if (accPockets.length === 0) return null;
-        return (
-          <optgroup key={acc.id} label={tr(acc.name)}>
-            {accPockets.map((p) => <option key={p.id} value={p.id}>{p.name ? `${tr(p.name)} · ${p.currency}` : `${tr(acc.name)} · ${p.currency}`}</option>)}
-          </optgroup>
-        );
+    <select value={value} onChange={(e) => onChange(e.target.value)} style={st} className={`w-full min-w-0 max-w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${className || ""}`}>
+      {favs.length > 0 && (
+        <optgroup label={"★ " + tr("Обрані")}>
+          {favs.map(([acc, p]) => <option key={"f" + p.id} value={p.id}>{optLabel(acc, p)}</option>)}
+        </optgroup>
+      )}
+      {order.map((k) => {
+        const opts = buckets[k].flatMap((acc) => pks(acc).map((p) => <option key={p.id} value={p.id}>{optLabel(acc, p)}</option>));
+        if (opts.length === 0) return null;
+        return <optgroup key={k} label={k === "__nb__" ? tr("Інші рахунки") : tr(k)}>{opts}</optgroup>;
       })}
-    </Select>
+    </select>
   );
 }
 
@@ -2540,18 +2580,19 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
   const [hideTotal, setHideTotal] = useState(() => {
     try { return window.localStorage && window.localStorage.getItem("ft_hideTotal") === "1"; } catch (e) { return false; }
   });
-  const _lastTap = React.useRef(0);
+  const [showBreak, setShowBreak] = useState(false);
+  const _tapTimer = React.useRef(null);
+  // Single tap toggles the breakdown badges; a quick second tap masks the amount.
   const toggleHide = () => {
-    const now = Date.now();
-    if (now - _lastTap.current < 320) {
+    if (_tapTimer.current) {
+      clearTimeout(_tapTimer.current); _tapTimer.current = null;
       setHideTotal((h) => {
         const nv = !h;
         try { window.localStorage.setItem("ft_hideTotal", nv ? "1" : "0"); } catch (e) {}
         return nv;
       });
-      _lastTap.current = 0;
     } else {
-      _lastTap.current = now;
+      _tapTimer.current = setTimeout(() => { _tapTimer.current = null; setShowBreak((v) => !v); }, 300);
     }
   };
 
@@ -2564,15 +2605,15 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
     <div className="space-y-6 animate-in">
       <div data-tour="total">
         <p className="text-sm mb-1" style={{ color: "var(--text-dim)" }}>{tr("Загальний капітал")}</p>
-        <h1 onClick={toggleHide} className="font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none" style={{ color: "var(--text)", WebkitUserSelect: "none" }} title={tr("Подвійний тап, щоб приховати")}>
+        <h1 onClick={toggleHide} className="font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none" style={{ color: "var(--text)", WebkitUserSelect: "none" }} title={tr("Тап — склад суми · подвійний тап — приховати")}>
           {hideTotal ? "$$$$$$$" : fmtMoney(totalInBase + (cryptoTotalBase || 0) + (loansNetBase || 0), baseCurrency)}
         </h1>
-        <div className="flex flex-wrap gap-2 mt-3">
+        {showBreak && <div className="flex flex-wrap gap-2 mt-3">
           {Object.entries(byCurrencyTotals).map(([cur, val]) => <Badge key={cur} color="var(--accent2)">{hideTotal ? "••••" : fmtMoney(val, cur)}</Badge>)}
           {cryptoTotalBase > 0 && <Badge color="var(--accent)">{hideTotal ? "••••" : `₿ ${fmtMoney(cryptoTotalBase, baseCurrency)}`}</Badge>}
           {includeLoansInTotal && totalLoanedOut > 0 && <Badge color="var(--warn)">{hideTotal ? "••••" : `↗ ${fmtMoney(totalLoanedOut, baseCurrency)}`}</Badge>}
           {includeLoansInTotal && totalOwed > 0 && <Badge color="var(--danger)">{hideTotal ? "••••" : `↘ −${fmtMoney(totalOwed, baseCurrency)}`}</Badge>}
-        </div>
+        </div>}
       </div>
 
       <div data-tour="actions" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -2615,6 +2656,17 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
             <Plus size={16} /> {tr("Новий рахунок")}
           </button>
         </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display font-semibold text-lg">{tr("Останні транзакції")}</h2>
+          <button onClick={() => setView("history")} className="pill-link">{tr("Уся історія")} <ChevronRight size={13} /></button>
+        </div>
+        <Card className="divide-y" style={{ borderColor: "var(--border)" }}>
+          {recent.map((tx) => <TxRow key={tx.id} tx={tx} categories={categories} pocketLabel={pocketLabel} onClick={() => setModal({ type: "txDetail", payload: tx })} />)}
+          {recent.length === 0 && <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>{tr("Ще немає транзакцій")}</p>}
+        </Card>
       </div>
 
       <div>
@@ -2795,16 +2847,6 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
         </Card>
       )}
 
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-semibold text-lg">{tr("Останні транзакції")}</h2>
-          <button onClick={() => setView("history")} className="pill-link">{tr("Уся історія")} <ChevronRight size={13} /></button>
-        </div>
-        <Card className="divide-y" style={{ borderColor: "var(--border)" }}>
-          {recent.map((tx) => <TxRow key={tx.id} tx={tx} categories={categories} pocketLabel={pocketLabel} />)}
-          {recent.length === 0 && <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>{tr("Ще немає транзакцій")}</p>}
-        </Card>
-      </div>
     </div>
   );
 }
@@ -2872,14 +2914,16 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
   let label = "", sub = "", amountStr = "", amountColor = "var(--text)";
   const cat = categories.find((c) => c.id === tx.categoryId);
 
-  if (tx.type === "income") { label = cat?.name || tr("Дохід"); sub = pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
-  else if (tx.type === "expense") { label = cat?.name || tr("Витрата"); sub = pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--danger)"; }
+  if (tx.type === "income") { label = tr(cat?.name) || tr("Дохід"); sub = pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
+  else if (tx.type === "expense") { label = tr(cat?.name) || tr("Витрата"); sub = pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--danger)"; }
   else if (tx.type === "transfer") { label = tr("Переказ"); sub = `${pocketLabel(tx.fromPocketId)} → ${pocketLabel(tx.toPocketId)}`; amountStr = `${fmtMoney(tx.fromAmount, tx.fromCurrency)}`; amountColor = "var(--accent2)"; }
   else if (tx.type === "exchange") { label = tr("Обмін валюти"); sub = `${pocketLabel(tx.fromPocketId)} → ${pocketLabel(tx.toPocketId)}`; amountStr = `${fmtMoney(tx.fromAmount, tx.fromCurrency)} → ${fmtMoney(tx.toAmount, tx.toCurrency)}`; amountColor = "var(--warn)"; }
-  else if (tx.type === "loan_out") { label = tr("Позика надана"); sub = tx.note || pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--warn)"; }
-  else if (tx.type === "loan_return") { label = tr("Повернення позики"); sub = tx.note || pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
+  else if (tx.type === "loan_out") { label = tr("Позика надана"); sub = tr(tx.note) || pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--warn)"; }
+  else if (tx.type === "loan_return") { label = tr("Повернення позики"); sub = tr(tx.note) || pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
+  else if (tx.type === "debt_take") { label = tr("Отримання боргу"); sub = tr(tx.note) || pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent2)"; }
+  else if (tx.type === "debt_repay") { label = tr("Погашення боргу"); sub = tr(tx.note) || pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--warn)"; }
 
-  const TypeIcon = tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" ? ArrowUpRight : tx.type === "loan_return" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
+  const TypeIcon = tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
 
   return (
     <div onClick={onClick} className={`flex items-center gap-3 px-4 py-3 ${onClick ? "cursor-pointer hover:opacity-80" : ""}`}>
@@ -2887,6 +2931,56 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
       <div className="min-w-0 flex-1"><p className="text-sm font-medium truncate">{label}</p><p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{sub}</p></div>
       <div className="text-right shrink-0"><p className="text-sm font-semibold tabular" style={{ color: amountColor }}>{amountStr}</p><p className="text-[11px]" style={{ color: "var(--text-dim)" }}>{fmtDate(tx.date)}</p></div>
     </div>
+  );
+}
+
+/* Tap on a transaction anywhere → full details */
+function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction }) {
+  const [confirmDel, setConfirmDel] = useState(false);
+  const cat = categories.find((x) => x.id === tx.categoryId);
+  const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу" };
+  const dual = tx.type === "transfer" || tx.type === "exchange";
+  const Row = ({ k, v, strong }) => ((v == null || v === "") ? null : (
+    <div className="flex items-start justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid var(--border)" }}>
+      <span className="text-xs shrink-0 pt-0.5" style={{ color: "var(--text-dim)" }}>{k}</span>
+      <span className={"text-sm text-right min-w-0 " + (strong ? "font-display font-bold tabular" : "font-medium")} style={{ wordBreak: "break-word" }}>{v}</span>
+    </div>
+  ));
+  return (
+    <Modal title={tr("Деталі операції")} onClose={onClose}>
+      <div className="mb-4">
+        <Row k={tr("Тип")} v={tr(typeLbl[tx.type] || tx.type)} />
+        <Row k={tr("Дата")} v={fmtDate(tx.date)} />
+        {!dual && <Row k={tr("Сума")} v={fmtMoney(tx.amount, tx.currency)} strong />}
+        {dual && <Row k={tr("Списано")} v={fmtMoney(tx.fromAmount, tx.fromCurrency)} strong />}
+        {dual && <Row k={tr("Зараховано")} v={fmtMoney(tx.toAmount, tx.toCurrency)} strong />}
+        {dual && tx.fromCurrency !== tx.toCurrency && tx.rate ? <Row k={tr("Курс")} v={`1 ${tx.fromCurrency} = ${tx.rate} ${tx.toCurrency}`} /> : null}
+        {tx.fee > 0 ? <Row k={tr("Комісія")} v={fmtMoney(tx.fee, tx.fromCurrency || tx.currency)} /> : null}
+        {cat ? <Row k={tr("Категорія")} v={tr(cat.name)} /> : null}
+        {!dual && <Row k={tr("Рахунок")} v={pocketLabel(tx.pocketId)} />}
+        {dual && <Row k={tr("З рахунку")} v={pocketLabel(tx.fromPocketId)} />}
+        {dual && <Row k={tr("На рахунок")} v={pocketLabel(tx.toPocketId)} />}
+        {(tx.type === "income" || tx.type === "expense") && tx.fx != null && tx.currency !== "UAH" ? <Row k={tr("Зафіксований курс")} v={`1 ${tx.currency} = ${tx.fx} UAH`} /> : null}
+        <Row k={tr("Нотатка")} v={tr(tx.note)} />
+      </div>
+      <div className="flex gap-2">
+        {(tx.type === "income" || tx.type === "expense") && (
+          <Button variant="secondary" className="flex-1" onClick={() => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } })}><Edit3 size={14} /> {tr("Редагувати")}</Button>
+        )}
+        <Button variant="secondary" className="flex-1" onClick={() => { duplicateTransaction(tx); onClose(); }}><Plus size={14} /> {tr("Дублювати")}</Button>
+      </div>
+      {confirmDel ? (
+        <div className="flex items-center justify-between mt-3 text-sm">
+          <span style={{ color: "var(--text-dim)" }}>{tr("Видалити операцію?")}</span>
+          <div className="flex gap-2">
+            <button onClick={() => { deleteTransaction(tx.id); onClose(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--danger)", color: "#fff" }}>{tr("Так")}</button>
+            <button onClick={() => setConfirmDel(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text)" }}>{tr("Ні")}</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setConfirmDel(true)} className="w-full text-center mt-3 text-xs font-medium" style={{ color: "var(--danger)" }}>{tr("Видалити операцію")}</button>
+      )}
+    </Modal>
   );
 }
 
@@ -3224,7 +3318,7 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
           return (
             <SwipeRow key={tx.id} actions={acts}>
               <div className="group flex items-center" style={{ background: "var(--surface)" }}>
-                <div className="flex-1 min-w-0"><TxRow tx={tx} categories={categories} pocketLabel={pocketLabel} /></div>
+                <div className="flex-1 min-w-0"><TxRow tx={tx} categories={categories} pocketLabel={pocketLabel} onClick={() => setModal({ type: "txDetail", payload: tx })} /></div>
                 <div className="hidden group-hover:flex items-center gap-2 pr-4 shrink-0">
                   {(tx.type === "income" || tx.type === "expense") && (
                     <button onClick={() => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } })} className="p-1.5 rounded-lg" style={{ color: "var(--text-dim)" }}><Edit3 size={14} /></button>
@@ -3985,11 +4079,12 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "pocket") return <PocketModal onClose={close} accountId={modal.payload.accountId} existing={modal.payload.existing} accounts={accounts} pockets={pockets} addPocket={addPocket} editPocket={editPocket} currencies={currencies} />;
   if (modal.type === "cardMenu") return <CardMenuModal onClose={close} pocketId={modal.payload} pockets={pockets} getPocket={getPocket} setModal={setModal} archivePocket={archivePocket} deletePocket={deletePocket} movePocket={movePocket} />;
   if (modal.type === "category") return <CategoryModal onClose={close} existing={modal.payload} addCategory={addCategory} editCategory={editCategory} />;
-  if (modal.type === "transaction") return <TransactionModal onClose={close} kind={modal.payload.kind} editing={modal.payload.editing} presetPocketId={modal.payload.presetPocketId} accounts={accounts} pockets={pockets} categories={categories} addTransaction={addTransaction} editTransaction={editTransaction} />;
-  if (modal.type === "transfer") return <TransferExchangeModal onClose={close} mode="transfer" presetFromPocketId={modal.payload?.presetPocketId} accounts={accounts} pockets={pockets} rates={rates} addTransaction={addTransaction} />;
-  if (modal.type === "exchange") return <TransferExchangeModal onClose={close} mode="exchange" presetFromPocketId={modal.payload?.presetPocketId} accounts={accounts} pockets={pockets} rates={rates} addTransaction={addTransaction} />;
-  if (modal.type === "loan") return <LoanModal onClose={close} accounts={accounts} pockets={pockets} addLoan={addLoan} direction={(modal.payload && modal.payload.direction) || "out"} />;
-  if (modal.type === "loanReturn") return <LoanReturnModal onClose={close} loan={modal.payload} accounts={accounts} pockets={pockets} registerLoanReturn={registerLoanReturn} loanRemaining={loanRemaining} />;
+  if (modal.type === "transaction") return <TransactionModal onClose={close} kind={modal.payload.kind} editing={modal.payload.editing} presetPocketId={modal.payload.presetPocketId} accounts={accounts} pockets={pockets} categories={categories} addTransaction={addTransaction} editTransaction={editTransaction} pocketBalance={pocketBalance} />;
+  if (modal.type === "transfer") return <TransferExchangeModal onClose={close} mode="transfer" presetFromPocketId={modal.payload?.presetPocketId} accounts={accounts} pockets={pockets} rates={rates} addTransaction={addTransaction} pocketBalance={pocketBalance} />;
+  if (modal.type === "exchange") return <TransferExchangeModal onClose={close} mode="exchange" presetFromPocketId={modal.payload?.presetPocketId} accounts={accounts} pockets={pockets} rates={rates} addTransaction={addTransaction} pocketBalance={pocketBalance} />;
+  if (modal.type === "loan") return <LoanModal onClose={close} accounts={accounts} pockets={pockets} addLoan={addLoan} direction={(modal.payload && modal.payload.direction) || "out"} pocketBalance={pocketBalance} />;
+  if (modal.type === "loanReturn") return <LoanReturnModal onClose={close} loan={modal.payload} accounts={accounts} pockets={pockets} registerLoanReturn={registerLoanReturn} loanRemaining={loanRemaining} pocketBalance={pocketBalance} />;
+  if (modal.type === "txDetail") return <TxDetailModal onClose={close} tx={modal.payload} categories={categories} pocketLabel={pocketLabel} setModal={setModal} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} />;
   if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
   if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} pockets={pockets} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
   if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} currencies={currencies} />;
@@ -4386,7 +4481,7 @@ function CategoryModal({ onClose, existing, addCategory, editCategory }) {
 }
 
 /* ---------- Transaction (income/expense) Modal ---------- */
-function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction }) {
+function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance }) {
   const isIncome = kind === "income";
   const cats = categories.filter((c) => c.type === kind && !c.archived);
   const firstPocket = pockets.find((p) => !p.archived);
@@ -4422,7 +4517,7 @@ function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, po
   return (
     <Modal title={editing ? tr("Редагувати операцію") : isIncome ? tr("Додати дохід") : tr("Додати витрату")} onClose={onClose}>
       <Field label={tr("Рахунок")}>
-        <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} />
+        <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} tint={isIncome ? "in" : "out"} pocketBalance={pocketBalance} />
       </Field>
       <Field label={`Сума (${currency})`} error={error}>
         <Input type="number" step="0.01" value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} placeholder="0.00" />
@@ -4449,7 +4544,7 @@ function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, po
 }
 
 /* ---------- Transfer / Exchange Modal ---------- */
-function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, pockets, rates, addTransaction }) {
+function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, pockets, rates, addTransaction, pocketBalance }) {
   const isExchange = mode === "exchange";
   const active = pockets.filter((p) => !p.archived);
   const [fromPocketId, setFromPocketId] = useState(presetFromPocketId || active[0]?.id || "");
@@ -4497,10 +4592,10 @@ function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, po
   return (
     <Modal title={isExchange ? tr("Обмін валюти") : tr("Переказ між рахунками")} onClose={onClose}>
       <Field label={tr("Рахунок списання")}>
-        <PocketSelect accounts={accounts} pockets={pockets} value={fromPocketId} onChange={setFromPocketId} />
+        <PocketSelect accounts={accounts} pockets={pockets} value={fromPocketId} onChange={setFromPocketId} tint="out" pocketBalance={pocketBalance} />
       </Field>
       <Field label={tr("Рахунок зарахування")}>
-        <PocketSelect accounts={accounts} pockets={pockets} value={toPocketId} onChange={setToPocketId} excludePocketId={fromPocketId} />
+        <PocketSelect accounts={accounts} pockets={pockets} value={toPocketId} onChange={setToPocketId} excludePocketId={fromPocketId} tint="in" pocketBalance={pocketBalance} />
       </Field>
       <Field label={`Сума списання (${fromCurrency})`} error={error}>
         <Input type="number" step="0.01" value={fromAmount} onChange={(e) => { setFromAmount(e.target.value); setError(""); }} />
@@ -4518,7 +4613,7 @@ function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, po
 }
 
 /* ---------- Loan Modal ---------- */
-function LoanModal({ onClose, accounts, pockets, addLoan, direction }) {
+function LoanModal({ onClose, accounts, pockets, addLoan, direction, pocketBalance }) {
   const isIn = direction === "in";
   const active = pockets.filter((p) => !p.archived);
   const [borrower, setBorrower] = useState("");
@@ -4545,7 +4640,7 @@ function LoanModal({ onClose, accounts, pockets, addLoan, direction }) {
     <Modal title={isIn ? tr("Додати борг (я винен)") : tr("Надати позику")} onClose={onClose}>
       <Field label={isIn ? tr("Кому ви винні") : tr("Ім'я / назва позичальника")} error={error}><Input value={borrower} onChange={(e) => { setBorrower(e.target.value); setError(""); }} placeholder={isIn ? tr("Напр. Банк / Андрій") : tr("Напр. Олег К.")} /></Field>
       <Field label={isIn ? tr("Рахунок, куди надійшли кошти") : tr("Рахунок, з якого видано кошти")}>
-        <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} />
+        <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} tint={isIn ? "in" : "out"} pocketBalance={pocketBalance} />
       </Field>
       <Field label={`Сума (${currency})`}><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
       <Field label={isIn ? tr("Дата отримання") : tr("Дата надання")}><Input type="date" value={dateGiven} onChange={(e) => setDateGiven(e.target.value)} /></Field>
@@ -4585,38 +4680,70 @@ function LoanEditModal({ onClose, loan, editLoan }) {
 }
 
 /* ---------- Loan Return Modal ---------- */
-function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn, loanRemaining }) {
-  const active = pockets.filter((p) => !p.archived && p.currency === loan.currency);
+function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn, loanRemaining, pocketBalance }) {
+  const isDebt = loan.direction === "in";
+  const active = pockets.filter((p) => !p.archived);
   const remaining = loanRemaining(loan);
-  const [amount, setAmount] = useState(remaining);
+  const [mode, setMode] = useState("pocket");
+  const [amount, setAmount] = useState(String(remaining));
   const [pocketId, setPocketId] = useState(active.find((p) => p.id === loan.pocketId)?.id || active[0]?.id || "");
+  const [received, setReceived] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const pk = pockets.find((p) => p.id === pocketId);
+  const cross = mode === "pocket" && pk && pk.currency !== loan.currency;
+  const amtNum = parseFloat(String(amount).replace(",", ".")) || 0;
+  const recNum = parseFloat(String(received).replace(",", ".")) || 0;
 
   const submit = () => {
-    const amt = parseFloat(amount);
-    if (!amt || amt <= 0) return setError(tr("Введіть коректну суму повернення"));
-    if (amt > remaining + 0.005) return setError(tr(`Сума не може перевищувати залишок боргу (${fmtMoney(remaining, loan.currency)})`));
-    if (!pocketId) return setError(tr("Оберіть рахунок зарахування"));
-    registerLoanReturn(loan.id, amt, pocketId, loan.currency, date, note);
+    if (!(amtNum > 0)) return setError(tr("Введіть коректну суму повернення"));
+    if (amtNum > remaining + 0.005) return setError(tr(`Сума не може перевищувати залишок боргу (${fmtMoney(remaining, loan.currency)})`));
+    if (mode === "pocket") {
+      if (!pocketId) return setError(tr("Оберіть рахунок зарахування"));
+      if (cross && !(recNum > 0)) return setError(tr("Вкажіть суму в валюті рахунку"));
+      registerLoanReturn(loan.id, amtNum, pocketId, cross ? recNum : amtNum, pk.currency, date, note);
+    } else {
+      registerLoanReturn(loan.id, amtNum, null, null, null, date, note);
+    }
     onClose();
   };
 
+  const seg = (on) => ({ background: on ? "var(--surface)" : "transparent", color: on ? "var(--text)" : "var(--text-dim)" });
   return (
-    <Modal title={(loan.direction === "in" ? tr("Погашення боргу: ") : tr("Повернення позики: ")) + loan.borrower} onClose={onClose}>
+    <Modal title={(isDebt ? tr("Погашення боргу: ") : tr("Повернення позики: ")) + loan.borrower} onClose={onClose}>
       <p className="text-sm mb-4 px-3 py-2 rounded-lg" style={{ background: "var(--surface2)", color: "var(--text-dim)" }}>
-        {loan.direction === "in" ? tr("Залишок до сплати: ") : tr("Залишок боргу: ")}<strong style={{ color: "var(--text)" }}>{fmtMoney(remaining, loan.currency)}</strong>
+        {isDebt ? tr("Залишок до сплати: ") : tr("Залишок боргу: ")}<strong style={{ color: "var(--text)" }}>{fmtMoney(remaining, loan.currency)}</strong>
       </p>
-      <Field label={(loan.direction === "in" ? tr("Сума погашення") : tr("Сума повернення")) + ` (${loan.currency})`} error={error}>
-        <Input type="number" step="0.01" max={remaining} value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} />
+      <Field label={(isDebt ? tr("Сума погашення") : tr("Сума повернення")) + ` (${loan.currency})`} error={error}>
+        <Input type="number" step="0.01" value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} />
       </Field>
-      <Field label={(loan.direction === "in" ? tr("Рахунок, з якого сплачуєте") : tr("Рахунок зарахування")) + tr(` (валюта ${loan.currency})`)}>
-        <PocketSelect accounts={accounts} pockets={active} value={pocketId} onChange={setPocketId} />
-      </Field>
+      <div className="flex gap-1.5 p-1 rounded-xl mb-3" style={{ background: "var(--surface2)" }}>
+        <button onClick={() => { setMode("pocket"); setError(""); }} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={seg(mode === "pocket")}>{isDebt ? tr("З рахунку") : tr("На рахунок")}</button>
+        <button onClick={() => { setMode("outside"); setError(""); }} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={seg(mode === "outside")}>{tr("Поза рахунками")}</button>
+      </div>
+      {mode === "pocket" ? (
+        <>
+          <Field label={isDebt ? tr("Рахунок, з якого сплачуєте") : tr("Рахунок зарахування")}>
+            <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={(v) => { setPocketId(v); setError(""); }} tint={isDebt ? "out" : "in"} pocketBalance={pocketBalance} />
+          </Field>
+          {cross && (
+            <>
+              <Field label={(isDebt ? tr("Списано з рахунку") : tr("Зараховано на рахунок")) + ` (${pk.currency})`}>
+                <Input type="number" step="0.01" value={received} onChange={(e) => { setReceived(e.target.value); setError(""); }} placeholder="0" />
+              </Field>
+              {amtNum > 0 && recNum > 0 && (
+                <p className="text-[11px] -mt-2 mb-3" style={{ color: "var(--text-dim)" }}>≈ 1 {loan.currency} = {(recNum / amtNum).toFixed(4)} {pk.currency}</p>
+              )}
+            </>
+          )}
+        </>
+      ) : (
+        <p className="text-xs mb-3 px-3 py-2 rounded-lg" style={{ background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" }}>{tr("Борг зменшиться, але баланси рахунків не зміняться — напр., повернули криптою, товаром чи готівкою поза обліком.")}</p>
+      )}
       <Field label={tr("Дата")}><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
       <Field label={tr("Коментар")}><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("Необов'язково")} /></Field>
-      <Button className="w-full mt-2" onClick={submit}>{loan.direction === "in" ? tr("Зареєструвати погашення") : tr("Зареєструвати повернення")}</Button>
+      <Button className="w-full mt-2" onClick={submit}>{isDebt ? tr("Зареєструвати погашення") : tr("Зареєструвати повернення")}</Button>
     </Modal>
   );
 }
