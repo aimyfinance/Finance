@@ -3087,8 +3087,8 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
   let label = "", sub = "", amountStr = "", amountColor = "var(--text)";
   const cat = categories.find((c) => c.id === tx.categoryId);
 
-  if (tx.type === "income") { label = tr(cat?.name) || tr("Дохід"); sub = pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
-  else if (tx.type === "expense") { label = tr(cat?.name) || tr("Витрата"); sub = pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--danger)"; }
+  if (tx.type === "income") { label = tr(tx.note) || tr(cat?.name) || tr("Дохід"); sub = pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
+  else if (tx.type === "expense") { label = tr(tx.note) || tr(cat?.name) || tr("Витрата"); sub = pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--danger)"; }
   else if (tx.type === "transfer") { label = tr("Переказ"); sub = `${pocketLabel(tx.fromPocketId)} → ${pocketLabel(tx.toPocketId)}`; amountStr = `${fmtMoney(tx.fromAmount, tx.fromCurrency)}`; amountColor = "var(--accent2)"; }
   else if (tx.type === "exchange") { label = tr("Обмін валюти"); sub = `${pocketLabel(tx.fromPocketId)} → ${pocketLabel(tx.toPocketId)}`; amountStr = `${fmtMoney(tx.fromAmount, tx.fromCurrency)} → ${fmtMoney(tx.toAmount, tx.toCurrency)}`; amountColor = "var(--warn)"; }
   else if (tx.type === "loan_out") { label = tr("Позика надана"); sub = tr(tx.note) || pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--warn)"; }
@@ -5315,15 +5315,16 @@ function CategoryModal({ onClose, existing, addCategory, editCategory }) {
           <option value="income">{tr("Дохід")}</option>
         </Select>
       </Field>
-      <Field label={tr("Іконка")}>
+      <div className="block mb-3">
+        <span className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-dim)" }}>{tr("Іконка")}</span>
         <div className="grid grid-cols-8 gap-2 max-h-32 overflow-y-auto">
           {iconOptions.map((k) => (
-            <button key={k} onClick={() => setIcon(k)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: icon === k ? "var(--accent)" : "var(--surface2)" }}>
+            <button type="button" key={k} onClick={() => setIcon(k)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: icon === k ? "var(--accent)" : "var(--surface2)" }}>
               <Icon name={k} size={15} style={{ color: icon === k ? "#08110D" : "var(--text-dim)" }} />
             </button>
           ))}
         </div>
-      </Field>
+      </div>
       <Field label={tr("Колір")}>
         <div className="flex gap-2 flex-wrap">{ACCOUNT_COLORS.map((c) => <button key={c} onClick={() => setColor(c)} className="w-8 h-8 rounded-full" style={{ background: c, border: color === c ? "2px solid var(--text)" : "2px solid transparent" }} />)}</div>
       </Field>
@@ -5349,6 +5350,7 @@ function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, po
   const [catOpen, setCatOpen] = useState(false);
   const [newCatMode, setNewCatMode] = useState(false);
   const [newCatName, setNewCatName] = useState("");
+  const [newCatIcon, setNewCatIcon] = useState("MoreHorizontal");
   const [date, setDate] = useState(editing?.date || new Date().toISOString().slice(0, 10));
   const [receipt, setReceipt] = useState(editing?.receipt || null);
   const [error, setError] = useState("");
@@ -5369,7 +5371,7 @@ function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, po
   const createCat = () => {
     const name = newCatName.trim();
     if (!name) return;
-    const created = addCategory && addCategory({ name, type: kind, icon: "MoreHorizontal", color: CAT_COLORS[categories.length % CAT_COLORS.length] });
+    const created = addCategory && addCategory({ name, type: kind, icon: newCatIcon || "MoreHorizontal", color: CAT_COLORS[categories.length % CAT_COLORS.length] });
     if (created && created.id) {
       setCategoryId(created.id);
       setNewCatMode(false);
@@ -5400,9 +5402,10 @@ function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, po
       <Field label={tr("Рахунок")}>
         <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={setPocketId} tint={isIncome ? "in" : "out"} pocketBalance={pocketBalance} />
       </Field>
-      <Field label={tr("Категорія")}>
+      <div className="block mb-3">
+        <span className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-dim)" }}>{tr("Категорія")}</span>
         {!catOpen ? (
-          <button onClick={() => setCatOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}>
+          <button type="button" onClick={() => setCatOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}>
             <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: selCat ? selCat.color + "22" : "var(--surface)" }}>
               <Icon name={selCat ? selCat.icon : "Tags"} size={15} style={{ color: selCat ? selCat.color : "var(--text-dim)" }} />
             </span>
@@ -5413,26 +5416,35 @@ function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, po
           <div>
             <div className="grid grid-cols-4 gap-2">
               {cats.map((c) => (
-                <button key={c.id} onClick={() => { setCategoryId(c.id); setCatOpen(false); setError(""); }} className="flex flex-col items-center gap-1 p-2 rounded-xl" style={{ background: categoryId === c.id ? "var(--surface2)" : "transparent", border: categoryId === c.id ? `1px solid ${c.color}` : "1px solid var(--border)" }}>
+                <button type="button" key={c.id} onClick={() => { setCategoryId(c.id); setCatOpen(false); setError(""); }} className="flex flex-col items-center gap-1 p-2 rounded-xl" style={{ background: categoryId === c.id ? "var(--surface2)" : "transparent", border: categoryId === c.id ? `1px solid ${c.color}` : "1px solid var(--border)" }}>
                   <Icon name={c.icon} size={16} style={{ color: c.color }} />
                   <span className="text-[10px] text-center leading-tight" style={{ color: "var(--text)" }}>{tr(c.name)}</span>
                 </button>
               ))}
-              <button onClick={() => { setNewCatMode(true); setNewCatName(""); }} className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl" style={{ border: "1px dashed var(--border)", color: "var(--text-dim)" }}>
+              <button type="button" onClick={() => { setNewCatMode(true); setNewCatName(""); setNewCatIcon("MoreHorizontal"); }} className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl" style={{ border: "1px dashed var(--border)", color: "var(--text-dim)" }}>
                 <Plus size={16} />
                 <span className="text-[10px] leading-tight">{tr("Нова")}</span>
               </button>
             </div>
             {newCatMode && (
-              <div className="flex items-center gap-2 mt-2">
-                <Input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder={tr("Назва категорії")} autoFocus />
-                <Button variant="secondary" onClick={createCat}>OK</Button>
-                <button onClick={() => setNewCatMode(false)} className="p-1.5 shrink-0" style={{ color: "var(--text-dim)" }}><X size={14} /></button>
+              <div className="mt-2">
+                <div className="flex items-center gap-2">
+                  <Input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder={tr("Назва категорії")} autoFocus />
+                  <Button variant="secondary" onClick={createCat}>OK</Button>
+                  <button type="button" onClick={() => setNewCatMode(false)} className="p-1.5 shrink-0" style={{ color: "var(--text-dim)" }}><X size={14} /></button>
+                </div>
+                <div className="grid grid-cols-8 gap-2 max-h-28 overflow-y-auto mt-2 p-1.5 rounded-lg" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                  {Object.keys(ICONS).map((k) => (
+                    <button type="button" key={k} onClick={() => setNewCatIcon(k)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: newCatIcon === k ? "var(--accent)" : "var(--surface2)" }}>
+                      <Icon name={k} size={14} style={{ color: newCatIcon === k ? "var(--accent-ink)" : "var(--text-dim)" }} />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         )}
-      </Field>
+      </div>
       <Field label={tr("Дата")}><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
       <Field label={tr("Фото чеку (необов'язково)")}>
         <input type="file" accept="image/*" onChange={handleReceipt} className="text-xs" style={{ color: "var(--text-dim)" }} />
