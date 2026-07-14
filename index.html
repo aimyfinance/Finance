@@ -570,6 +570,23 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Купити / Продати": "Buy / Sell",
+  "Купити / Продати крипто": "Buy / Sell crypto",
+  "Купити": "Buy",
+  "Продати": "Sell",
+  "Купівля крипто": "Crypto purchase",
+  "Продаж крипто": "Crypto sale",
+  "Крипто куплено": "Crypto purchased",
+  "Крипто продано": "Crypto sold",
+  "Сума з рахунку": "Amount from the account",
+  "Сума на рахунок": "Amount to the account",
+  "Отримано монет": "Coins received",
+  "Продано монет": "Coins sold",
+  "У портфелі:": "In portfolio:",
+  "Недостатньо монет у портфелі": "Not enough coins in the portfolio",
+  "ринок": "market",
+  "Курс включає комісію/премію обмінника.": "The rate includes the exchanger's fee or premium.",
+  "Крипто-операції": "Crypto trades",
   "Як імпортувати виписку": "How to import a statement",
   "Історія → «Імпорт» (або Налаштування → «Імпорт виписки»). Оберіть рахунок і CSV-файл — застосунок сам розпізнає колонки, розкладе операції за категоріями й позначить можливі дублікати. Вам лишається перевірити й підтвердити.": "History → “Import” (or Settings → “Statement import”). Pick the account and a CSV file — the app detects the columns, sorts transactions into categories and flags possible duplicates. You just review and confirm.",
   "Як імпортувати виписку з банку?": "How do I import a bank statement?",
@@ -1912,6 +1929,8 @@ function FinanceTracker() {
       else if (tx.type === "loan_return" && tx.pocketId === pocketId) bal += tx.amount;
       else if (tx.type === "debt_take" && tx.pocketId === pocketId) bal += tx.amount;
       else if (tx.type === "debt_repay" && tx.pocketId === pocketId) bal -= tx.amount;
+      else if (tx.type === "crypto_buy" && tx.pocketId === pocketId) bal -= tx.amount;
+      else if (tx.type === "crypto_sell" && tx.pocketId === pocketId) bal += tx.amount;
     });
     return bal;
   }, [pockets, transactions]);
@@ -2013,6 +2032,8 @@ function FinanceTracker() {
           else if (tx.type === "loan_return" && tx.pocketId === p.id) bal += tx.amount;
           else if (tx.type === "debt_take" && tx.pocketId === p.id) bal += tx.amount;
           else if (tx.type === "debt_repay" && tx.pocketId === p.id) bal -= tx.amount;
+          else if (tx.type === "crypto_buy" && tx.pocketId === p.id) bal -= tx.amount;
+          else if (tx.type === "crypto_sell" && tx.pocketId === p.id) bal += tx.amount;
         });
         total += convert(bal, p.currency, baseCurrency, rates);
       });
@@ -2108,6 +2129,28 @@ function FinanceTracker() {
     const stamped = rows.map((r) => ({ id: uid("tx"), createdAt: new Date().toISOString(), fx: r.currency ? (rates[r.currency] || 1) : 1, ...r }));
     update({ transactions: [...stamped, ...transactions] });
     notify(tr("Імпортовано операцій: ") + stamped.length);
+  };
+  // Buy/sell crypto against a fiat pocket: one transaction + holding adjustment.
+  // fiatAmount is what actually left/entered the pocket, so the fee/premium is baked in.
+  const tradeCrypto = (mode, pocketId, fiatAmount, coin, coinAmount, date, note) => {
+    const pk = pockets.find((p) => p.id === pocketId);
+    if (!pk || !coin || !coin.id) return;
+    const existing = crypto.find(cx => cx.coinId === coin.id);
+    let newCrypto;
+    if (mode === "buy") {
+      newCrypto = existing
+        ? crypto.map((cx) => (cx.coinId === coin.id ? { ...cx, amount: Math.round((cx.amount + coinAmount) * 1e8) / 1e8 } : cx))
+        : [{ id: uid("cr"), coinId: coin.id, symbol: coin.symbol, name: coin.name, amount: coinAmount, note: "" }, ...crypto];
+    } else {
+      if (!existing) return;
+      const left = Math.round((existing.amount - coinAmount) * 1e8) / 1e8;
+      newCrypto = left > 1e-9
+        ? crypto.map((cx) => (cx.coinId === coin.id ? { ...cx, amount: left } : cx))
+        : crypto.filter((cx) => cx.coinId !== coin.id);
+    }
+    const tx = { id: uid("tx"), createdAt: new Date().toISOString(), type: mode === "buy" ? "crypto_buy" : "crypto_sell", date, amount: fiatAmount, currency: pk.currency, fx: rates[pk.currency] || 1, pocketId, coinId: coin.id, coinSymbol: coin.symbol, coinAmount, note: note || "" };
+    update({ crypto: newCrypto, transactions: [tx, ...transactions] });
+    notify(mode === "buy" ? tr("Крипто куплено") : tr("Крипто продано"));
   };
 
   const addLoan = (loan, sourcePocketId, amount, currency, note) => {
@@ -2423,7 +2466,7 @@ function FinanceTracker() {
           transactions={transactions} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction}
           reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone}
           addGoal={addGoal} editGoal={editGoal} deleteGoal={deleteGoal} contributeGoal={contributeGoal} startTour={startTour}
-          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} renameBank={renameBank} importTransactions={importTransactions}
+          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} renameBank={renameBank} importTransactions={importTransactions} crypto={crypto} cryptoPrices={cryptoPrices} tradeCrypto={tradeCrypto}
         />
       )}
 
@@ -2960,8 +3003,10 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
   else if (tx.type === "loan_return") { label = tr("Повернення позики"); sub = tr(tx.note) || pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
   else if (tx.type === "debt_take") { label = tr("Отримання боргу"); sub = tr(tx.note) || pocketLabel(tx.pocketId); amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent2)"; }
   else if (tx.type === "debt_repay") { label = tr("Погашення боргу"); sub = tr(tx.note) || pocketLabel(tx.pocketId); amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--warn)"; }
+  else if (tx.type === "crypto_buy") { label = tr("Купівля крипто"); sub = tr(tx.note) || `${tx.coinAmount || ""} ${tx.coinSymbol || ""}`; amountStr = `−${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--warn)"; }
+  else if (tx.type === "crypto_sell") { label = tr("Продаж крипто"); sub = tr(tx.note) || `${tx.coinAmount || ""} ${tx.coinSymbol || ""}`; amountStr = `+${fmtMoney(tx.amount, tx.currency)}`; amountColor = "var(--accent)"; }
 
-  const TypeIcon = tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
+  const TypeIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
 
   return (
     <div onClick={onClick} className={`flex items-center gap-3 px-4 py-3 ${onClick ? "cursor-pointer hover:opacity-80" : ""}`}>
@@ -2976,7 +3021,7 @@ function TxRow({ tx, categories, pocketLabel, onClick }) {
 function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction }) {
   const [confirmDel, setConfirmDel] = useState(false);
   const cat = categories.find((x) => x.id === tx.categoryId);
-  const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу" };
+  const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу", crypto_buy: "Купівля крипто", crypto_sell: "Продаж крипто" };
   const dual = tx.type === "transfer" || tx.type === "exchange";
   const Row = ({ k, v, strong }) => ((v == null || v === "") ? null : (
     <div className="flex items-start justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid var(--border)" }}>
@@ -2995,6 +3040,8 @@ function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteT
         {dual && tx.fromCurrency !== tx.toCurrency && tx.rate ? <Row k={tr("Курс")} v={`1 ${tx.fromCurrency} = ${tx.rate} ${tx.toCurrency}`} /> : null}
         {tx.fee > 0 ? <Row k={tr("Комісія")} v={fmtMoney(tx.fee, tx.fromCurrency || tx.currency)} /> : null}
         {cat ? <Row k={tr("Категорія")} v={tr(cat.name)} /> : null}
+        {(tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount ? <Row k={tr("Монета")} v={`${tx.coinAmount} ${tx.coinSymbol || ""}`} /> : null}
+        {(tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount > 0 ? <Row k={tr("Курс")} v={`1 ${tx.coinSymbol || ""} = ${(tx.amount / tx.coinAmount).toFixed(4)} ${tx.currency}`} /> : null}
         {!dual && <Row k={tr("Рахунок")} v={pocketLabel(tx.pocketId)} />}
         {dual && <Row k={tr("З рахунку")} v={pocketLabel(tx.fromPocketId)} />}
         {dual && <Row k={tr("На рахунок")} v={pocketLabel(tx.toPocketId)} />}
@@ -3005,7 +3052,7 @@ function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteT
         {(tx.type === "income" || tx.type === "expense") && (
           <Button variant="secondary" className="flex-1" onClick={() => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } })}><Edit3 size={14} /> {tr("Редагувати")}</Button>
         )}
-        <Button variant="secondary" className="flex-1" onClick={() => { duplicateTransaction(tx); onClose(); }}><Plus size={14} /> {tr("Дублювати")}</Button>
+        {tx.type !== "crypto_buy" && tx.type !== "crypto_sell" && <Button variant="secondary" className="flex-1" onClick={() => { duplicateTransaction(tx); onClose(); }}><Plus size={14} /> {tr("Дублювати")}</Button>}
       </div>
       {confirmDel ? (
         <div className="flex items-center justify-between mt-3 text-sm">
@@ -3361,7 +3408,10 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
-      if (filterType !== "all" && t.type !== filterType) return false;
+      if (filterType !== "all") {
+        if (filterType === "crypto_ops") { if (t.type !== "crypto_buy" && t.type !== "crypto_sell") return false; }
+        else if (t.type !== filterType) return false;
+      }
       if (filterPocket !== "all") {
         const match = t.pocketId === filterPocket || t.fromPocketId === filterPocket || t.toPocketId === filterPocket;
         if (!match) return false;
@@ -3391,7 +3441,7 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
     }).sort(byRecent);
   }, [transactions, categories, filterType, filterPocket, filterCategory, filterCurrency, dateFrom, dateTo, search, pocketLabel]);
 
-  const typeLabel = { all: tr("Усі типи"), income: tr("Доходи"), expense: tr("Витрати"), transfer: tr("Перекази"), exchange: tr("Обмін валют"), loan_out: tr("Позики надані"), loan_return: tr("Повернення позик") };
+  const typeLabel = { all: tr("Усі типи"), income: tr("Доходи"), expense: tr("Витрати"), transfer: tr("Перекази"), exchange: tr("Обмін валют"), loan_out: tr("Позики надані"), loan_return: tr("Повернення позик"), crypto_ops: tr("Крипто-операції") };
 
   return (
     <div className="space-y-4 animate-in">
@@ -3756,6 +3806,7 @@ function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates
         <h1 className="font-display font-bold text-2xl">{tr("Крипто-портфель")}</h1>
         <div className="flex items-center gap-2">
           <button onClick={toggleCryptoFav} className="p-2 rounded-lg" style={{ color: cryptoFav ? "var(--accent)" : "var(--text-dim)" }} aria-label={tr("Показувати на головній")}><Star size={18} fill={cryptoFav ? "currentColor" : "none"} /></button>
+          <Button variant="secondary" onClick={() => setModal({ type: "cryptoTrade" })}><ArrowLeftRight size={15} /> {tr("Купити / Продати")}</Button>
           <Button onClick={() => setModal({ type: "crypto", payload: null })}><Plus size={16} /> {tr("Додати актив")}</Button>
         </div>
       </div>
@@ -3877,7 +3928,92 @@ function CoinPicker({ selected, onPick, onClose }) {
   );
 }
 
-function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions }) {
+// Buy/sell crypto against a fiat sub-account. Both amounts are entered as they
+// really happened, so the implied rate silently includes the exchanger's fee/premium.
+function CryptoTradeModal({ onClose, payload, accounts, pockets, crypto, cryptoPrices, rates, tradeCrypto, pocketBalance }) {
+  const held = crypto || [];
+  const [mode, setMode] = useState((payload && payload.mode) || "buy");
+  const [coin, setCoin] = useState(() => (held[0] ? { id: held[0].coinId, symbol: held[0].symbol, name: held[0].name } : { id: "tether", symbol: "USDT", name: "Tether" }));
+  const [picker, setPicker] = useState(false);
+  const activeP = pockets.filter((p) => !p.archived);
+  const [pocketId, setPocketId] = useState(activeP[0]?.id || "");
+  const [fiat, setFiat] = useState("");
+  const [coins, setCoins] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+
+  const pk = pockets.find((p) => p.id === pocketId);
+  const fiatNum = parseFloat(String(fiat).replace(",", ".")) || 0;
+  const coinNum = parseFloat(String(coins).replace(",", ".")) || 0;
+  const holding = held.find((x) => x.coinId === coin.id);
+  const heldAmt = holding ? holding.amount : 0;
+
+  useEffect(() => {
+    if (mode === "sell" && !held.find((x) => x.coinId === coin.id) && held[0]) {
+      setCoin({ id: held[0].coinId, symbol: held[0].symbol, name: held[0].name });
+    }
+  }, [mode]);
+
+  const submit = () => {
+    if (!pocketId || !pk) return setError(tr("Оберіть рахунок"));
+    if (!(fiatNum > 0)) return setError(tr("Введіть коректну суму"));
+    if (!(coinNum > 0)) return setError(tr("Вкажіть кількість"));
+    if (mode === "sell" && coinNum > heldAmt + 1e-9) return setError(tr("Недостатньо монет у портфелі"));
+    tradeCrypto(mode, pocketId, Math.round(fiatNum * 100) / 100, coin, coinNum, date, note.trim());
+    onClose();
+  };
+
+  const implied = fiatNum > 0 && coinNum > 0 ? fiatNum / coinNum : 0;
+  const market = coin && cryptoPrices && cryptoPrices[coin.id] > 0 && pk ? convert(cryptoPrices[coin.id], "USD", pk.currency, rates) : 0;
+  const diff = implied > 0 && market > 0 ? (implied / market - 1) * 100 : null;
+  const seg = (on) => ({ background: on ? "var(--surface)" : "transparent", color: on ? "var(--text)" : "var(--text-dim)" });
+
+  return (
+    <Modal title={tr("Купити / Продати крипто")} onClose={onClose}>
+      <div className="flex gap-1.5 p-1 rounded-xl mb-3" style={{ background: "var(--surface2)" }}>
+        <button onClick={() => { setMode("buy"); setError(""); }} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={seg(mode === "buy")}>{tr("Купити")}</button>
+        <button onClick={() => { setMode("sell"); setError(""); }} className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition" style={seg(mode === "sell")}>{tr("Продати")}</button>
+      </div>
+
+      <Field label={tr("Криптовалюта")}>
+        <button onClick={() => setPicker(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}>
+          <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[10px]" style={{ background: "var(--surface)", color: "var(--accent)" }}>{coin ? coin.symbol.slice(0, 5) : "—"}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold truncate">{coin ? coin.name : tr("Оберіть монету")}</span>
+            <span className="block text-xs" style={{ color: "var(--text-dim)" }}>{mode === "sell" ? tr("У портфелі:") + " " + heldAmt + " " + (coin ? coin.symbol : "") : (coin ? coin.symbol : "")}</span>
+          </span>
+          <ChevronRight size={17} style={{ color: "var(--text-dim)", flexShrink: 0 }} />
+        </button>
+      </Field>
+
+      <Field label={mode === "buy" ? tr("Рахунок списання") : tr("Рахунок зарахування")}>
+        <PocketSelect accounts={accounts} pockets={pockets} value={pocketId} onChange={(v) => { setPocketId(v); setError(""); }} tint={mode === "buy" ? "out" : "in"} pocketBalance={pocketBalance} />
+      </Field>
+
+      <Field label={(mode === "buy" ? tr("Сума з рахунку") : tr("Сума на рахунок")) + (pk ? ` (${pk.currency})` : "")} error={error}>
+        <Input type="number" step="0.01" value={fiat} onChange={(e) => { setFiat(e.target.value); setError(""); }} placeholder="0" />
+      </Field>
+      <Field label={(mode === "buy" ? tr("Отримано монет") : tr("Продано монет")) + (coin ? ` (${coin.symbol})` : "")}>
+        <Input type="number" value={coins} onChange={(e) => { setCoins(e.target.value); setError(""); }} placeholder={tr("напр. 0.5")} />
+      </Field>
+
+      {implied > 0 && (
+        <div className="text-[11px] -mt-2 mb-3 px-3 py-2 rounded-lg" style={{ background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" }}>
+          <p>≈ 1 {coin.symbol} = {implied.toFixed(4)} {pk ? pk.currency : ""}{diff != null && <span style={{ color: "var(--text-dim)" }}> · {tr("ринок")}: {market.toFixed(4)} · {diff >= 0 ? "+" : ""}{diff.toFixed(2)}%</span>}</p>
+          <p className="mt-0.5" style={{ color: "var(--text-dim)" }}>{tr("Курс включає комісію/премію обмінника.")}</p>
+        </div>
+      )}
+
+      <Field label={tr("Дата")}><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label={tr("Нотатка (необовʼязково)")}><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+      <Button className="w-full mt-2" onClick={submit}>{mode === "buy" ? tr("Купити") : tr("Продати")}</Button>
+      {picker && <CoinPicker selected={coin} onPick={(x) => { setCoin(x); setPicker(false); setError(""); }} onClose={() => setPicker(false)} />}
+    </Modal>
+  );
+}
+
+function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto }) {
   const isEdit = existing && existing.id;
   const [coin, setCoin] = useState(existing && existing.coinId
     ? { id: existing.coinId, symbol: existing.symbol, name: existing.name }
@@ -4502,7 +4638,7 @@ function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, upda
 
 /* ============================== MODAL ROUTER ============================== */
 
-function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto }) {
+function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto }) {
   const close = () => setModal(null);
   if (modal.type === "account") return <AccountModal onClose={close} existing={modal.payload && modal.payload.id ? modal.payload : null} presetBank={modal.payload && !modal.payload.id ? (modal.payload.bank || "") : ""} addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} currencies={currencies} />;
   if (modal.type === "pocket") return <PocketModal onClose={close} accountId={modal.payload.accountId} existing={modal.payload.existing} accounts={accounts} pockets={pockets} addPocket={addPocket} editPocket={editPocket} currencies={currencies} />;
@@ -4515,6 +4651,7 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "loanReturn") return <LoanReturnModal onClose={close} loan={modal.payload} accounts={accounts} pockets={pockets} registerLoanReturn={registerLoanReturn} loanRemaining={loanRemaining} pocketBalance={pocketBalance} />;
   if (modal.type === "txDetail") return <TxDetailModal onClose={close} tx={modal.payload} categories={categories} pocketLabel={pocketLabel} setModal={setModal} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} />;
   if (modal.type === "statementImport") return <StatementImportModal onClose={close} accounts={accounts} pockets={pockets} categories={categories} transactions={transactions} importTransactions={importTransactions} pocketBalance={pocketBalance} />;
+  if (modal.type === "cryptoTrade") return <CryptoTradeModal onClose={close} payload={modal.payload} accounts={accounts} pockets={pockets} crypto={crypto} cryptoPrices={cryptoPrices} rates={rates} tradeCrypto={tradeCrypto} pocketBalance={pocketBalance} />;
   if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
   if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} pockets={pockets} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
   if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} currencies={currencies} />;
