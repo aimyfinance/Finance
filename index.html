@@ -2321,7 +2321,7 @@ function FinanceTracker() {
             )}
             {view === "accounts" && (
               <AccountsView accounts={accounts} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
-                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} reorderBanks={reorderBanks} toggleFavPocket={toggleFavPocket} setView={setView} cryptoTotalBase={cryptoTotalBase} cryptoCount={crypto.length} />
+                baseCurrency={baseCurrency} setModal={setModal} archiveAccount={archiveAccount} archivePocket={archivePocket} deleteAccount={deleteAccount} reorderAccounts={reorderAccounts} reorderBanks={reorderBanks} toggleFavPocket={toggleFavPocket} chipOrder={state.chipOrder || null} saveChipOrder={(arr) => update({ chipOrder: arr })} setView={setView} cryptoTotalBase={cryptoTotalBase} cryptoCount={crypto.length} />
             )}
             {view === "history" && (
               <HistoryView transactions={transactions} pockets={pockets} accounts={accounts} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
@@ -2986,7 +2986,7 @@ function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteT
 
 /* ============================== ACCOUNTS VIEW ============================== */
 
-function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts, reorderBanks, toggleFavPocket, setView, cryptoTotalBase, cryptoCount }) {
+function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBase, baseCurrency, setModal, archiveAccount, archivePocket, deleteAccount, reorderAccounts, reorderBanks, toggleFavPocket, chipOrder, saveChipOrder, setView, cryptoTotalBase, cryptoCount }) {
   const [showArchived, setShowArchived] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [confirmDel, setConfirmDel] = useState(null);
@@ -3032,6 +3032,72 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
     reorderBanksRef.current(from, overKey);
   };
   const endBankDrag = () => { bankDragRef.current = null; lastBankOverRef.current = null; };
+
+  // --- Type chips: hold-to-drag reordering (no visible handle) ---
+  const presentTypeIds = ACCOUNT_TYPES.filter((t) => accounts.some((x) => !x.archived && x.type === t.id)).map((t) => t.id);
+  const chipPool = presentTypeIds.concat(["crypto"]);
+  const savedChipOrder = chipOrder || [];
+  const orderedChipIds = savedChipOrder.filter((id) => chipPool.includes(id)).concat(chipPool.filter((id) => savedChipOrder.indexOf(id) === -1));
+  const chips = [["all", "Усі"]].concat(orderedChipIds.map((id) => [id, id === "crypto" ? "Крипто" : (TYPE_CHIP[id] || ((ACCOUNT_TYPES.find((t) => t.id === id) || {}).label || id))]));
+  const reorderChips = (fromId, toId) => {
+    if (fromId === toId) return;
+    const arr = [...orderedChipIds];
+    const fi = arr.indexOf(fromId); const ti = arr.indexOf(toId);
+    if (fi < 0 || ti < 0) return;
+    const m = arr.splice(fi, 1)[0];
+    arr.splice(ti, 0, m);
+    saveChipOrder(arr);
+  };
+  const chipsRowRef = React.useRef(null);
+  const chipDragRef = React.useRef(null);
+  const chipLastOverRef = React.useRef(null);
+  const chipPressRef = React.useRef(null);      // pending long-press: {id, x, y, timer}
+  const chipClickBlockRef = React.useRef(false); // swallow the click that follows a drag
+  const [chipDragId, setChipDragId] = useState(null);
+  const reorderChipsRef = React.useRef(reorderChips);
+  reorderChipsRef.current = reorderChips;
+  const considerChipOver = (overId) => {
+    const from = chipDragRef.current;
+    if (!from || !overId || overId === "all" || overId === from || chipLastOverRef.current === overId) return;
+    chipLastOverRef.current = overId;
+    reorderChipsRef.current(from, overId);
+  };
+  const endChipDrag = () => { chipDragRef.current = null; chipLastOverRef.current = null; setChipDragId(null); setTimeout(() => { chipClickBlockRef.current = false; }, 60); };
+
+  React.useEffect(() => {
+    const el = chipsRowRef.current;
+    if (!el) return;
+    const onMove = (e) => {
+      if (chipDragRef.current) {
+        e.preventDefault(); // drag in progress: stop the row from scrolling
+        const t = e.touches ? e.touches[0] : e;
+        const target = document.elementFromPoint(t.clientX, t.clientY);
+        const chip = target && target.closest ? target.closest("[data-chip]") : null;
+        if (chip) considerChipOver(chip.getAttribute("data-chip"));
+        return;
+      }
+      const press = chipPressRef.current;
+      if (press && press.timer) {
+        const t = e.touches ? e.touches[0] : e;
+        // finger moved before the long-press fired -> user is scrolling, not dragging
+        if (Math.abs(t.clientX - press.x) > 10 || Math.abs(t.clientY - press.y) > 10) { clearTimeout(press.timer); chipPressRef.current = null; }
+      }
+    };
+    const onEnd = () => {
+      const press = chipPressRef.current;
+      if (press && press.timer) clearTimeout(press.timer);
+      chipPressRef.current = null;
+      if (chipDragRef.current) endChipDrag();
+    };
+    el.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
+    window.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchcancel", onEnd);
+    };
+  }, [showArchived]);
 
   React.useEffect(() => {
     const el = listRef.current;
@@ -3151,9 +3217,29 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
         <button onClick={() => setShowArchived(true)} className="px-3 py-1.5 rounded-lg font-medium" style={{ background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" }}>{tr("Архів")}</button>
       </div>
       {!showArchived && (
-        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5">
-          {[["all", "Усі"]].concat(ACCOUNT_TYPES.filter((t) => accounts.some((x) => !x.archived && x.type === t.id)).map((t) => [t.id, TYPE_CHIP[t.id] || t.label])).concat([["crypto", "Крипто"]]).map(([id, label]) => (
-            <button key={id} onClick={() => setTypeFilter(id)} className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition" style={{ background: typeFilter === id ? "var(--accent)" : "var(--surface2)", color: typeFilter === id ? "var(--accent-ink)" : "var(--text-dim)", border: "1px solid var(--border)" }}>{tr(label)}</button>
+        <div ref={chipsRowRef} className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5">
+          {chips.map(([id, label]) => (
+            <button
+              key={id}
+              data-chip={id}
+              draggable={id !== "all"}
+              onDragStart={(e) => { if (id === "all") return; chipDragRef.current = id; chipLastOverRef.current = id; setChipDragId(id); try { e.dataTransfer.setData("text/plain", id); e.dataTransfer.effectAllowed = "move"; } catch (err) {} }}
+              onDragEnd={endChipDrag}
+              onDragOver={(e) => { if (chipDragRef.current) { e.preventDefault(); considerChipOver(id); } }}
+              onTouchStart={(e) => {
+                if (id === "all") return;
+                const t = e.touches[0];
+                if (chipPressRef.current && chipPressRef.current.timer) clearTimeout(chipPressRef.current.timer);
+                chipPressRef.current = { id, x: t.clientX, y: t.clientY, timer: setTimeout(() => {
+                  chipPressRef.current = null;
+                  chipDragRef.current = id; chipLastOverRef.current = id; setChipDragId(id); chipClickBlockRef.current = true;
+                  try { if (navigator.vibrate) navigator.vibrate(10); } catch (err) {}
+                }, 380) };
+              }}
+              onClick={() => { if (chipClickBlockRef.current) return; setTypeFilter(id); }}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition"
+              style={{ background: typeFilter === id ? "var(--accent)" : "var(--surface2)", color: typeFilter === id ? "var(--accent-ink)" : "var(--text-dim)", border: chipDragId === id ? "1px solid var(--accent)" : "1px solid var(--border)", transform: chipDragId === id ? "scale(1.07)" : "none", boxShadow: chipDragId === id ? "0 4px 14px rgba(0,0,0,0.18)" : "none", opacity: chipDragId === id ? 0.92 : 1, WebkitUserSelect: "none", WebkitTouchCallout: "none", touchAction: chipDragId === id ? "none" : "auto" }}
+            >{tr(label)}</button>
           ))}
         </div>
       )}
