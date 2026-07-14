@@ -570,6 +570,17 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Точно?": "Sure?",
+  "Архівувати цю картку?": "Archive this card?",
+  "Відновити": "Restore",
+  "Підтвердити архівацію?": "Confirm archiving?",
+  "Керування карткою": "Manage card",
+  "Здійснити транзакцію": "Make a transaction",
+  "Обрані рахунки": "Favourite accounts",
+  "Купівля та продаж крипто": "Buying and selling crypto",
+  "Крипто-портфель → «Купити / Продати». Введіть суму, що реально пішла з рахунку, і кількість отриманих монет — курс із комісією порахується сам і порівняється з ринковим. Портфель і баланс рахунку оновляться автоматично.": "Crypto portfolio → “Buy / Sell”. Enter the amount that actually left the account and the coins you received — the rate with the fee is calculated for you and compared to the market. The portfolio and account balance update automatically.",
+  "Як купити USDT за готівку?": "How do I buy USDT with cash?",
+  "Крипто-портфель → «Купити / Продати» → оберіть USDT і готівковий рахунок. Впишіть, скільки віддали (напр. 1000 USD) і скільки монет отримали (напр. 995 USDT) — застосунок спише кошти, додасть монети в портфель і покаже ваш курс проти ринкового.": "Crypto portfolio → “Buy / Sell” → pick USDT and your cash account. Enter what you paid (e.g. 1000 USD) and the coins received (e.g. 995 USDT) — the app debits the account, adds the coins to the portfolio and shows your rate vs the market.",
   "Колонка з категорією (необовʼязково)": "Category column (optional)",
   "— немає —": "— none —",
   "+ Нова категорія…": "+ New category…",
@@ -1466,7 +1477,7 @@ function inputStyle() { return { background: "var(--surface2)", borderColor: "va
 
 function Input(props) {
   const dateLike = props.type === "date" || props.type === "time" || props.type === "datetime-local" || props.type === "month";
-  const st = dateLike ? { ...inputStyle(), WebkitAppearance: "none", appearance: "none" } : inputStyle();
+  const st = dateLike ? { ...inputStyle(), WebkitAppearance: "none", appearance: "none", minWidth: "100%", display: "block", minHeight: 40 } : inputStyle();
   const cls = `w-full min-w-0 max-w-full box-border rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${props.className || ""}`;
   // Amount fields: render as text + decimal keypad so the iOS comma key works.
   // (A real <input type="number"> silently discards "0,5" and blocks decimals.)
@@ -1640,6 +1651,7 @@ function HelpModal({ onClose, startTour }) {
     { q: tr("Рахунки та субрахунки"), a: tr("Рахунок — це контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з власними назвами (напр. «Основний», «Заначка»). Додайте тег банку, щоб згрупувати кілька карток одного банку.") },
     { q: tr("Операції"), a: tr("Додавайте доходи й витрати кнопками на головному екрані. Курс валюти фіксується на момент операції, тож зміна курсу не змінює минулі суми.") },
     { q: tr("Імпорт виписки (CSV)"), a: tr("Історія → «Імпорт» (або Налаштування → «Імпорт виписки»). Оберіть рахунок і CSV-файл — застосунок сам розпізнає колонки, розкладе операції за категоріями й позначить можливі дублікати. Вам лишається перевірити й підтвердити.") },
+    { q: tr("Купівля та продаж крипто"), a: tr("Крипто-портфель → «Купити / Продати». Введіть суму, що реально пішла з рахунку, і кількість отриманих монет — курс із комісією порахується сам і порівняється з ринковим. Портфель і баланс рахунку оновляться автоматично.") },
     { q: tr("Перекази та обмін валют"), a: tr("«Переказ» — між своїми рахунками. «Обмін валют» — між різними валютами за вашим курсом; баланси перерахуються автоматично.") },
     { q: tr("Бюджети"), a: tr("У категорії витрат задайте місячний ліміт — на головному зʼявиться прогрес-бар із попередженням при наближенні до межі.") },
     { q: tr("Цілі накопичень"), a: tr("Створюйте фінансові цілі (Налаштування → «Мої цілі»), поповнюйте їх і стежте за прогресом.") },
@@ -1653,6 +1665,7 @@ function HelpModal({ onClose, startTour }) {
     { q: tr("Як налаштувати PIN-код?"), a: tr("Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати.") },
     { q: tr("Як оновити курси валют?"), a: tr("Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними.") },
     { q: tr("Як імпортувати виписку з банку?"), a: tr("Вивантажте виписку у форматі CSV із застосунку чи сайту банку. В Історії натисніть «Імпорт», оберіть рахунок і файл. Дата, сума й опис розпізнаються автоматично, витрати розкладаються за категоріями, можливі дублікати позначаються — перевірте список і натисніть «Імпортувати».") },
+    { q: tr("Як купити USDT за готівку?"), a: tr("Крипто-портфель → «Купити / Продати» → оберіть USDT і готівковий рахунок. Впишіть, скільки віддали (напр. 1000 USD) і скільки монет отримали (напр. 995 USDT) — застосунок спише кошти, додасть монети в портфель і покаже ваш курс проти ринкового.") },
     { q: tr("Чому нова операція не зверху?"), a: tr("Операції сортуються за датою. Переконайтесь, що дата — сьогодні; операції одного дня показуються найновішою згори.") },
     { q: tr("Кілька карток одного банку?"), a: tr("Створіть окремий рахунок для кожної картки й впишіть однаковий «Банк» — вони позначаться тегом банку.") },
     { q: tr("Чи можна повернути видалене?"), a: tr("Видалення рахунку/категорії зберігає повʼязані операції в історії, але саму позицію відновити не можна — робіть резервні копії.") },
@@ -1990,7 +2003,7 @@ function FinanceTracker() {
     const arr = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = d.toISOString().slice(0, 7);
+      const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
       const inc = transactions.filter((t) => t.type === "income" && monthKey(t.date) === key).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
       const exp = transactions.filter((t) => t.type === "expense" && monthKey(t.date) === key).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
       arr.push({ month: MONTHS_UA[d.getMonth()], income: Math.round(inc), expense: Math.round(exp) });
@@ -2003,7 +2016,7 @@ function FinanceTracker() {
   const monthlyBudget = state.monthlyBudget || 0;
   const prevMonthExpense = useMemo(() => {
     const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const key = d.toISOString().slice(0, 7);
+    const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
     return transactions.filter((t) => t.type === "expense" && monthKey(t.date) === key).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
   }, [transactions, baseCurrency, rates]);
   const dayOfMonth = now.getDate();
@@ -2023,7 +2036,7 @@ function FinanceTracker() {
     const nm = new Date();
     for (let i = 5; i >= 0; i--) {
       const d = new Date(nm.getFullYear(), nm.getMonth() - i + 1, 0);
-      const cutoff = d.toISOString().slice(0, 10);
+      const cutoff = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
       let total = 0;
       pockets.forEach((p) => {
         let bal = p.initialBalance || 0;
@@ -2705,16 +2718,19 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
         </div>}
       </div>
 
+      <div>
+      <h2 className="font-display font-semibold text-lg mb-3">{tr("Здійснити транзакцію")}</h2>
       <div data-tour="actions" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <QuickAction icon={Minus} label={tr("Додати витрату")} onClick={() => setModal({ type: "transaction", payload: { kind: "expense" } })} />
         <QuickAction icon={Plus} label={tr("Додати дохід")} onClick={() => setModal({ type: "transaction", payload: { kind: "income" } })} />
         <QuickAction icon={ArrowLeftRight} label={tr("Переказ")} onClick={() => setModal({ type: "transfer" })} />
         <QuickAction icon={RefreshCw} label={tr("Обмін валюти")} onClick={() => setModal({ type: "exchange" })} />
       </div>
+      </div>
 
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-semibold text-lg">{tr("Рахунки")}</h2>
+          <h2 className="font-display font-semibold text-lg">{tr(favPocketCards.length > 0 ? "Обрані рахунки" : "Рахунки")}</h2>
           <button onClick={() => setView("accounts")} className="pill-link">{tr("Усі рахунки")} <ChevronRight size={13} /></button>
         </div>
         <div data-tour="accounts" className="flex gap-3 overflow-x-auto snap-x pt-1 pb-5 -mx-2 px-2">
@@ -2776,11 +2792,19 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
             </label>
           </Card>
         )}
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Дохід")} {periodLabel}</p><p className="font-display font-bold tabular" style={{ color: "var(--accent)" }}>{fmtMoney(periodIncome, baseCurrency)}</p></Card>
-          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Витрати")} {periodLabel}</p><p className="font-display font-bold tabular" style={{ color: "var(--danger)" }}>{fmtMoney(periodExpense, baseCurrency)}</p></Card>
-          <Card className="p-4"><p className="text-xs mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Чистий результат")}</p><p className="font-display font-bold tabular" style={{ color: periodNet >= 0 ? "var(--accent)" : "var(--danger)" }}>{fmtMoney(periodNet, baseCurrency)}</p></Card>
-        </div>
+        {(() => {
+          const sIn = fmtMoney(periodIncome, baseCurrency);
+          const sEx = fmtMoney(periodExpense, baseCurrency);
+          const sNet = fmtMoney(periodNet, baseCurrency);
+          const fs = (s) => ({ fontSize: s.length > 15 ? 12 : s.length > 12 ? 14 : s.length > 9 ? 16 : 18, lineHeight: 1.25 });
+          return (
+            <div className="grid grid-cols-3 gap-3">
+              <Card className="p-3.5 min-w-0"><p className="text-[11px] mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Дохід")} {periodLabel}</p><p className="font-display font-bold tabular whitespace-nowrap" style={{ color: "var(--accent)", ...fs(sIn) }}>{sIn}</p></Card>
+              <Card className="p-3.5 min-w-0"><p className="text-[11px] mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Витрати")} {periodLabel}</p><p className="font-display font-bold tabular whitespace-nowrap" style={{ color: "var(--danger)", ...fs(sEx) }}>{sEx}</p></Card>
+              <Card className="p-3.5 min-w-0"><p className="text-[11px] mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Чистий результат")}</p><p className="font-display font-bold tabular whitespace-nowrap" style={{ color: periodNet >= 0 ? "var(--accent)" : "var(--danger)", ...fs(sNet) }}>{sNet}</p></Card>
+            </div>
+          );
+        })()}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -3083,6 +3107,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
   const [showArchived, setShowArchived] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [confirmDel, setConfirmDel] = useState(null);
+  const [confirmArc, setConfirmArc] = useState(null);
   const [dragId, setDragId] = useState(null);
   const dragIdRef = React.useRef(null);
   const lastOverRef = React.useRef(null);
@@ -3090,7 +3115,11 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
   const reorderRef = React.useRef(reorderAccounts);
   reorderRef.current = reorderAccounts;
   const [typeFilter, setTypeFilter] = useState("all");
-  const list = accounts.filter((a) => (showArchived ? a.archived : !a.archived) && (typeFilter === "all" || a.type === typeFilter));
+  const list = accounts.filter((a) => {
+    if (typeFilter !== "all" && a.type !== typeFilter) return false;
+    if (showArchived) return a.archived || accountPockets(a.id, true).some((p) => p.archived);
+    return !a.archived;
+  });
   const [expandedBanks, setExpandedBanks] = useState({});
   const toggleBank = (b) => setExpandedBanks((m) => ({ ...m, [b]: !m[b] }));
   // Group by bank tag, preserving the user's account order (groups appear in first-seen order)
@@ -3223,7 +3252,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
   }, []);
 
   const renderAccount = (acc) => {
-    const pks = accountPockets(acc.id, true).filter((p) => showArchived ? true : true);
+    const pks = accountPockets(acc.id, true).filter((p) => (showArchived ? (acc.archived || p.archived) : !p.archived));
     const isOpen = expanded[acc.id] ?? true;
     return (
       <div
@@ -3285,8 +3314,12 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
                 </div>
                 <p className="font-semibold text-sm tabular shrink-0">{fmtMoney(pocketBalance(p.id), p.currency)}</p>
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={(e) => { e.stopPropagation(); toggleFavPocket(p.id); }} className="p-1 rounded-md" style={{ color: p.fav ? "var(--accent)" : "var(--text-dim)" }}><Star size={13} fill={p.fav ? "currentColor" : "none"} /></button><button onClick={(e) => { e.stopPropagation(); setModal({ type: "pocket", payload: { accountId: acc.id, existing: p } }); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Edit3 size={13} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); archivePocket(p.id); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Archive size={13} /></button>
+                  {showArchived ? (
+                    <button onClick={(e) => { e.stopPropagation(); archivePocket(p.id); }} className="p-1 rounded-md flex items-center gap-1 text-[11px] font-semibold" style={{ color: "var(--accent)" }}><RotateCcw size={13} /> {tr("Відновити")}</button>
+                  ) : (<>
+                    <button onClick={(e) => { e.stopPropagation(); toggleFavPocket(p.id); }} className="p-1 rounded-md" style={{ color: p.fav ? "var(--accent)" : "var(--text-dim)" }}><Star size={13} fill={p.fav ? "currentColor" : "none"} /></button><button onClick={(e) => { e.stopPropagation(); setModal({ type: "pocket", payload: { accountId: acc.id, existing: p } }); }} className="p-1 rounded-md" style={{ color: "var(--text-dim)" }}><Edit3 size={13} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); if (confirmArc === p.id) { archivePocket(p.id); setConfirmArc(null); } else { setConfirmArc(p.id); setTimeout(() => setConfirmArc((v) => (v === p.id ? null : v)), 2800); } }} className="p-1 rounded-md" style={{ color: confirmArc === p.id ? "var(--danger)" : "var(--text-dim)" }}>{confirmArc === p.id ? <span className="text-[10px] font-bold whitespace-nowrap px-0.5">{tr("Точно?")}</span> : <Archive size={13} />}</button>
+                  </>)}
                 </div>
               </div>
             ))}
@@ -4772,7 +4805,7 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "statementImport") return <StatementImportModal onClose={close} accounts={accounts} pockets={pockets} categories={categories} transactions={transactions} importTransactions={importTransactions} pocketBalance={pocketBalance} addCategory={addCategory} />;
   if (modal.type === "cryptoTrade") return <CryptoTradeModal onClose={close} payload={modal.payload} accounts={accounts} pockets={pockets} crypto={crypto} cryptoPrices={cryptoPrices} rates={rates} tradeCrypto={tradeCrypto} pocketBalance={pocketBalance} />;
   if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
-  if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} pockets={pockets} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
+  if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} pockets={pockets} accounts={accounts} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
   if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} currencies={currencies} />;
   if (modal.type === "goal") return <GoalModal onClose={close} existing={modal.payload} addGoal={addGoal} editGoal={editGoal} deleteGoal={deleteGoal} currencies={currencies} />;
   if (modal.type === "goalContribute") return <GoalContributeModal onClose={close} goal={modal.payload} contributeGoal={contributeGoal} />;
@@ -4883,13 +4916,35 @@ function RoundAction({ icon: Ic, label, onClick }) {
   );
 }
 
-function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocketLabel, transactions, categories, pockets, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket }) {
+function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocketLabel, transactions, categories, pockets, accounts, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket }) {
   const [pid, setPid] = useState(pocketId);
+  const [confirmArc, setConfirmArc] = useState(false);
+  const swipeRef = React.useRef(null);
   const pocket = getPocket(pid);
   if (!pocket || !pocket.account) return null;
   const acc = pocket.account;
   const balance = pocketBalance(pid);
   const siblings = (pockets || []).filter((x) => x.accountId === acc.id && !x.archived);
+  // The same order as the home carousel: accounts in their order, sub-accounts inside
+  const carouselIds = (accounts || []).filter((x) => !x.archived).flatMap((x) => (pockets || []).filter((pp) => pp.accountId === x.id && !pp.archived).map((pp) => pp.id));
+  const carIdx = carouselIds.indexOf(pid);
+  const goSwipe = (dir) => {
+    const ni = carIdx + dir;
+    if (ni >= 0 && ni < carouselIds.length) { setPid(carouselIds[ni]); setConfirmArc(false); }
+  };
+  const onSwipeStart = (e) => {
+    if (e.target && e.target.closest && e.target.closest("[data-noswipe]")) { swipeRef.current = null; return; }
+    const t = e.touches[0];
+    swipeRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onSwipeEnd = (e) => {
+    const s = swipeRef.current;
+    swipeRef.current = null;
+    if (!s || !e.changedTouches || !e.changedTouches[0]) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x, dy = t.clientY - s.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 2) goSwipe(dx < 0 ? 1 : -1);
+  };
 
   const history = useMemo(() =>
     transactions
@@ -4898,11 +4953,14 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
   [transactions, pid]);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto animate-in" style={{ background: "var(--bg)" }}>
-      <div className="relative px-5 pb-6 overflow-hidden" style={{ background: "linear-gradient(160deg, #2B3757 0%, #1A2742 55%, #0E1626 100%)", paddingTop: "calc(1rem + env(safe-area-inset-top))", borderBottom: "3px solid #C9A362" }}>
+    <div className="fixed inset-0 z-50 overflow-y-auto animate-in" style={{ background: "var(--bg)" }} onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+      <div className="relative px-5 pb-6 overflow-hidden" style={{ background: "linear-gradient(160deg, #2B3757 0%, #1A2742 55%, #0E1626 100%)", paddingTop: "calc(1rem + env(safe-area-inset-top))", borderBottom: "3px solid #C9A362", borderRadius: 28, margin: "10px 10px 0", boxShadow: "0 14px 34px rgba(14,22,38,0.35)" }}>
         <div className="absolute pointer-events-none" style={{ top: -70, right: -50, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,163,98,0.16), transparent 65%)" }} />
         <div className="flex items-center justify-between mb-6">
-          <button onClick={onClose} className="p-2 rounded-full" style={{ background: "rgba(255,255,255,0.10)" }}><X size={18} color="#fff" /></button>
+          <div className="flex items-center gap-2">
+            <button onClick={onClose} className="p-2 rounded-full" style={{ background: "rgba(255,255,255,0.10)" }}><X size={18} color="#fff" /></button>
+            <button onClick={() => setModal({ type: "cardMenu", payload: pid })} aria-label={tr("Керування карткою")} className="p-2 rounded-full" style={{ background: "rgba(255,255,255,0.10)" }}><MoreHorizontal size={18} color="#fff" /></button>
+          </div>
           <span className="font-display font-bold leading-none" style={{ fontSize: 20, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.96)" }}>K<sup style={{ color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 }}>3</sup></span>
         </div>
         <div className="flex items-center gap-2 flex-wrap mb-1.5">
@@ -4915,7 +4973,7 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
         </div>
         {pocket.name && <p className="text-sm mt-1 font-medium" style={{ color: "rgba(255,255,255,0.72)" }}>{tr(pocket.name)}</p>}
         {siblings.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto mt-4 -mx-1 px-1 pb-0.5">
+          <div data-noswipe className="flex gap-2 overflow-x-auto mt-4 -mx-1 px-1 pb-0.5">
             {siblings.map((s) => {
               const on = s.id === pid;
               return (
@@ -4955,8 +5013,8 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
           {history.length === 0 && <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>{tr("Ще немає операцій по цьому рахунку")}</p>}
         </Card>
 
-        <button onClick={() => { archivePocket(pid); onClose(); }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium mb-8" style={{ borderColor: "var(--border)", color: "var(--text-dim)" }}>
-          <Archive size={14} /> {tr("Архівувати субрахунок")}
+        <button onClick={() => { if (confirmArc) { archivePocket(pid); onClose(); } else { setConfirmArc(true); setTimeout(() => setConfirmArc(false), 3200); } }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium mb-8" style={{ borderColor: confirmArc ? "var(--danger)" : "var(--border)", color: confirmArc ? "var(--danger)" : "var(--text-dim)" }}>
+          <Archive size={14} /> {confirmArc ? tr("Підтвердити архівацію?") : tr("Архівувати субрахунок")}
         </button>
       </div>
     </div>
@@ -4967,6 +5025,7 @@ function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocket
 function CardMenuModal({ onClose, pocketId, pockets, getPocket, setModal, archivePocket, deletePocket, movePocket }) {
   const pk = getPocket(pocketId);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [confirmArc, setConfirmArc] = useState(false);
   if (!pk || !pk.account) return null;
   const acc = pk.account;
   const active = pockets.filter((p) => !p.archived);
@@ -4987,7 +5046,17 @@ function CardMenuModal({ onClose, pocketId, pockets, getPocket, setModal, archiv
         <Row icon={ChevronRight} label={tr("Відкрити рахунок")} onClick={() => setModal({ type: "pocketDetail", payload: pocketId })} />
         <Row icon={Edit3} label={tr("Редагувати рахунок (назва, колір, тип)")} onClick={() => setModal({ type: "account", payload: acc })} />
         <Row icon={Coins} label={tr("Змінити валюту / баланс")} onClick={() => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk } })} />
-        <Row icon={Archive} label={tr("Архівувати картку")} onClick={() => { archivePocket(pocketId); onClose(); }} />
+        {!confirmArc ? (
+          <Row icon={Archive} label={tr("Архівувати картку")} onClick={() => setConfirmArc(true)} />
+        ) : (
+          <div className="px-1 py-2">
+            <p className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>{tr("Архівувати цю картку?")}</p>
+            <div className="flex gap-2">
+              <button onClick={() => { archivePocket(pocketId); onClose(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>{tr("Так")}</button>
+              <button onClick={() => setConfirmArc(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text)" }}>{tr("Ні")}</button>
+            </div>
+          </div>
+        )}
         {!confirmDel ? (
           <Row icon={Trash2} label={tr("Видалити картку")} danger onClick={() => setConfirmDel(true)} />
         ) : (
