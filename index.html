@@ -4083,21 +4083,70 @@ const IMPORT_KEYWORDS = [
   ["sportlife", "Спорт"], ["gym", "Спорт"], ["fitness", "Спорт"], ["фітнес", "Спорт"], ["спортзал", "Спорт"],
   ["prometheus", "Освіта"], ["coursera", "Освіта"], ["udemy", "Освіта"], ["школ", "Освіта"],
   ["комунал", "Комунальні послуги"], ["yasno", "Комунальні послуги"], ["нафтогаз", "Комунальні послуги"], ["водоканал", "Комунальні послуги"], ["київенерго", "Комунальні послуги"], ["електроенерг", "Комунальні послуги"],
+  ["comfy", "Дім"], ["foxtrot", "Дім"], ["rozetka", "Дім"], ["multiplex", "Розваги"], ["dominos", "Ресторани"], ["пузата", "Ресторани"], ["salateira", "Ресторани"], ["starbucks", "Ресторани"], ["kyivstar", "Комунальні послуги"], ["київстар", "Комунальні послуги"], ["vodafone", "Комунальні послуги"], ["lifecell", "Комунальні послуги"],
   ["зарплат", "Зарплата"], ["salary", "Зарплата"], ["аванс", "Зарплата"],
 ];
 
-function guessCategory(desc, amount, categories) {
+// Words too generic to identify a merchant — excluded from history learning
+const IMPORT_STOP = { oplata: 1, platij: 1, payment: 1, purchase: 1, terminal: 1, kyiv: 1, kiev: 1, ukraine: 1, ukraina: 1, card: 1, kartka: 1, bank: 1, shop: 1, store: 1, magazin: 1, market: 1, tov: 1, fop: 1, llc: 1, ltd: 1, inc: 1, pos: 1, uah: 1, usd: 1, eur: 1, pln: 1, gbp: 1 };
+
+// Learn word → category from the user's OWN categorized history (the strongest signal:
+// after the first manual sort, every next import recognises those merchants automatically)
+function buildNoteIndex(transactions) {
+  const idx = {};
+  (transactions || []).forEach((t) => {
+    if ((t.type !== "expense" && t.type !== "income") || !t.categoryId || !t.note) return;
+    searchFold(t.note).split(/[^a-z0-9]+/).forEach((w) => {
+      if (w.length < 3 || IMPORT_STOP[w] || /^\d+$/.test(w)) return;
+      const bump = (k) => { const slot = idx[k] || (idx[k] = {}); slot[t.categoryId] = (slot[t.categoryId] || 0) + 1; };
+      bump(w);
+      if (w.length > 4) bump(w.slice(0, 4)); // light stemming: "тенісних" also answers to "теніс"
+    });
+  });
+  return idx;
+}
+
+function guessCategory(desc, amount, categories, noteIdx) {
   const hay = searchFold(desc || "");
   const wantType = amount < 0 ? "expense" : "income";
+  const cats = categories.filter((x) => !x.archived && x.type === wantType);
+  const byId = {};
+  cats.forEach((x) => { byId[x.id] = true; });
+
+  // 1) personal history: words of this description seen in already-categorized notes
+  if (noteIdx && hay) {
+    const votes = {};
+    hay.split(/[^a-z0-9]+/).forEach((w) => {
+      if (w.length < 3 || IMPORT_STOP[w] || /^\d+$/.test(w)) return;
+      const keys = w.length > 4 ? [w, w.slice(0, 4)] : [w];
+      keys.forEach((k) => {
+        if (!noteIdx[k]) return;
+        Object.keys(noteIdx[k]).forEach((cid) => { if (byId[cid]) votes[cid] = (votes[cid] || 0) + noteIdx[k][cid]; });
+      });
+    });
+    let best = "", bestN = 0;
+    Object.keys(votes).forEach((cid) => { if (votes[cid] > bestN) { bestN = votes[cid]; best = cid; } });
+    if (best) return best;
+  }
+
+  // 2) the user's own category name mentioned right in the description
+  for (let i = 0; i < cats.length; i++) {
+    const f = searchFold(cats[i].name);
+    if (f.length >= 4 && hay.indexOf(f) !== -1) return cats[i].id;
+  }
+
+  // 3) merchant keyword dictionary
   for (let i = 0; i < IMPORT_KEYWORDS.length; i++) {
     const kw = searchFold(IMPORT_KEYWORDS[i][0]);
     if (kw && hay.indexOf(kw) !== -1) {
-      const cat = categories.find((x) => !x.archived && x.type === wantType && x.name === IMPORT_KEYWORDS[i][1]);
+      const cat = cats.find((x) => x.name === IMPORT_KEYWORDS[i][1]);
       if (cat) return cat.id;
     }
   }
-  const fb = categories.find((x) => !x.archived && x.type === wantType && (x.name === "Інше" || x.name === "Інший"));
-  return fb ? fb.id : "";
+
+  // 4) guaranteed fallback: "Інше"/"Інший", otherwise the first category of this type
+  const fb = cats.find((x) => x.name === "Інше" || x.name === "Інший" || x.name === "Other");
+  return fb ? fb.id : (cats[0] ? cats[0].id : "");
 }
 
 // --- tiny CSV toolkit ---
@@ -4230,6 +4279,7 @@ function StatementImportModal({ onClose, accounts, pockets, categories, transact
   const sample = (ci) => { for (let i = 0; i < dataRows.length; i++) { const v = String(dataRows[i][ci] == null ? "" : dataRows[i][ci]).trim(); if (v) return v; } return ""; };
 
   const buildPreview = () => {
+    const noteIdx = buildNoteIndex(transactions);
     const today = new Date().toISOString().slice(0, 10);
     const out = [];
     dataRows.forEach((r, i) => {
@@ -4239,7 +4289,7 @@ function StatementImportModal({ onClose, accounts, pockets, categories, transact
       if (!dISO || amt === null || amt === 0) return;
       const date = dISO > today ? today : dISO;
       const dup = transactions.some((t) => t.date === date && t.pocketId === pocketId && t.amount != null && Math.abs(t.amount - Math.abs(amt)) < 0.005 && t.type === (amt < 0 ? "expense" : "income"));
-      out.push({ key: i, date, amount: amt, desc, categoryId: guessCategory(desc, amt, categories), include: !dup, dup });
+      out.push({ key: i, date, amount: amt, desc, categoryId: guessCategory(desc, amt, categories, noteIdx), include: !dup, dup });
     });
     if (!out.length) { setError(tr("У файлі не знайдено рядків з датою та сумою.")); return; }
     setError("");
