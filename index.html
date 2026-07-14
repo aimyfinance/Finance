@@ -575,6 +575,20 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Автооновлення курсів": "Auto-refresh rates",
+  "Діє для валют і крипти, поки застосунок відкритий; також оновлює при поверненні в застосунок. Ручні курси не змінюються.": "Applies to currencies and crypto while the app is open; also refreshes when you return to the app. Manual rates stay untouched.",
+  "Вимкнено": "Off",
+  "При відкритті застосунку": "On app open",
+  "Щохвилини": "Every minute",
+  "Кожні 15 хвилин": "Every 15 minutes",
+  "Щогодини": "Every hour",
+  "Категорії для порівняння": "Categories to compare",
+  "Позначені категорії беруть участь у розбивці за обраний період.": "Ticked categories take part in the breakdown for the selected period.",
+  "Оберіть хоча б одну категорію": "Pick at least one category",
+  "Зняти всі": "Uncheck all",
+  "Змінити": "Change",
+  "Ліміти в базовій валюті": "Limits in the base currency",
+  "Порожнє поле — без ліміту.": "Leave a field empty for no limit.",
   "Як читати цю суму": "How to read this number",
   "Один тап по сумі — розгортає склад капіталу: валюти, крипто-портфель, видані позики й борги. Подвійний тап — маскує суму крапками; ще один подвійний — показує знову.": "One tap on the amount reveals what the capital is made of: currencies, crypto portfolio, loans given and debts. Double-tap masks the amount with dots; another double-tap shows it again.",
   "Автокопія (щодня)": "Auto-backup (daily)",
@@ -1865,6 +1879,7 @@ function FinanceTracker() {
   const [theme, setTheme] = useState(() => (loadState() && loadState().theme) || "light");
   const [view, setView] = useState("dashboard");
   const [modal, setModal] = useState(null);
+  const [historyPreset, setHistoryPreset] = useState(null); // filters handed to History by tappable dashboard numbers
   const [toast, setToast] = useState(null);
   const [session, setSession] = useState(null);
   const [pin, setPinState] = useState(() => loadPin());
@@ -2180,6 +2195,8 @@ function FinanceTracker() {
     update({ categories: [...categories, cat] });
     return cat;
   };
+  const setCategoryBudgets = (map) => update({ categories: categories.map((x) => (x.type === "expense" && !x.archived && map[x.id] !== undefined ? { ...x, budget: map[x.id] } : x)) });
+  const setBreakdownCats = (ids) => update({ breakdownCats: ids && ids.length ? ids : null });
   const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
   const archiveCategory = (id) => update({ categories: categories.map((c) => (c.id === id ? { ...c, archived: !c.archived } : c)) });
 
@@ -2286,6 +2303,40 @@ function FinanceTracker() {
       return { ok: true };
     } catch (e) { return { ok: false }; }
   };
+  // Silent fiat-rates refresh on the committed state; manual-mode currencies stay untouched
+  const refreshRatesOnline = async () => {
+    try {
+      const resp = await fetch("https://open.er-api.com/v6/latest/UAH");
+      const data = await resp.json();
+      if (!data || data.result !== "success" || !data.rates) throw new Error("bad");
+      const mode = state.rateMode || {};
+      const newRates = { UAH: 1 };
+      Object.keys(rates).forEach((cur) => {
+        if (cur === "UAH") return;
+        if (mode[cur] === "manual") { newRates[cur] = rates[cur] || 0; return; }
+        const r = data.rates[cur];
+        newRates[cur] = r && r > 0 ? Math.round((1 / r) * 10000) / 10000 : (rates[cur] || 0);
+      });
+      update({ rates: newRates });
+      return { ok: true };
+    } catch (e) { return { ok: false }; }
+  };
+  // Auto-refresh: on open, on returning to the app, and (optionally) on a timer while it is open.
+  // iOS freezes background PWAs, so intervals longer than an hour would be an illusion.
+  const autoRefresh = state.autoRefresh || "open";
+  const refreshersRef = React.useRef({});
+  refreshersRef.current = { rates: refreshRatesOnline, crypto: refreshCryptoPrices };
+  useEffect(() => {
+    if (autoRefresh === "off") return;
+    let alive = true;
+    const doRefresh = () => { if (!alive) return; try { refreshersRef.current.rates(); } catch (e) {} try { refreshersRef.current.crypto(); } catch (e) {} };
+    doRefresh();
+    const ms = autoRefresh === "1m" ? 60000 : autoRefresh === "15m" ? 900000 : autoRefresh === "60m" ? 3600000 : 0;
+    const id = ms ? setInterval(doRefresh, ms) : null;
+    const onVis = () => { if (document.visibilityState === "visible") doRefresh(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { alive = false; if (id) clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
+  }, [autoRefresh]);
   const cryptoValueUSD = (c) => (c.amount || 0) * (cryptoPrices[c.coinId] || 0);
   const cryptoTotalUSD = crypto.reduce((s, c) => s + cryptoValueUSD(c), 0);
   const cryptoTotalBase = convert(cryptoTotalUSD, "USD", baseCurrency, rates);
@@ -2455,7 +2506,7 @@ function FinanceTracker() {
               <Dashboard
                 accounts={accounts} pockets={pockets} accountPockets={accountPockets} pocketBalance={pocketBalance} accountTotalBase={accountTotalBase}
                 totalInBase={totalInBase} baseCurrency={baseCurrency} rates={rates} byCurrencyTotals={byCurrencyTotals}
-                monthIncome={monthIncome} monthExpense={monthExpense} categoryBreakdown={categoryBreakdown} monthlySeries={monthlySeries}
+                monthIncome={monthIncome} monthExpense={monthExpense} categoryBreakdown={categoryBreakdown} monthlySeries={monthlySeries} breakdownCats={state.breakdownCats || null} setHistoryPreset={setHistoryPreset}
                 transactions={transactions} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
                 setModal={setModal} setView={setView} totalLoanedOut={totalLoanedOut} overdueTotal={overdueTotal} upcomingLoans={upcomingLoans} activeLoans={activeLoans}
                 budgetStatus={budgetStatus} netWorthSeries={netWorthSeries} goals={goals}
@@ -2469,7 +2520,7 @@ function FinanceTracker() {
             )}
             {view === "history" && (
               <HistoryView transactions={transactions} pockets={pockets} accounts={accounts} categories={categories} getPocket={getPocket} pocketLabel={pocketLabel}
-                deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} setModal={setModal} currencies={currencyList} />
+                deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} setModal={setModal} currencies={currencyList} historyPreset={historyPreset} clearHistoryPreset={() => setHistoryPreset(null)} />
             )}
             {view === "loans" && (
               <LoansView loans={loans} pockets={pockets} getPocket={getPocket} setModal={setModal} loanRemaining={loanRemaining} archiveLoan={archiveLoan} deleteLoan={deleteLoan} />
@@ -2484,7 +2535,7 @@ function FinanceTracker() {
               <CryptoView crypto={crypto} cryptoPrices={cryptoPrices} cryptoUpdatedAt={state.cryptoUpdatedAt} baseCurrency={baseCurrency} rates={rates} setModal={setModal} refreshCryptoPrices={refreshCryptoPrices} setToast={setToast} cryptoFav={cryptoFav} toggleCryptoFav={toggleCryptoFav} />
             )}
             {view === "settings" && (
-              <SettingsView baseCurrency={baseCurrency} rates={rates} rateMode={state.rateMode || {}} includeLoansInTotal={includeLoansInTotal} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} exportCSV={exportCSV} setView={setView} setModal={setModal} />
+              <SettingsView baseCurrency={baseCurrency} rates={rates} rateMode={state.rateMode || {}} includeLoansInTotal={includeLoansInTotal} update={update} session={session} setToast={setToast} pin={pin} applyPin={applyPin} pinDelay={pinDelay} applyPinDelay={applyPinDelay} exportBackup={exportBackup} importBackup={importBackup} exportCSV={exportCSV} setView={setView} setModal={setModal} autoRefresh={state.autoRefresh || "open"} />
             )}
           </div>
         </main>
@@ -2529,7 +2580,7 @@ function FinanceTracker() {
           transactions={transactions} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction}
           reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone}
           addGoal={addGoal} editGoal={editGoal} deleteGoal={deleteGoal} contributeGoal={contributeGoal} startTour={startTour}
-          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} renameBank={renameBank} importTransactions={importTransactions} crypto={crypto} cryptoPrices={cryptoPrices} tradeCrypto={tradeCrypto}
+          addCrypto={addCrypto} editCrypto={editCrypto} deleteCrypto={deleteCrypto} renameBank={renameBank} importTransactions={importTransactions} crypto={crypto} cryptoPrices={cryptoPrices} tradeCrypto={tradeCrypto} setCategoryBudgets={setCategoryBudgets} setBreakdownCats={setBreakdownCats} breakdownCats={state.breakdownCats || null}
         />
       )}
 
@@ -2686,7 +2737,7 @@ function MonthBudgetEdit({ monthlyBudget, update, baseCurrency }) {
 
 /* ============================== DASHBOARD ============================== */
 
-function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
+function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
   const net = monthIncome - monthExpense;
   const recent = [...transactions].sort(byRecent).slice(0, 6);
   const activeAccounts = accounts.filter((a) => !a.archived);
@@ -2699,7 +2750,7 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const nowD = new Date();
-  const isoD = (d) => d.toISOString().slice(0, 10);
+  const isoD = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   let pStart = "", pEnd = "";
   if (period === "day") { pStart = isoD(nowD); pEnd = isoD(nowD); }
   else if (period === "month") { pStart = isoD(new Date(nowD.getFullYear(), nowD.getMonth(), 1)); pEnd = isoD(new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0)); }
@@ -2713,7 +2764,8 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
   const periodLabel = period === "day" ? tr("за сьогодні") : period === "month" ? tr("за місяць") : period === "year" ? tr("за рік") : tr("за період");
   const periodBreakdown = (() => {
     const m = {};
-    periodTx.filter((t) => t.type === "expense").forEach((t) => {
+    const selSet = breakdownCats && breakdownCats.length ? new Set(breakdownCats) : null;
+    periodTx.filter((t) => t.type === "expense" && (!selSet || (t.categoryId && selSet.has(t.categoryId)))).forEach((t) => {
       const cat = categories.find((c) => c.id === t.categoryId);
       const key = cat ? cat.name : tr("Інше");
       m[key] = (m[key] || 0) + txToBase(t, baseCurrency, rates);
@@ -2848,24 +2900,30 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
             </label>
           </Card>
         )}
-        {(() => {
-          const sIn = fmtMoney(periodIncome, baseCurrency);
-          const sEx = fmtMoney(periodExpense, baseCurrency);
-          const sNet = fmtMoney(periodNet, baseCurrency);
-          const fs = (s) => ({ fontSize: s.length > 15 ? 12 : s.length > 12 ? 14 : s.length > 9 ? 16 : 18, lineHeight: 1.25 });
-          return (
-            <div className="grid grid-cols-3 gap-3">
-              <Card className="p-3.5 min-w-0"><p className="text-[11px] mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Дохід")} {periodLabel}</p><p className="font-display font-bold tabular whitespace-nowrap" style={{ color: "var(--accent)", ...fs(sIn) }}>{sIn}</p></Card>
-              <Card className="p-3.5 min-w-0"><p className="text-[11px] mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Витрати")} {periodLabel}</p><p className="font-display font-bold tabular whitespace-nowrap" style={{ color: "var(--danger)", ...fs(sEx) }}>{sEx}</p></Card>
-              <Card className="p-3.5 min-w-0"><p className="text-[11px] mb-1 truncate" style={{ color: "var(--text-dim)" }}>{tr("Чистий результат")}</p><p className="font-display font-bold tabular whitespace-nowrap" style={{ color: periodNet >= 0 ? "var(--accent)" : "var(--danger)", ...fs(sNet) }}>{sNet}</p></Card>
+        <Card className="p-4">
+          <div className="space-y-2.5">
+            <button onClick={() => { setHistoryPreset({ type: "income", from: pStart, to: pEnd }); setView("history"); }} className="w-full flex items-center justify-between text-xs gap-2">
+              <span style={{ color: "var(--text-dim)" }}>{tr("Дохід")} {periodLabel}</span>
+              <span className="flex items-center gap-1 font-semibold tabular shrink-0" style={{ color: "var(--accent)" }}>{fmtMoney(periodIncome, baseCurrency)}<ChevronRight size={13} style={{ color: "var(--text-dim)" }} /></span>
+            </button>
+            <button onClick={() => { setHistoryPreset({ type: "expense", from: pStart, to: pEnd }); setView("history"); }} className="w-full flex items-center justify-between text-xs gap-2">
+              <span style={{ color: "var(--text-dim)" }}>{tr("Витрати")} {periodLabel}</span>
+              <span className="flex items-center gap-1 font-semibold tabular shrink-0" style={{ color: "var(--danger)" }}>{fmtMoney(periodExpense, baseCurrency)}<ChevronRight size={13} style={{ color: "var(--text-dim)" }} /></span>
+            </button>
+            <div className="flex items-center justify-between text-xs gap-2 pt-2.5" style={{ borderTop: "1px solid var(--border)" }}>
+              <span className="font-medium" style={{ color: "var(--text)" }}>{tr("Чистий результат")}</span>
+              <span className="font-display font-bold text-sm tabular shrink-0" style={{ color: periodNet >= 0 ? "var(--accent)" : "var(--danger)" }}>{fmtMoney(periodNet, baseCurrency)}</span>
             </div>
-          );
-        })()}
+          </div>
+        </Card>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="p-4">
-          <h3 className="font-display font-semibold mb-3 text-sm">{tr("Витрати за категоріями")} ({periodLabel})</h3>
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <h3 className="font-display font-semibold text-sm min-w-0 truncate">{tr("Витрати за категоріями")} ({periodLabel})</h3>
+            <button onClick={() => setModal({ type: "breakdownCats" })} className="pill-link shrink-0">{breakdownCats && breakdownCats.length ? `${tr("Категорії")} · ${breakdownCats.length}` : tr("Категорії")}</button>
+          </div>
           {periodBreakdown.length === 0 ? (
             <p className="text-sm py-8 text-center" style={{ color: "var(--text-dim)" }}>{tr("Немає витрат за цей період")}</p>
           ) : (
@@ -2946,7 +3004,10 @@ function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTo
 
       {budgetStatus && budgetStatus.length > 0 && (
         <Card data-tour="budgets" className="p-4">
-          <h3 className="font-display font-semibold text-sm mb-3">{tr("Бюджети за місяць")}</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-semibold text-sm">{tr("Бюджети за місяць")}</h3>
+            <button onClick={() => setModal({ type: "catBudgets" })} className="pill-link">{tr("Змінити")}</button>
+          </div>
           <div className="space-y-3.5">
             {budgetStatus.map((b) => {
               const over = b.pct > 100;
@@ -3492,7 +3553,7 @@ function AccountsView({ accounts, accountPockets, pocketBalance, accountTotalBas
 
 /* ============================== HISTORY VIEW ============================== */
 
-function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies }) {
+function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset }) {
   const [search, setSearch] = useState("");
   const [showImportHint, setShowImportHint] = useState(false);
   const [filterType, setFilterType] = useState("all");
@@ -3502,6 +3563,15 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  // Filters handed over by tappable dashboard numbers (income / expenses for the period)
+  useEffect(() => {
+    if (!historyPreset) return;
+    setFilterType(historyPreset.type || "all");
+    setDateFrom(historyPreset.from || "");
+    setDateTo(historyPreset.to || "");
+    setShowFilters(true);
+    if (clearHistoryPreset) clearHistoryPreset();
+  }, [historyPreset]);
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
@@ -4580,7 +4650,7 @@ function AutoBackupRestore({ update, setToast }) {
   );
 }
 
-function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView, setModal }) {
+function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView, setModal, autoRefresh }) {
   const [localRates, setLocalRates] = useState(() => {
     const o = {};
     Object.keys(rates).forEach((k) => { o[k] = String(rates[k]); });
@@ -4801,6 +4871,18 @@ function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, upda
       </Card>
 
       <Card className="p-5">
+        <h3 className="font-display font-semibold text-sm mb-1">{tr("Автооновлення курсів")}</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Діє для валют і крипти, поки застосунок відкритий; також оновлює при поверненні в застосунок. Ручні курси не змінюються.")}</p>
+        <Select value={autoRefresh} onChange={(e) => update({ autoRefresh: e.target.value })}>
+          <option value="off">{tr("Вимкнено")}</option>
+          <option value="open">{tr("При відкритті застосунку")}</option>
+          <option value="1m">{tr("Щохвилини")}</option>
+          <option value="15m">{tr("Кожні 15 хвилин")}</option>
+          <option value="60m">{tr("Щогодини")}</option>
+        </Select>
+      </Card>
+
+      <Card className="p-5">
         <Field label={tr("Базова валюта (для загального балансу)")}>
           <Select value={base} onChange={(e) => setBase(e.target.value)}>{activeCurs.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
         </Field>
@@ -4876,7 +4958,77 @@ function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, upda
 
 /* ============================== MODAL ROUTER ============================== */
 
-function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto }) {
+// Quick editor for per-category monthly limits (opened from the budgets card)
+function CategoryBudgetsModal({ onClose, categories, setCategoryBudgets, baseCurrency }) {
+  const cats = categories.filter((x) => x.type === "expense" && !x.archived);
+  const [vals, setVals] = useState(() => { const o = {}; cats.forEach((x) => { o[x.id] = x.budget > 0 ? String(x.budget) : ""; }); return o; });
+  const save = () => {
+    const m = {};
+    cats.forEach((x) => {
+      const n = parseFloat(String(vals[x.id] || "").replace(",", "."));
+      m[x.id] = n > 0 ? Math.round(n * 100) / 100 : 0;
+    });
+    setCategoryBudgets(m);
+    onClose();
+  };
+  return (
+    <Modal title={tr("Бюджети за місяць")} onClose={onClose}>
+      <p className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>{tr("Ліміти в базовій валюті")} ({baseCurrency}). {tr("Порожнє поле — без ліміту.")}</p>
+      <div className="space-y-2.5 max-h-[52vh] overflow-y-auto pr-1 mb-3">
+        {cats.map((x) => (
+          <div key={x.id} className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: x.color + "22" }}><Icon name={x.icon} size={15} style={{ color: x.color }} /></span>
+            <span className="flex-1 min-w-0 text-sm font-medium truncate">{tr(x.name)}</span>
+            <span className="w-28 shrink-0"><Input type="number" value={vals[x.id] || ""} onChange={(e) => setVals((v) => ({ ...v, [x.id]: e.target.value }))} placeholder="—" /></span>
+          </div>
+        ))}
+      </div>
+      <Button className="w-full" onClick={save}>{tr("Зберегти")}</Button>
+    </Modal>
+  );
+}
+
+// Which expense categories take part in the period comparison (donut + list)
+function BreakdownCatsModal({ onClose, categories, breakdownCats, setBreakdownCats }) {
+  const cats = categories.filter((x) => x.type === "expense" && !x.archived);
+  const [sel, setSel] = useState(() => {
+    const o = {};
+    const base = breakdownCats && breakdownCats.length ? breakdownCats : cats.map((x) => x.id);
+    base.forEach((id) => { o[id] = true; });
+    return o;
+  });
+  const [error, setError] = useState("");
+  const count = cats.filter((x) => sel[x.id]).length;
+  const allOn = count === cats.length;
+  const toggleAll = () => { const o = {}; if (!allOn) cats.forEach((x) => { o[x.id] = true; }); setSel(o); setError(""); };
+  const save = () => {
+    const ids = cats.filter((x) => sel[x.id]).map((x) => x.id);
+    if (!ids.length) return setError(tr("Оберіть хоча б одну категорію"));
+    setBreakdownCats(ids.length === cats.length ? null : ids);
+    onClose();
+  };
+  return (
+    <Modal title={tr("Категорії для порівняння")} onClose={onClose}>
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <p className="text-xs min-w-0" style={{ color: "var(--text-dim)" }}>{tr("Позначені категорії беруть участь у розбивці за обраний період.")}</p>
+        <button onClick={toggleAll} className="pill-link shrink-0">{allOn ? tr("Зняти всі") : tr("Усі")}</button>
+      </div>
+      <div className="space-y-2 max-h-[52vh] overflow-y-auto pr-1 mb-3">
+        {cats.map((x) => (
+          <label key={x.id} className="flex items-center gap-2.5 cursor-pointer">
+            <input type="checkbox" checked={!!sel[x.id]} onChange={(e) => { setSel((v) => ({ ...v, [x.id]: e.target.checked })); setError(""); }} style={{ width: 17, height: 17, accentColor: "var(--accent)", flexShrink: 0 }} />
+            <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: x.color + "22" }}><Icon name={x.icon} size={15} style={{ color: x.color }} /></span>
+            <span className="flex-1 min-w-0 text-sm font-medium truncate">{tr(x.name)}</span>
+          </label>
+        ))}
+      </div>
+      {error && <p className="text-xs mb-2" style={{ color: "var(--danger)" }}>{error}</p>}
+      <Button className="w-full" onClick={save}>{tr("Зберегти")}</Button>
+    </Modal>
+  );
+}
+
+function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats }) {
   const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
   const body = (() => {
   if (modal.type === "account") return <AccountModal onClose={close} existing={modal.payload && modal.payload.id ? modal.payload : null} presetBank={modal.payload && !modal.payload.id ? (modal.payload.bank || "") : ""} addAccountWithPocket={addAccountWithPocket} editAccount={editAccount} currencies={currencies} />;
@@ -4891,6 +5043,8 @@ function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, ba
   if (modal.type === "txDetail") return <TxDetailModal onClose={close} tx={modal.payload} categories={categories} pocketLabel={pocketLabel} setModal={setModal} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} />;
   if (modal.type === "statementImport") return <StatementImportModal onClose={close} accounts={accounts} pockets={pockets} categories={categories} transactions={transactions} importTransactions={importTransactions} pocketBalance={pocketBalance} addCategory={addCategory} />;
   if (modal.type === "cryptoTrade") return <CryptoTradeModal onClose={close} payload={modal.payload} accounts={accounts} pockets={pockets} crypto={crypto} cryptoPrices={cryptoPrices} rates={rates} tradeCrypto={tradeCrypto} pocketBalance={pocketBalance} />;
+  if (modal.type === "catBudgets") return <CategoryBudgetsModal onClose={close} categories={categories} setCategoryBudgets={setCategoryBudgets} baseCurrency={baseCurrency} />;
+  if (modal.type === "breakdownCats") return <BreakdownCatsModal onClose={close} categories={categories} breakdownCats={breakdownCats} setBreakdownCats={setBreakdownCats} />;
   if (modal.type === "loanEdit") return <LoanEditModal onClose={close} loan={modal.payload} editLoan={editLoan} />;
   if (modal.type === "pocketDetail") return <PocketDetailModal pocketId={modal.payload} onClose={close} getPocket={getPocket} pocketBalance={pocketBalance} pocketLabel={pocketLabel} transactions={transactions} categories={categories} pockets={pockets} accounts={accounts} setModal={setModal} editTransaction={editTransaction} deleteTransaction={deleteTransaction} duplicateTransaction={duplicateTransaction} archivePocket={archivePocket} />;
   if (modal.type === "reminders") return <RemindersModal onClose={close} reminders={reminders} addReminder={addReminder} editReminder={editReminder} deleteReminder={deleteReminder} toggleReminderDone={toggleReminderDone} currencies={currencies} />;
