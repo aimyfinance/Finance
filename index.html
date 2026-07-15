@@ -575,6 +575,8 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Налаштування звіту": "Report settings",
+  "Згорнути": "Collapse",
   "Налаштувати звіт": "Adjust report",
   "Скинути фільтри": "Reset filters",
   "Дохід і витрати": "Income and expenses",
@@ -3728,6 +3730,10 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
       )}
       {showFilters && (
         <Card className="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="sm:col-span-2 lg:col-span-3 flex items-center justify-between">
+            <h3 className="font-display font-semibold text-sm">{tr("Налаштування звіту")}</h3>
+            <button onClick={() => setShowFilters(false)} className="pill-link">{tr("Згорнути")} <ChevronDown size={13} style={{ transform: "rotate(180deg)" }} /></button>
+          </div>
           <Field label={tr("Тип операції")}>
             <Select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
               {Object.entries(typeLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -3755,6 +3761,9 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
           </Field>
           <Field label={tr("Період від")}><Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></Field>
           <Field label={tr("Період до")}><Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></Field>
+          <button onClick={() => setShowFilters(false)} className="sm:col-span-2 lg:col-span-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium" style={{ background: "var(--surface2)", color: "var(--text-dim)" }}>
+            <ChevronDown size={13} style={{ transform: "rotate(180deg)" }} /> {tr("Згорнути")}
+          </button>
         </Card>
       )}
 
