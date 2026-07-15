@@ -575,6 +575,8 @@ function loadLang() { try { return (window.localStorage && window.localStorage.g
 function saveLang(v) { try { if (window.localStorage) window.localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 
 const EN_DICT = {
+  "Налаштувати звіт": "Adjust report",
+  "Скинути фільтри": "Reset filters",
   "Дохід і витрати": "Income and expenses",
   "Автооновлення курсів": "Auto-refresh rates",
   "Діє для валют і крипти, поки застосунок відкритий; також оновлює при поверненні в застосунок. Ручні курси не змінюються.": "Applies to currencies and crypto while the app is open; also refreshes when you return to the app. Manual rates stay untouched.",
@@ -3639,7 +3641,6 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
     setFilterType(historyPreset.type || "all");
     setDateFrom(historyPreset.from || "");
     setDateTo(historyPreset.to || "");
-    setShowFilters(true);
     if (clearHistoryPreset) clearHistoryPreset();
   }, [historyPreset]);
 
@@ -3707,6 +3708,24 @@ function HistoryView({ transactions, pockets, accounts, categories, getPocket, p
         <Input data-tour="histsearch" placeholder={tr("Пошук: опис, категорія, рахунок...")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      {!showFilters && (filterType !== "all" || filterPocket !== "all" || filterCategory !== "all" || filterCurrency !== "all" || dateFrom || dateTo) && (
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" }}>
+          <button onClick={() => setShowFilters(true)} className="flex items-center gap-2 min-w-0 flex-1 text-left">
+            <Filter size={12} style={{ color: "var(--accent)", flexShrink: 0 }} />
+            <span className="text-xs min-w-0 truncate" style={{ color: "var(--text)" }}>
+              {[
+                filterType !== "all" ? (typeLabel[filterType] || filterType) : null,
+                (dateFrom || dateTo) ? ((dateFrom ? fmtDate(dateFrom) : "…") + " – " + (dateTo ? fmtDate(dateTo) : "…")) : null,
+                filterPocket !== "all" ? pocketLabel(filterPocket) : null,
+                filterCategory !== "all" ? tr((categories.find((cc) => cc.id === filterCategory) || {}).name || "") : null,
+                filterCurrency !== "all" ? filterCurrency : null,
+              ].filter(Boolean).join(" · ")}
+            </span>
+            <span className="pill-link shrink-0">{tr("Налаштувати звіт")}</span>
+          </button>
+          <button onClick={() => { setFilterType("all"); setFilterPocket("all"); setFilterCategory("all"); setFilterCurrency("all"); setDateFrom(""); setDateTo(""); }} aria-label={tr("Скинути фільтри")} className="p-1 shrink-0" style={{ color: "var(--text-dim)" }}><X size={14} /></button>
+        </div>
+      )}
       {showFilters && (
         <Card className="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <Field label={tr("Тип операції")}>
