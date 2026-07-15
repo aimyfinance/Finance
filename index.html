@@ -2117,7 +2117,7 @@ window.__K3_START = function () {
         /* ---------- month stats ---------- */
         const now = new Date();
         const monthKey = (d) => d.slice(0, 7);
-        const thisMonthKey = now.toISOString().slice(0, 7);
+        const thisMonthKey = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
         const monthTx = transactions.filter((t) => (t.type === "income" || t.type === "expense") && monthKey(t.date) === thisMonthKey);
         const monthIncome = monthTx.filter((t) => t.type === "income").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
         const monthExpense = monthTx.filter((t) => t.type === "expense").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
@@ -3129,20 +3129,24 @@ window.__K3_START = function () {
                         React.createElement("p", { className: "font-semibold tabular mt-1" }, fmtMoney(avgDailySpend, baseCurrency)))))),
             budgetStatus && budgetStatus.length > 0 && (React.createElement(Card, { "data-tour": "budgets", className: "p-4" },
                 React.createElement("div", { className: "flex items-center justify-between mb-3" },
-                    React.createElement("h3", { className: "font-display font-semibold text-sm" }, tr("Бюджети за місяць")),
+                    React.createElement("h3", { className: "font-display font-semibold text-sm" },
+                        tr("Бюджети за місяць"),
+                        " \u00B7 ",
+                        tr(MONTHS_FULL[nowD.getMonth()])),
                     React.createElement("button", { onClick: () => setModal({ type: "catBudgets" }), className: "pill-link" }, tr("Змінити"))),
                 React.createElement("div", { className: "space-y-3.5" }, budgetStatus.map((b) => {
                     const over = b.pct > 100;
                     const barColor = over ? "var(--danger)" : b.pct >= 80 ? "var(--warn)" : "var(--accent)";
-                    return (React.createElement("div", { key: b.id },
+                    return (React.createElement("button", { type: "button", key: b.id, className: "w-full text-left block", onClick: () => { const y = nowD.getFullYear(), m = nowD.getMonth(); const pad2 = (n) => String(n).padStart(2, "0"); setHistoryPreset({ type: "expense", categoryId: b.id, from: y + "-" + pad2(m + 1) + "-01", to: y + "-" + pad2(m + 1) + "-" + pad2(new Date(y, m + 1, 0).getDate()) }); setView("history"); } },
                         React.createElement("div", { className: "flex items-center justify-between text-xs mb-1.5 gap-2" },
                             React.createElement("span", { className: "flex items-center gap-1.5 font-medium min-w-0" },
                                 React.createElement(Icon, { name: b.icon, size: 13, style: { color: b.color } }),
                                 React.createElement("span", { className: "truncate" }, tr(b.name))),
-                            React.createElement("span", { className: "tabular shrink-0", style: { color: over ? "var(--danger)" : "var(--text-dim)" } },
+                            React.createElement("span", { className: "flex items-center gap-1 tabular shrink-0", style: { color: over ? "var(--danger)" : "var(--text-dim)" } },
                                 fmtMoney(b.spent, baseCurrency),
                                 " / ",
-                                fmtMoney(b.budget, baseCurrency))),
+                                fmtMoney(b.budget, baseCurrency),
+                                React.createElement(ChevronRight, { size: 12, style: { color: "var(--text-dim)", flexShrink: 0 } }))),
                         React.createElement("div", { className: "h-2 rounded-full overflow-hidden", style: { background: "var(--surface2)" } },
                             React.createElement("div", { style: { width: Math.min(100, b.pct) + "%", height: "100%", background: barColor, borderRadius: 999, transition: "width .3s ease" } }))));
                 })))),
@@ -3701,6 +3705,7 @@ window.__K3_START = function () {
             if (!historyPreset)
                 return;
             setFilterType(historyPreset.type || "all");
+            setFilterCategory(historyPreset.categoryId || "all");
             setDateFrom(historyPreset.from || "");
             setDateTo(historyPreset.to || "");
             if (clearHistoryPreset)
