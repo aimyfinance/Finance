@@ -609,6 +609,12 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Імпорт виписки на цей рахунок": "Import a statement to this account",
+        "Проєкт — як у всіх": "Project — same as all",
+        "Проєкт для відфільтрованих": "Project for filtered",
+        "— оберіть —": "— choose —",
+        "Застосувати": "Apply",
+        "Проєкт застосовано": "Project applied",
         "Назад": "Back",
         "Всі проєкти": "All projects",
         "Зірочка — показувати проєкт на головному.": "Star a project to pin it on the dashboard.",
@@ -1695,13 +1701,16 @@ window.__K3_START = function () {
     function Textarea(props) {
         return React.createElement("textarea", { ...props, style: inputStyle(), className: "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition resize-none" });
     }
-    function Modal({ title, onClose, children, wide }) {
+    function Modal({ title, onClose, children, wide, onBack }) {
         title = tr(title);
         return (React.createElement("div", { className: "fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4", style: { background: "rgba(0,0,0,0.55)" }, onMouseDown: (e) => { if (e.target === e.currentTarget)
                 onClose(); } },
             React.createElement("div", { className: `w-full ${wide ? "sm:max-w-lg" : "sm:max-w-md"} max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border`, style: { background: "var(--surface)", borderColor: "var(--border)" } },
                 React.createElement("div", { className: "flex items-center justify-between px-5 py-4 border-b sticky top-0", style: { borderColor: "var(--border)", background: "var(--surface)" } },
-                    React.createElement("h3", { className: "text-base font-semibold", style: { color: "var(--text)" } }, title),
+                    React.createElement("div", { className: "flex items-center min-w-0" },
+                        onBack && React.createElement("button", { onClick: onBack, "aria-label": tr("Назад"), className: "p-1 -ml-1.5 mr-1 rounded-lg", style: { color: "var(--text-dim)" } },
+                            React.createElement(ChevronRight, { size: 18, style: { transform: "rotate(180deg)" } })),
+                        React.createElement("h3", { className: "text-base font-semibold truncate", style: { color: "var(--text)" } }, title)),
                     React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hover:opacity-70", style: { color: "var(--text-dim)" } },
                         React.createElement(X, { size: 18 }))),
                 React.createElement("div", { className: "p-5" }, children))));
@@ -2504,6 +2513,12 @@ window.__K3_START = function () {
             });
             notify(tr("Проєкт видалено"));
         };
+        const assignProjectBulk = (ids, projectId) => {
+            const idSet = {};
+            ids.forEach((i2) => { idSet[i2] = 1; });
+            update({ transactions: transactions.map((t) => (idSet[t.id] ? { ...t, projectId: projectId || null } : t)) });
+            notify(tr("Проєкт застосовано") + ": " + ids.length);
+        };
         const todayISO = localISODate(new Date());
         const pendingRecurring = [];
         recurring.forEach((r) => { if (r.mode !== "ask")
@@ -2678,7 +2693,7 @@ window.__K3_START = function () {
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[11px] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
                         view === "dashboard" && (React.createElement(Dashboard, { accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
-                        view === "history" && (React.createElement(HistoryView, { transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects })),
+                        view === "history" && (React.createElement(HistoryView, { transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, assignProjectBulk: assignProjectBulk })),
                         view === "loans" && (React.createElement(LoansView, { loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
@@ -3659,7 +3674,7 @@ window.__K3_START = function () {
                 list.length === 0 && typeFilter !== "crypto" && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("Немає рахунків у цій категорії")))));
     }
     /* ============================== HISTORY VIEW ============================== */
-    function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, projects }) {
+    function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, projects, assignProjectBulk }) {
         const [search, setSearch] = useState("");
         const [showImportHint, setShowImportHint] = useState(false);
         const [filterType, setFilterType] = useState("all");
@@ -3667,6 +3682,7 @@ window.__K3_START = function () {
         const [filterCategory, setFilterCategory] = useState("all");
         const [filterCurrency, setFilterCurrency] = useState("all");
         const [filterProject, setFilterProject] = useState("all");
+        const [bulkPrj, setBulkPrj] = useState("");
         const [dateFrom, setDateFrom] = useState("");
         const [dateTo, setDateTo] = useState("");
         const [showFilters, setShowFilters] = useState(false);
@@ -3803,6 +3819,20 @@ window.__K3_START = function () {
                     React.createElement(Input, { type: "date", value: dateFrom, onChange: (e) => setDateFrom(e.target.value) })),
                 React.createElement(Field, { label: tr("Період до") },
                     React.createElement(Input, { type: "date", value: dateTo, onChange: (e) => setDateTo(e.target.value) })),
+                (projects || []).filter((xx) => !xx.archived).length > 0 && (React.createElement("div", { className: "sm:col-span-2 lg:col-span-3 flex items-center gap-2 rounded-xl p-2.5", style: { background: "var(--surface2)" } },
+                    React.createElement("span", { className: "text-[11px] shrink-0", style: { color: "var(--text-dim)" } },
+                        tr("Проєкт для відфільтрованих"),
+                        ":"),
+                    React.createElement(Select, { value: bulkPrj, onChange: (e) => setBulkPrj(e.target.value) },
+                        React.createElement("option", { value: "" }, tr("— оберіть —")),
+                        React.createElement("option", { value: "__none__" }, tr("Без проєкту")),
+                        (projects || []).filter((xx) => !xx.archived).map((xx) => React.createElement("option", { key: xx.id, value: xx.id }, tr(xx.name)))),
+                    React.createElement(Button, { variant: "secondary", className: "shrink-0", onClick: () => { if (!bulkPrj || !assignProjectBulk)
+                            return; assignProjectBulk(filtered.map((t) => t.id), bulkPrj === "__none__" ? null : bulkPrj); setBulkPrj(""); } },
+                        tr("Застосувати"),
+                        " (",
+                        filtered.length,
+                        ")"))),
                 React.createElement("button", { onClick: () => setShowFilters(false), className: "sm:col-span-2 lg:col-span-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
                     React.createElement(ChevronDown, { size: 13, style: { transform: "rotate(180deg)" } }),
                     " ",
@@ -4587,7 +4617,7 @@ window.__K3_START = function () {
     function StatementImportModal({ onClose, accounts, pockets, categories, transactions, importTransactions, pocketBalance, addCategory, projects, addProject }) {
         const activePockets = pockets.filter((p) => !p.archived);
         const [stage, setStage] = useState("file");
-        const [pocketId, setPocketId] = useState(activePockets[0]?.id || "");
+        const [pocketId, setPocketId] = useState((payload && payload.presetPocketId) || activePockets[0]?.id || "");
         const [fileName, setFileName] = useState("");
         const [impProject, setImpProject] = useState("");
         const [impPrjNew, setImpPrjNew] = useState(false);
@@ -4661,7 +4691,7 @@ window.__K3_START = function () {
                 const date = dISO > today ? today : dISO;
                 const dup = transactions.some((t) => t.date === date && t.pocketId === pocketId && t.amount != null && Math.abs(t.amount - Math.abs(amt)) < 0.005 && t.type === (amt < 0 ? "expense" : "income"));
                 const viaBank = bankCat ? matchCategoryByName(bankCat, amt < 0 ? "expense" : "income", categories) : "";
-                out.push({ key: i, date, amount: amt, desc, bankCat, categoryId: viaBank || guessCategory(desc, amt, categories, noteIdx), include: !dup, dup, creating: false, newName: "" });
+                out.push({ key: i, date, amount: amt, desc, bankCat, categoryId: viaBank || guessCategory(desc, amt, categories, noteIdx), include: !dup, dup, creating: false, newName: "", projectId: "" });
             });
             if (!out.length) {
                 setError(tr("У файлі не знайдено рядків з датою та сумою."));
@@ -4703,7 +4733,7 @@ window.__K3_START = function () {
                 currency: pkCur || "UAH",
                 pocketId,
                 categoryId: r.categoryId || null,
-                projectId: impProject || null,
+                projectId: r.projectId || impProject || null,
                 note: r.desc,
             })));
             onClose();
@@ -4792,17 +4822,21 @@ window.__K3_START = function () {
                         React.createElement("p", { className: "text-sm font-semibold tabular shrink-0", style: { color: r.amount < 0 ? "var(--danger)" : "var(--accent)" } },
                             r.amount < 0 ? "−" : "+",
                             fmtMoney(Math.abs(r.amount), pkCur))),
-                    r.include && (React.createElement("div", { className: "mt-2 pl-7" }, r.creating ? (React.createElement("div", { className: "flex items-center gap-2" },
-                        React.createElement(Input, { value: r.newName, onChange: (e) => setRow(r.key, { newName: e.target.value }), placeholder: tr("Назва категорії"), autoFocus: true }),
-                        React.createElement(Button, { variant: "secondary", onClick: () => createCategoryInline(r) }, "OK"),
-                        React.createElement("button", { onClick: () => setRow(r.key, { creating: false }), className: "p-1.5 shrink-0", style: { color: "var(--text-dim)" } },
-                            React.createElement(X, { size: 14 })))) : (React.createElement(Select, { value: r.categoryId || "", onChange: (e) => { const v = e.target.value; if (v === "__new__")
-                            setRow(r.key, { creating: true, newName: r.bankCat || "" });
-                        else
-                            setRow(r.key, { categoryId: v }); } },
-                        React.createElement("option", { value: "" }, tr("Без категорії")),
-                        (r.amount < 0 ? expenseCats : incomeCats).map((cat) => React.createElement("option", { key: cat.id, value: cat.id }, tr(cat.name))),
-                        React.createElement("option", { value: "__new__" }, tr("+ Нова категорія…")))))))))),
+                    r.include && (React.createElement("div", { className: "mt-2 pl-7" },
+                        r.creating ? (React.createElement("div", { className: "flex items-center gap-2" },
+                            React.createElement(Input, { value: r.newName, onChange: (e) => setRow(r.key, { newName: e.target.value }), placeholder: tr("Назва категорії"), autoFocus: true }),
+                            React.createElement(Button, { variant: "secondary", onClick: () => createCategoryInline(r) }, "OK"),
+                            React.createElement("button", { onClick: () => setRow(r.key, { creating: false }), className: "p-1.5 shrink-0", style: { color: "var(--text-dim)" } },
+                                React.createElement(X, { size: 14 })))) : (React.createElement(Select, { value: r.categoryId || "", onChange: (e) => { const v = e.target.value; if (v === "__new__")
+                                setRow(r.key, { creating: true, newName: r.bankCat || "" });
+                            else
+                                setRow(r.key, { categoryId: v }); } },
+                            React.createElement("option", { value: "" }, tr("Без категорії")),
+                            (r.amount < 0 ? expenseCats : incomeCats).map((cat) => React.createElement("option", { key: cat.id, value: cat.id }, tr(cat.name))),
+                            React.createElement("option", { value: "__new__" }, tr("+ Нова категорія…")))),
+                        (projects || []).filter((xx) => !xx.archived).length > 0 && (React.createElement(Select, { value: r.projectId || "", onChange: (e) => setRow(r.key, { projectId: e.target.value }) },
+                            React.createElement("option", { value: "" }, impProject ? tr("Проєкт — як у всіх") : tr("— без проєкту —")),
+                            (projects || []).filter((xx) => !xx.archived).map((xx) => React.createElement("option", { key: xx.id, value: xx.id }, tr(xx.name))))))))))),
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { setStage("map"); setError(""); } }, tr("Назад")),
                     React.createElement(Button, { className: "flex-1", onClick: doImport },
@@ -5198,7 +5232,7 @@ window.__K3_START = function () {
         const list = (projects || []).filter((x) => !x.archived);
         const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects" } });
         const txCount = (id) => transactions.filter((t) => t.projectId === id).length;
-        return (React.createElement(Modal, { title: tr("Проєкти"), onClose: onClose },
+        return (React.createElement(Modal, { title: tr("Проєкти"), onClose: onClose, onBack: onClose },
             list.length === 0 && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Проєктів ще немає. Створіть перший — «Квартира», «Авто» чи «Ремонт» — і привʼязуйте до нього витрати з форми, імпорту та регулярних платежів.")),
             list.length > 0 && React.createElement("p", { className: "text-[11px] mb-2", style: { color: "var(--text-dim)" } }, tr("Зірочка — показувати проєкт на головному.")),
             React.createElement("div", { className: "space-y-2.5 mb-3" }, list.map((x) => (React.createElement("div", { key: x.id, className: "flex items-center gap-2.5 rounded-xl p-3", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
@@ -5426,7 +5460,7 @@ window.__K3_START = function () {
             if (modal.type === "txDetail")
                 return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects });
             if (modal.type === "statementImport")
-                return React.createElement(StatementImportModal, { onClose: close, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject });
+                return React.createElement(StatementImportModal, { onClose: close, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject, payload: modal.payload });
             if (modal.type === "cryptoTrade")
                 return React.createElement(CryptoTradeModal, { onClose: close, payload: modal.payload, accounts: accounts, pockets: pockets, crypto: crypto, cryptoPrices: cryptoPrices, rates: rates, tradeCrypto: tradeCrypto, pocketBalance: pocketBalance });
             if (modal.type === "catBudgets")
@@ -5682,6 +5716,7 @@ window.__K3_START = function () {
             React.createElement("div", { className: "space-y-0.5" },
                 React.createElement(Row, { icon: ChevronRight, label: tr("Відкрити рахунок"), onClick: () => setModal({ type: "pocketDetail", payload: pocketId }) }),
                 React.createElement(Row, { icon: Edit3, label: tr("Редагувати рахунок (назва, колір, тип)"), onClick: () => setModal({ type: "account", payload: acc, returnTo }) }),
+                React.createElement(Row, { icon: ArrowDownRight, label: tr("Імпорт виписки на цей рахунок"), onClick: () => setModal({ type: "import", payload: { presetPocketId: pocket.id }, returnTo }) }),
                 React.createElement(Row, { icon: Coins, label: tr("Змінити валюту / баланс"), onClick: () => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk }, returnTo }) }),
                 !confirmArc ? (React.createElement(Row, { icon: Archive, label: tr("Архівувати картку"), onClick: () => setConfirmArc(true) })) : (React.createElement("div", { className: "px-1 py-2" },
                     React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Архівувати цю картку?")),
