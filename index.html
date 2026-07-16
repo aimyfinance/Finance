@@ -2149,17 +2149,6 @@ window.__K3_START = function () {
             });
             return Object.entries(m).map(([name, value]) => ({ name, value, color: (categories.find((c) => c.name === name) || {}).color || "#8B93A3" })).sort((a, b) => b.value - a.value);
         }, [monthTx, categories, baseCurrency, rates]);
-        const monthlySeries = useMemo(() => {
-            const arr = [];
-            for (let i = 5; i >= 0; i--) {
-                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-                const inc = transactions.filter((t) => t.type === "income" && monthKey(t.date) === key).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
-                const exp = transactions.filter((t) => t.type === "expense" && monthKey(t.date) === key).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
-                arr.push({ month: MONTHS_UA[d.getMonth()], income: Math.round(inc), expense: Math.round(exp) });
-            }
-            return arr;
-        }, [transactions, baseCurrency, rates]);
         // Budgets: spent this month vs the category's monthly limit (limit interpreted in base currency)
         // Overall month insights: total budget, previous-month comparison, daily average
         const monthlyBudget = state.monthlyBudget || 0;
@@ -2673,7 +2662,7 @@ window.__K3_START = function () {
                                 React.createElement("div", { className: "flex gap-2 mt-2" },
                                     React.createElement(Button, { variant: "secondary", onClick: exportBackup }, tr("Зберегти копію")),
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[11px] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
-                        view === "dashboard" && (React.createElement(Dashboard, { accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, monthlySeries: monthlySeries, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
+                        view === "dashboard" && (React.createElement(Dashboard, { accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects })),
                         view === "loans" && (React.createElement(LoansView, { loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
@@ -2815,7 +2804,7 @@ window.__K3_START = function () {
             React.createElement(Button, { variant: "secondary", onClick: save }, "OK")));
     }
     /* ============================== DASHBOARD ============================== */
-    function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, projects, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
+    function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
         const net = monthIncome - monthExpense;
         const recent = [...transactions].sort(byRecent).slice(0, 6);
         const activeAccounts = accounts.filter((a) => !a.archived);
@@ -2860,79 +2849,6 @@ window.__K3_START = function () {
                 m[key] = (m[key] || 0) + txToBase(t, baseCurrency, rates);
             });
             return Object.entries(m).map(([name, value]) => ({ name, value, color: (categories.find((c) => c.name === name) || {}).color || "#8B93A3" })).sort((a, b) => b.value - a.value);
-        })();
-        // The income/expense chart follows the same period pills; bucket size adapts to the span
-        const periodSeries = (() => {
-            const out = [];
-            const dayISO = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-            const sumRange = (a, b) => {
-                let inc = 0, exp = 0;
-                transactions.forEach((t) => {
-                    if (t.type !== "income" && t.type !== "expense")
-                        return;
-                    if (t.date < a || t.date > b)
-                        return;
-                    const v = txToBase(t, baseCurrency, rates);
-                    if (t.type === "income")
-                        inc += v;
-                    else
-                        exp += v;
-                });
-                return { income: Math.round(inc), expense: Math.round(exp) };
-            };
-            const pushDay = (d, label) => { const iso = dayISO(d); out.push({ month: label, ...sumRange(iso, iso) }); };
-            if (period === "day") {
-                for (let i2 = 6; i2 >= 0; i2--) {
-                    const d = new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate() - i2);
-                    pushDay(d, String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0"));
-                }
-            }
-            else if (period === "month") {
-                const last = new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0).getDate();
-                const step = Math.ceil(last / 8);
-                for (let day = 1; day <= last; day++) {
-                    const d = new Date(nowD.getFullYear(), nowD.getMonth(), day);
-                    pushDay(d, day === 1 || day % step === 0 ? String(day) : "");
-                }
-            }
-            else if (period === "year") {
-                for (let m2 = 0; m2 < 12; m2++) {
-                    const a2 = dayISO(new Date(nowD.getFullYear(), m2, 1));
-                    const b2 = dayISO(new Date(nowD.getFullYear(), m2 + 1, 0));
-                    out.push({ month: MONTHS_UA[m2], ...sumRange(a2, b2) });
-                }
-            }
-            else {
-                if (!pStart || !pEnd || pStart > pEnd)
-                    return out;
-                const s = new Date(pStart + "T00:00:00");
-                const e = new Date(pEnd + "T00:00:00");
-                const days = Math.round((e - s) / 86400000) + 1;
-                if (days <= 31) {
-                    const step = Math.max(1, Math.ceil(days / 8));
-                    for (let i2 = 0; i2 < days; i2++) {
-                        const d = new Date(s.getFullYear(), s.getMonth(), s.getDate() + i2);
-                        pushDay(d, i2 === 0 || i2 % step === 0 ? String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0") : "");
-                    }
-                }
-                else if (days <= 130) {
-                    for (let i2 = 0; i2 < days; i2 += 7) {
-                        const a2 = new Date(s.getFullYear(), s.getMonth(), s.getDate() + i2);
-                        const b2 = new Date(s.getFullYear(), s.getMonth(), s.getDate() + Math.min(i2 + 6, days - 1));
-                        out.push({ month: String(a2.getDate()).padStart(2, "0") + "." + String(a2.getMonth() + 1).padStart(2, "0"), ...sumRange(dayISO(a2), dayISO(b2)) });
-                    }
-                }
-                else {
-                    const cur = new Date(s.getFullYear(), s.getMonth(), 1);
-                    while (cur <= e) {
-                        const a2 = dayISO(new Date(cur.getFullYear(), cur.getMonth(), 1));
-                        const b2 = dayISO(new Date(cur.getFullYear(), cur.getMonth() + 1, 0));
-                        out.push({ month: MONTHS_UA[cur.getMonth()], ...sumRange(a2 < pStart ? pStart : a2, b2 > pEnd ? pEnd : b2) });
-                        cur.setMonth(cur.getMonth() + 1);
-                    }
-                }
-            }
-            return out;
         })();
         const [hideTotal, setHideTotal] = useState(() => {
             try {
@@ -3116,21 +3032,7 @@ window.__K3_START = function () {
                             React.createElement(Icon, { name: pj.icon || "Home", size: 14, style: { color: pj.color || "var(--text-dim)" } })),
                         React.createElement("span", { className: "flex-1 min-w-0 text-left text-sm font-medium truncate" }, tr(pj.name)),
                         React.createElement("span", { className: "tabular text-sm font-semibold shrink-0" }, fmtMoney(spent, baseCurrency)),
-                        React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } }))))))),
-                React.createElement(Card, { className: "p-4" },
-                    React.createElement("h3", { className: "font-display font-semibold mb-3 text-sm" },
-                        tr("Дохід і витрати"),
-                        " (",
-                        periodLabel,
-                        ")"),
-                    React.createElement("div", { className: "flex items-center gap-4 mb-2 text-xs", style: { color: "var(--text-dim)" } },
-                        React.createElement("span", { className: "flex items-center gap-1.5" },
-                            React.createElement("span", { className: "w-2 h-2 rounded-full", style: { background: "var(--accent)" } }),
-                            tr("Дохід")),
-                        React.createElement("span", { className: "flex items-center gap-1.5" },
-                            React.createElement("span", { className: "w-2 h-2 rounded-full", style: { background: "var(--danger)" } }),
-                            tr("Витрати"))),
-                    React.createElement(MiniBars, { data: periodSeries.length ? periodSeries : monthlySeries, baseCurrency: baseCurrency }))),
+                        React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } })))))))),
             nwLen >= 2 && (React.createElement(Card, { "data-tour": "networth", className: "p-4" },
                 React.createElement("div", { className: "flex items-center justify-between mb-3" },
                     React.createElement("h3", { className: "font-display font-semibold text-sm" }, tr("Динаміка капіталу")),
