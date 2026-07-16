@@ -429,6 +429,26 @@ window.__K3_START = function () {
     }
     // Convert a transaction to the base currency using the rate snapshotted when it was created
     // (t.fx = rate of the transaction's currency to UAH at creation time). Falls back to current rate.
+    class ErrorBoundary extends React.Component {
+        constructor(props) { super(props); this.state = { err: null }; }
+        static getDerivedStateFromError(err) { return { err }; }
+        componentDidCatch(err) { try {
+            console.error("K3 boundary:", err);
+        }
+        catch (e) { } }
+        render() {
+            if (this.state.err) {
+                const msg = String((this.state.err && (this.state.err.message || this.state.err)) || "").slice(0, 300);
+                return (React.createElement("div", { style: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F4F0E8", padding: 24 } },
+                    React.createElement("div", { style: { maxWidth: 340, textAlign: "center", fontFamily: "system-ui, sans-serif" } },
+                        React.createElement("div", { style: { fontWeight: 800, fontSize: 17, color: "#131B2B", marginBottom: 8 } }, tr("K³ перечепився")),
+                        React.createElement("div", { style: { fontSize: 13, lineHeight: 1.5, color: "#8B93A3", marginBottom: 6 } }, tr("Сталася помилка інтерфейсу. Ваші дані в безпеці.")),
+                        React.createElement("div", { style: { fontSize: 11, color: "#B4893C", wordBreak: "break-word", marginBottom: 18 } }, msg),
+                        React.createElement("button", { onClick: () => window.location.reload(), style: { background: "#2B3757", color: "#fff", border: 0, borderRadius: 12, padding: "11px 20px", fontSize: 14, fontWeight: 600 } }, tr("Перезавантажити")))));
+            }
+            return this.props.children;
+        }
+    }
     function txToBase(t, base, ratesToUAH) {
         // 1) Однакова валюта = тотожність: $600 лишається $600 у доларовій базі.
         if (t.currency === base)
@@ -617,6 +637,9 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "K³ перечепився": "K³ stumbled",
+        "Сталася помилка інтерфейсу. Ваші дані в безпеці.": "An interface error occurred. Your data is safe.",
+        "Перезавантажити": "Reload",
         "Курс до базової": "Rate to base currency",
         "Вартість у базовій": "Value in base currency",
         "зафіксований курс": "pinned rate",
@@ -4662,7 +4685,7 @@ window.__K3_START = function () {
             cat: catCi,
         };
     }
-    function StatementImportModal({ onClose, accounts, pockets, categories, transactions, importTransactions, pocketBalance, addCategory, projects, addProject }) {
+    function StatementImportModal({ onClose, accounts, pockets, categories, transactions, importTransactions, pocketBalance, addCategory, projects, addProject, payload }) {
         const activePockets = pockets.filter((p) => !p.archived);
         const [stage, setStage] = useState("file");
         const [pocketId, setPocketId] = useState((payload && payload.presetPocketId) || activePockets[0]?.id || "");
@@ -6276,7 +6299,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isDebt ? tr("Зареєструвати погашення") : tr("Зареєструвати повернення"))));
     }
     var __root_el = document.getElementById("root");
-    ReactDOM.createRoot(__root_el).render(React.createElement(FinanceTracker));
+    ReactDOM.createRoot(__root_el).render(React.createElement(ErrorBoundary, null, React.createElement(FinanceTracker)));
     var __k3check = function (final) {
         if (window.__K3_OK)
             return;
