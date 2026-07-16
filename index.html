@@ -592,7 +592,7 @@ window.__K3_START = function () {
         // (The demo generator above is kept intact; remove these two lines to bring it back.)
         transactions.length = 0;
         loans.length = 0;
-        return { accounts, pockets, categories: [...expenseCats, ...incomeCats], transactions, loans, rates, baseCurrency: "UAH", reminders: [], goals: [], crypto: [], cryptoPrices: { bitcoin: 68000, ethereum: 3500, solana: 150 }, cryptoUpdatedAt: null };
+        return { accounts, pockets, categories: [...expenseCats, ...incomeCats], transactions, loans, rates, baseCurrency: "UAH", reminders: [], goals: [], crypto: [], projects: [], cryptoPrices: { bitcoin: 68000, ethereum: 3500, solana: 150 }, cryptoUpdatedAt: null };
     }
     /* ============================== PERSISTENCE ============================== */
     /* ============================== i18n (UK / EN) ============================== */
@@ -609,6 +609,25 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Проєкти": "Projects",
+        "Проєкт": "Project",
+        "Проєкт (необовʼязково)": "Project (optional)",
+        "— без проєкту —": "— no project —",
+        "+ Новий проєкт…": "+ New project…",
+        "Керувати проєктами": "Manage projects",
+        "Додати проєкт": "Add project",
+        "Новий проєкт": "New project",
+        "Редагувати проєкт": "Edit project",
+        "Назва проєкту": "Project name",
+        "напр. Квартира": "e.g. Apartment",
+        "Проєкт додано": "Project added",
+        "Проєкт видалено": "Project deleted",
+        "Введіть назву проєкту": "Enter a project name",
+        "Проєктів ще немає. Створіть перший — «Квартира», «Авто» чи «Ремонт» — і привʼязуйте до нього витрати з форми, імпорту та регулярних платежів.": "No projects yet. Create the first one — “Apartment”, “Car” or “Renovation” — and link expenses to it from the form, import and recurring payments.",
+        "Обʼєднуйте витрати за обʼєктами: квартира, будинок, авто, ремонт. Аналітика на головному покаже, скільки коштує кожен.": "Group spending by object: apartment, house, car, renovation. The dashboard shows what each one costs.",
+        "Віднести все до проєкту (необовʼязково)": "Assign everything to a project (optional)",
+        "Без проєкту": "No project",
+        "операцій": "transactions",
         "Повторювати щомісяця": "Repeat monthly",
         "Щомісяця створюватиметься така сама операція.": "The same transaction will be created every month.",
         "Щомісяця K³ питатиме фактичну суму карткою на головному.": "Every month K³ will ask for the actual amount with a card on the home screen.",
@@ -2468,6 +2487,23 @@ window.__K3_START = function () {
             update({ transactions: [tx, ...transactions], recurring: [...recurring, rec] });
             notify(tr("Збережено як регулярний платіж"));
         };
+        /* ---------- Projects (обʼєкти витрат: квартира, авто, ремонт...) ---------- */
+        const projects = state.projects || [];
+        const addProject = (data) => {
+            const prj = { id: uid("prj"), archived: false, createdAt: new Date().toISOString(), ...data };
+            update({ projects: [...projects, prj] });
+            notify(tr("Проєкт додано"));
+            return prj;
+        };
+        const editProject = (id, patch) => update({ projects: projects.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
+        const deleteProject = (id) => {
+            update({
+                projects: projects.filter((x) => x.id !== id),
+                transactions: transactions.map((t) => (t.projectId === id ? { ...t, projectId: null } : t)),
+                recurring: recurring.map((r) => (r.projectId === id ? { ...r, projectId: null } : r)),
+            });
+            notify(tr("Проєкт видалено"));
+        };
         const todayISO = localISODate(new Date());
         const pendingRecurring = [];
         recurring.forEach((r) => { if (r.mode !== "ask")
@@ -2482,7 +2518,7 @@ window.__K3_START = function () {
                 if (!due.length)
                     return r;
                 const cur = (pockets.find((pp) => pp.id === r.pocketId) || {}).currency || baseCurrency;
-                due.forEach((o) => txs.push({ id: uid("tx"), createdAt: new Date().toISOString(), fx: rates[cur] || 1, type: r.kind, amount: r.amount, currency: cur, pocketId: r.pocketId, categoryId: r.categoryId || null, date: o.date, note: r.title, receipt: null, recurringId: r.id }));
+                due.forEach((o) => txs.push({ id: uid("tx"), createdAt: new Date().toISOString(), fx: rates[cur] || 1, type: r.kind, amount: r.amount, currency: cur, pocketId: r.pocketId, categoryId: r.categoryId || null, date: o.date, note: r.title, receipt: null, projectId: r.projectId || null, recurringId: r.id }));
                 return { ...r, lastDone: due[due.length - 1].month };
             });
             if (!txs.length)
@@ -2637,9 +2673,9 @@ window.__K3_START = function () {
                                 React.createElement("div", { className: "flex gap-2 mt-2" },
                                     React.createElement(Button, { variant: "secondary", onClick: exportBackup }, tr("Зберегти копію")),
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[11px] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
-                        view === "dashboard" && (React.createElement(Dashboard, { accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, monthlySeries: monthlySeries, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
+                        view === "dashboard" && (React.createElement(Dashboard, { accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, monthlySeries: monthlySeries, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
-                        view === "history" && (React.createElement(HistoryView, { transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null) })),
+                        view === "history" && (React.createElement(HistoryView, { transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects })),
                         view === "loans" && (React.createElement(LoansView, { loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
@@ -2663,7 +2699,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -2779,7 +2815,7 @@ window.__K3_START = function () {
             React.createElement(Button, { variant: "secondary", onClick: save }, "OK")));
     }
     /* ============================== DASHBOARD ============================== */
-    function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
+    function Dashboard({ accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, projects, monthlySeries, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
         const net = monthIncome - monthExpense;
         const recent = [...transactions].sort(byRecent).slice(0, 6);
         const activeAccounts = accounts.filter((a) => !a.archived);
@@ -2964,7 +3000,7 @@ window.__K3_START = function () {
                             tr("орієнтир"),
                             " ",
                             fmtMoney(o.rule.amount, o.currency))),
-                    React.createElement("button", { onClick: () => setModal({ type: "transaction", payload: { kind: o.rule.kind, presetPocketId: o.rule.pocketId, presetCategoryId: o.rule.categoryId, presetAmount: o.rule.amount, presetNote: o.rule.title, presetDate: o.date, focusAmount: true, recurringDone: { id: o.rule.id, month: o.month } } }), className: "px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Внести")),
+                    React.createElement("button", { onClick: () => setModal({ type: "transaction", payload: { kind: o.rule.kind, presetPocketId: o.rule.pocketId, presetCategoryId: o.rule.categoryId, presetAmount: o.rule.amount, presetNote: o.rule.title, presetDate: o.date, presetProjectId: o.rule.projectId || null, focusAmount: true, recurringDone: { id: o.rule.id, month: o.month } } }), className: "px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Внести")),
                     React.createElement("button", { onClick: () => markRecurringDone(o.rule.id, o.month), className: "px-2.5 py-1.5 rounded-lg text-xs font-medium shrink-0", style: { background: "var(--surface2)", color: "var(--text-dim)" } }, tr("Пропустити"))))),
                 pendingRecurring.length > 4 && React.createElement("p", { className: "text-[11px] text-center", style: { color: "var(--text-dim)" } },
                     "+",
@@ -3069,6 +3105,18 @@ window.__K3_START = function () {
                                 React.createElement("span", { className: "w-2 h-2 rounded-full shrink-0", style: { background: c.color } }),
                                 tr(c.name)),
                             React.createElement("span", { className: "tabular shrink-0", style: { color: "var(--text-dim)" } }, fmtMoney(c.value, baseCurrency))))))))),
+                projects && projects.filter((x) => !x.archived).length > 0 && (React.createElement(Card, { className: "p-5" },
+                    React.createElement("h3", { className: "font-display font-semibold text-sm mb-3" },
+                        tr("Проєкти"),
+                        " (",
+                        periodLabel,
+                        ")"),
+                    React.createElement("div", { className: "space-y-2" }, projects.filter((x) => !x.archived).map((pj) => ({ pj, spent: periodTx.filter((t) => t.type === "expense" && t.projectId === pj.id).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0) })).sort((x, y) => y.spent - x.spent).map(({ pj, spent }) => (React.createElement("button", { type: "button", key: pj.id, className: "w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" }, onClick: () => { setHistoryPreset({ type: "expense", projectId: pj.id, from: pStart, to: pEnd }); setView("history"); } },
+                        React.createElement("span", { className: "w-7 h-7 rounded-lg flex items-center justify-center shrink-0", style: { background: (pj.color || "#8B93A3") + "22" } },
+                            React.createElement(Icon, { name: pj.icon || "Home", size: 14, style: { color: pj.color || "var(--text-dim)" } })),
+                        React.createElement("span", { className: "flex-1 min-w-0 text-left text-sm font-medium truncate" }, tr(pj.name)),
+                        React.createElement("span", { className: "tabular text-sm font-semibold shrink-0" }, fmtMoney(spent, baseCurrency)),
+                        React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } }))))))),
                 React.createElement(Card, { className: "p-4" },
                     React.createElement("h3", { className: "font-display font-semibold mb-3 text-sm" },
                         tr("Дохід і витрати"),
@@ -3320,7 +3368,7 @@ window.__K3_START = function () {
                 React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } }, fmtDate(tx.date)))));
     }
     /* Tap on a transaction anywhere → full details */
-    function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring }) {
+    function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring, projects }) {
         const [confirmDel, setConfirmDel] = useState(false);
         const cat = categories.find((x) => x.id === tx.categoryId);
         const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу", crypto_buy: "Купівля крипто", crypto_sell: "Продаж крипто" };
@@ -3341,6 +3389,7 @@ window.__K3_START = function () {
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount ? React.createElement(Row, { k: tr("Монета"), v: `${tx.coinAmount} ${tx.coinSymbol || ""}` }) : null,
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount > 0 ? React.createElement(Row, { k: tr("Курс"), v: `1 ${tx.coinSymbol || ""} = ${(tx.amount / tx.coinAmount).toFixed(4)} ${tx.currency}` }) : null,
                 !dual && React.createElement(Row, { k: tr("Рахунок"), v: pocketLabel(tx.pocketId) }),
+                tx.projectId && (() => { const pj = (projects || []).find((x) => x.id === tx.projectId); return pj ? React.createElement(Row, { k: tr("Проєкт"), v: tr(pj.name) }) : null; })(),
                 dual && React.createElement(Row, { k: tr("З рахунку"), v: pocketLabel(tx.fromPocketId) }),
                 dual && React.createElement(Row, { k: tr("На рахунок"), v: pocketLabel(tx.toPocketId) }),
                 (tx.type === "income" || tx.type === "expense") && tx.fx != null && tx.currency !== "UAH" ? React.createElement(Row, { k: tr("Зафіксований курс"), v: `1 ${tx.currency} = ${tx.fx} UAH` }) : null,
@@ -3690,13 +3739,14 @@ window.__K3_START = function () {
                 list.length === 0 && typeFilter !== "crypto" && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("Немає рахунків у цій категорії")))));
     }
     /* ============================== HISTORY VIEW ============================== */
-    function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset }) {
+    function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, projects }) {
         const [search, setSearch] = useState("");
         const [showImportHint, setShowImportHint] = useState(false);
         const [filterType, setFilterType] = useState("all");
         const [filterPocket, setFilterPocket] = useState("all");
         const [filterCategory, setFilterCategory] = useState("all");
         const [filterCurrency, setFilterCurrency] = useState("all");
+        const [filterProject, setFilterProject] = useState("all");
         const [dateFrom, setDateFrom] = useState("");
         const [dateTo, setDateTo] = useState("");
         const [showFilters, setShowFilters] = useState(false);
@@ -3706,6 +3756,7 @@ window.__K3_START = function () {
                 return;
             setFilterType(historyPreset.type || "all");
             setFilterCategory(historyPreset.categoryId || "all");
+            setFilterProject(historyPreset.projectId || "all");
             setDateFrom(historyPreset.from || "");
             setDateTo(historyPreset.to || "");
             if (clearHistoryPreset)
@@ -3728,6 +3779,14 @@ window.__K3_START = function () {
                 }
                 if (filterCategory !== "all" && t.categoryId !== filterCategory)
                     return false;
+                if (filterProject !== "all") {
+                    if (filterProject === "__none__") {
+                        if (t.projectId)
+                            return false;
+                    }
+                    else if (t.projectId !== filterProject)
+                        return false;
+                }
                 if (filterCurrency !== "all") {
                     const curMatch = t.currency === filterCurrency || t.fromCurrency === filterCurrency || t.toCurrency === filterCurrency;
                     if (!curMatch)
@@ -3754,7 +3813,7 @@ window.__K3_START = function () {
                 }
                 return true;
             }).sort(byRecent);
-        }, [transactions, categories, filterType, filterPocket, filterCategory, filterCurrency, dateFrom, dateTo, search, pocketLabel]);
+        }, [transactions, categories, filterType, filterPocket, filterCategory, filterCurrency, filterProject, dateFrom, dateTo, search, pocketLabel]);
         const typeLabel = { all: tr("Усі типи"), income: tr("Доходи"), expense: tr("Витрати"), transfer: tr("Перекази"), exchange: tr("Обмін валют"), loan_out: tr("Позики надані"), loan_return: tr("Повернення позик"), crypto_ops: tr("Крипто-операції") };
         return (React.createElement("div", { className: "space-y-4 animate-in" },
             React.createElement("div", { className: "flex items-center justify-between" },
@@ -3777,7 +3836,7 @@ window.__K3_START = function () {
             React.createElement("div", { className: "relative" },
                 React.createElement(Search, { size: 16, className: "absolute left-3 top-1/2 -translate-y-1/2", style: { color: "var(--text-dim)" } }),
                 React.createElement(Input, { "data-tour": "histsearch", placeholder: tr("Пошук: опис, категорія, рахунок..."), value: search, onChange: (e) => setSearch(e.target.value), className: "pl-9" })),
-            !showFilters && (filterType !== "all" || filterPocket !== "all" || filterCategory !== "all" || filterCurrency !== "all" || dateFrom || dateTo) && (React.createElement("div", { className: "flex items-center gap-2 rounded-xl px-3 py-2", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
+            !showFilters && (filterType !== "all" || filterPocket !== "all" || filterCategory !== "all" || filterCurrency !== "all" || filterProject !== "all" || dateFrom || dateTo) && (React.createElement("div", { className: "flex items-center gap-2 rounded-xl px-3 py-2", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
                 React.createElement("button", { onClick: () => setShowFilters(true), className: "flex items-center gap-2 min-w-0 flex-1 text-left" },
                     React.createElement(Filter, { size: 12, style: { color: "var(--accent)", flexShrink: 0 } }),
                     React.createElement("span", { className: "text-xs min-w-0 truncate", style: { color: "var(--text)" } }, [
@@ -3785,10 +3844,11 @@ window.__K3_START = function () {
                         (dateFrom || dateTo) ? ((dateFrom ? fmtDate(dateFrom) : "…") + " – " + (dateTo ? fmtDate(dateTo) : "…")) : null,
                         filterPocket !== "all" ? pocketLabel(filterPocket) : null,
                         filterCategory !== "all" ? tr((categories.find((cc) => cc.id === filterCategory) || {}).name || "") : null,
+                        filterProject !== "all" ? (filterProject === "__none__" ? tr("Без проєкту") : tr(((projects || []).find((xx) => xx.id === filterProject) || {}).name || "")) : null,
                         filterCurrency !== "all" ? filterCurrency : null,
                     ].filter(Boolean).join(" · ")),
                     React.createElement("span", { className: "pill-link shrink-0" }, tr("Налаштувати звіт"))),
-                React.createElement("button", { onClick: () => { setFilterType("all"); setFilterPocket("all"); setFilterCategory("all"); setFilterCurrency("all"); setDateFrom(""); setDateTo(""); }, "aria-label": tr("Скинути фільтри"), className: "p-1 shrink-0", style: { color: "var(--text-dim)" } },
+                React.createElement("button", { onClick: () => { setFilterType("all"); setFilterPocket("all"); setFilterCategory("all"); setFilterCurrency("all"); setFilterProject("all"); setDateFrom(""); setDateTo(""); }, "aria-label": tr("Скинути фільтри"), className: "p-1 shrink-0", style: { color: "var(--text-dim)" } },
                     React.createElement(X, { size: 14 })))),
             showFilters && (React.createElement(Card, { className: "p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3" },
                 React.createElement("div", { className: "sm:col-span-2 lg:col-span-3 flex items-center justify-between" },
@@ -3810,6 +3870,11 @@ window.__K3_START = function () {
                     React.createElement(Select, { value: filterCategory, onChange: (e) => setFilterCategory(e.target.value) },
                         React.createElement("option", { value: "all" }, tr("Усі категорії")),
                         categories.map((c) => React.createElement("option", { key: c.id, value: c.id }, tr(c.name))))),
+                React.createElement(Field, { label: tr("Проєкт") },
+                    React.createElement(Select, { value: filterProject, onChange: (e) => setFilterProject(e.target.value) },
+                        React.createElement("option", { value: "all" }, tr("Усі")),
+                        React.createElement("option", { value: "__none__" }, tr("Без проєкту")),
+                        (projects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))))),
                 React.createElement(Field, { label: tr("Валюта") },
                     React.createElement(Select, { value: filterCurrency, onChange: (e) => setFilterCurrency(e.target.value) },
                         React.createElement("option", { value: "all" }, tr("Усі валюти")),
@@ -4599,11 +4664,14 @@ window.__K3_START = function () {
             cat: catCi,
         };
     }
-    function StatementImportModal({ onClose, accounts, pockets, categories, transactions, importTransactions, pocketBalance, addCategory }) {
+    function StatementImportModal({ onClose, accounts, pockets, categories, transactions, importTransactions, pocketBalance, addCategory, projects, addProject }) {
         const activePockets = pockets.filter((p) => !p.archived);
         const [stage, setStage] = useState("file");
         const [pocketId, setPocketId] = useState(activePockets[0]?.id || "");
         const [fileName, setFileName] = useState("");
+        const [impProject, setImpProject] = useState("");
+        const [impPrjNew, setImpPrjNew] = useState(false);
+        const [impPrjName, setImpPrjName] = useState("");
         const [headerRow, setHeaderRow] = useState(null);
         const [dataRows, setDataRows] = useState([]);
         const [cols, setCols] = useState(0);
@@ -4715,6 +4783,7 @@ window.__K3_START = function () {
                 currency: pkCur || "UAH",
                 pocketId,
                 categoryId: r.categoryId || null,
+                projectId: impProject || null,
                 note: r.desc,
             })));
             onClose();
@@ -4761,6 +4830,23 @@ window.__K3_START = function () {
                             colName(ci),
                             " \u2014 ",
                             sample(ci).slice(0, 22))))),
+                React.createElement(Field, { label: tr("Віднести все до проєкту (необовʼязково)") },
+                    React.createElement(Select, { value: impPrjNew ? "__new__" : impProject, onChange: (e) => { const v = e.target.value; if (v === "__new__") {
+                            setImpPrjNew(true);
+                        }
+                        else {
+                            setImpPrjNew(false);
+                            setImpProject(v);
+                        } } },
+                        React.createElement("option", { value: "" }, tr("— без проєкту —")),
+                        (projects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))),
+                        addProject && React.createElement("option", { value: "__new__" }, tr("+ Новий проєкт…"))),
+                    impPrjNew && (React.createElement("div", { className: "flex gap-2 mt-2" },
+                        React.createElement(Input, { value: impPrjName, onChange: (e) => setImpPrjName(e.target.value), placeholder: tr("Назва проєкту"), autoFocus: true }),
+                        React.createElement(Button, { type: "button", onClick: () => { const nm = impPrjName.trim(); if (!nm)
+                                return; const created = addProject({ name: nm, icon: "Home", color: "#6683B4" }); if (created)
+                                setImpProject(created.id); setImpPrjNew(false); setImpPrjName(""); } },
+                            React.createElement(Check, { size: 15 }))))),
                 React.createElement("div", { className: "flex gap-2 mt-2" },
                     React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { setStage("file"); setError(""); } }, tr("Назад")),
                     React.createElement(Button, { className: "flex-1", onClick: buildPreview }, tr("Продовжити"))),
@@ -5085,6 +5171,13 @@ window.__K3_START = function () {
                     " ",
                     tr("Керувати платежами"))),
             React.createElement(Card, { className: "p-5" },
+                React.createElement("h3", { className: "font-display font-semibold text-sm mb-1" }, tr("Проєкти")),
+                React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Обʼєднуйте витрати за обʼєктами: квартира, будинок, авто, ремонт. Аналітика на головному покаже, скільки коштує кожен.")),
+                React.createElement(Button, { variant: "secondary", onClick: () => setModal && setModal({ type: "projects" }) },
+                    React.createElement(Home, { size: 15 }),
+                    " ",
+                    tr("Керувати проєктами"))),
+            React.createElement(Card, { className: "p-5" },
                 React.createElement(Field, { label: tr("Базова валюта (для загального балансу)") },
                     React.createElement(Select, { value: base, onChange: (e) => setBase(e.target.value) }, activeCurs.map((c) => React.createElement("option", { key: c, value: c }, c)))),
                 React.createElement("p", { "data-tour": "setrates", className: "text-xs mb-2", style: { color: "var(--text-dim)" } },
@@ -5179,6 +5272,66 @@ window.__K3_START = function () {
                     React.createElement(Input, { type: "number", value: vals[x.id] || "", onChange: (e) => setVals((v) => ({ ...v, [x.id]: e.target.value })), placeholder: "\u2014" })))))),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
+    // ---------- Projects: manager + editor ----------
+    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject }) {
+        const [confirmDel, setConfirmDel] = useState(null);
+        const list = (projects || []).filter((x) => !x.archived);
+        const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects" } });
+        const txCount = (id) => transactions.filter((t) => t.projectId === id).length;
+        return (React.createElement(Modal, { title: tr("Проєкти"), onClose: onClose },
+            list.length === 0 && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Проєктів ще немає. Створіть перший — «Квартира», «Авто» чи «Ремонт» — і привʼязуйте до нього витрати з форми, імпорту та регулярних платежів.")),
+            React.createElement("div", { className: "space-y-2.5 mb-3" }, list.map((x) => (React.createElement("div", { key: x.id, className: "flex items-center gap-2.5 rounded-xl p-3", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+                React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: (x.color || "#8B93A3") + "22" } },
+                    React.createElement(Icon, { name: x.icon || "Home", size: 15, style: { color: x.color || "var(--text-dim)" } })),
+                React.createElement("div", { className: "flex-1 min-w-0" },
+                    React.createElement("p", { className: "text-sm font-medium truncate" }, tr(x.name)),
+                    React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                        txCount(x.id),
+                        " ",
+                        tr("операцій"))),
+                React.createElement("button", { onClick: () => openEdit(x), className: "p-1.5 rounded-md shrink-0", style: { color: "var(--text-dim)" } },
+                    React.createElement(Edit3, { size: 14 })),
+                React.createElement("button", { onClick: () => { if (confirmDel === x.id) {
+                        deleteProject(x.id);
+                        setConfirmDel(null);
+                    }
+                    else {
+                        setConfirmDel(x.id);
+                        setTimeout(() => setConfirmDel((v) => (v === x.id ? null : v)), 2800);
+                    } }, className: "p-1.5 rounded-md shrink-0", style: { color: confirmDel === x.id ? "var(--danger)" : "var(--text-dim)" } }, confirmDel === x.id ? React.createElement("span", { className: "text-[10px] font-bold whitespace-nowrap" }, tr("Точно?")) : React.createElement(Trash2, { size: 14 })))))),
+            React.createElement(Button, { className: "w-full", onClick: () => openEdit(null) },
+                React.createElement(Plus, { size: 15 }),
+                " ",
+                tr("Додати проєкт"))));
+    }
+    function ProjectEditModal({ onClose, existing, addProject, editProject }) {
+        const PRJ_COLORS = ["#6683B4", "#6FA98C", "#D8A24A", "#C77F6E", "#5FA8B8", "#9B87C4", "#C77FA0", "#818CF8"];
+        const [name, setName] = useState(existing?.name || "");
+        const [icon, setIcon] = useState(existing?.icon || "Home");
+        const [color, setColor] = useState(existing?.color || PRJ_COLORS[0]);
+        const [error, setError] = useState("");
+        const submit = () => {
+            if (!name.trim())
+                return setError(tr("Введіть назву проєкту"));
+            const data = { name: name.trim(), icon, color };
+            if (existing && existing.id)
+                editProject(existing.id, data);
+            else
+                addProject(data);
+            onClose();
+        };
+        return (React.createElement(Modal, { title: existing && existing.id ? tr("Редагувати проєкт") : tr("Новий проєкт"), onClose: onClose },
+            React.createElement(Field, { label: tr("Назва проєкту"), error: error },
+                React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); }, placeholder: tr("напр. Квартира"), autoFocus: true })),
+            React.createElement("div", { className: "block mb-3" },
+                React.createElement("span", { className: "block text-xs font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Іконка")),
+                React.createElement("div", { className: "grid grid-cols-8 gap-2 max-h-28 overflow-y-auto p-1.5 rounded-lg", style: { background: "var(--surface)", border: "1px solid var(--border)" } }, ICON_CHOICES.map((k) => (React.createElement("button", { type: "button", key: k, onClick: () => setIcon(k), className: "w-8 h-8 rounded-lg flex items-center justify-center", style: { background: icon === k ? "var(--accent)" : "var(--surface2)" } },
+                    React.createElement(Icon, { name: k, size: 14, style: { color: icon === k ? "var(--accent-ink)" : "var(--text-dim)" } })))))),
+            React.createElement("div", { className: "block mb-4" },
+                React.createElement("span", { className: "block text-xs font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Колір")),
+                React.createElement("div", { className: "flex gap-2 flex-wrap" }, PRJ_COLORS.map((cc) => (React.createElement("button", { type: "button", key: cc, onClick: () => setColor(cc), className: "w-8 h-8 rounded-full", style: { background: cc, border: color === cc ? "3px solid var(--text)" : "3px solid transparent" } }))))),
+            React.createElement(Button, { className: "w-full", onClick: submit }, tr("Зберегти"))));
+    }
     // ---------- Recurring payments: manager + editor ----------
     function RecurringListModal({ onClose, recurring, pockets, categories, pocketLabel, setModal, editRecurring, deleteRecurring }) {
         const [confirmDel, setConfirmDel] = useState(null);
@@ -5224,7 +5377,7 @@ window.__K3_START = function () {
                 " ",
                 tr("Додати платіж"))));
     }
-    function RecurringEditModal({ onClose, existing, accounts, pockets, categories, addRecurring, editRecurring, pocketBalance }) {
+    function RecurringEditModal({ onClose, existing, accounts, pockets, categories, addRecurring, editRecurring, pocketBalance, projects }) {
         const [kind, setKind] = useState(existing?.kind || "expense");
         const cats = categories.filter((x) => x.type === kind && !x.archived);
         const firstPocket = pockets.find((pp) => !pp.archived);
@@ -5233,6 +5386,7 @@ window.__K3_START = function () {
         const [amount, setAmount] = useState(existing?.amount != null ? String(existing.amount) : "");
         const [pocketId, setPocketId] = useState(existing?.pocketId || firstPocket?.id || "");
         const [categoryId, setCategoryId] = useState(existing?.categoryId || "");
+        const [projectId, setProjectId] = useState(existing?.projectId || "");
         const [dayOfMonth, setDayOfMonth] = useState(existing?.dayOfMonth || 1);
         const [startDate, setStartDate] = useState(existing?.startDate || new Date().toISOString().slice(0, 10));
         const [error, setError] = useState("");
@@ -5249,7 +5403,7 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть рахунок"));
             if (!categoryId)
                 return setError(tr("Оберіть категорію"));
-            const data = { kind, title: title.trim(), mode, amount: Math.round(amt * 100) / 100, pocketId, categoryId, dayOfMonth: Number(dayOfMonth) || 1, startDate };
+            const data = { projectId: projectId || null, kind, title: title.trim(), mode, amount: Math.round(amt * 100) / 100, pocketId, categoryId, dayOfMonth: Number(dayOfMonth) || 1, startDate };
             if (existing && existing.id)
                 editRecurring(existing.id, data);
             else
@@ -5273,6 +5427,10 @@ window.__K3_START = function () {
                 React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: pocketId, onChange: setPocketId, tint: kind === "income" ? "in" : "out", pocketBalance: pocketBalance })),
             React.createElement(Field, { label: tr("Категорія") },
                 React.createElement(Select, { value: categoryId, onChange: (e) => { setCategoryId(e.target.value); setError(""); } }, cats.map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))))),
+            React.createElement(Field, { label: tr("Проєкт (необовʼязково)") },
+                React.createElement(Select, { value: projectId, onChange: (e) => setProjectId(e.target.value) },
+                    React.createElement("option", { value: "" }, tr("— без проєкту —")),
+                    (projects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))))),
             React.createElement("div", { className: "grid grid-cols-2 gap-3" },
                 React.createElement(Field, { label: tr("День місяця") },
                     React.createElement(Select, { value: String(dayOfMonth), onChange: (e) => setDayOfMonth(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1)))),
@@ -5314,7 +5472,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring }) {
+    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject }) {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
@@ -5326,7 +5484,7 @@ window.__K3_START = function () {
             if (modal.type === "category")
                 return React.createElement(CategoryModal, { onClose: close, existing: modal.payload, addCategory: addCategory, editCategory: editCategory });
             if (modal.type === "transaction")
-                return React.createElement(TransactionModal, { onClose: close, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring });
+                return React.createElement(TransactionModal, { onClose: close, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject });
             if (modal.type === "transfer")
                 return React.createElement(TransferExchangeModal, { onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, accounts: accounts, pockets: pockets, rates: rates, addTransaction: addTransaction, pocketBalance: pocketBalance });
             if (modal.type === "exchange")
@@ -5336,9 +5494,9 @@ window.__K3_START = function () {
             if (modal.type === "loanReturn")
                 return React.createElement(LoanReturnModal, { onClose: close, loan: modal.payload, accounts: accounts, pockets: pockets, registerLoanReturn: registerLoanReturn, loanRemaining: loanRemaining, pocketBalance: pocketBalance });
             if (modal.type === "txDetail")
-                return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring });
+                return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects });
             if (modal.type === "statementImport")
-                return React.createElement(StatementImportModal, { onClose: close, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory });
+                return React.createElement(StatementImportModal, { onClose: close, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject });
             if (modal.type === "cryptoTrade")
                 return React.createElement(CryptoTradeModal, { onClose: close, payload: modal.payload, accounts: accounts, pockets: pockets, crypto: crypto, cryptoPrices: cryptoPrices, rates: rates, tradeCrypto: tradeCrypto, pocketBalance: pocketBalance });
             if (modal.type === "catBudgets")
@@ -5348,7 +5506,11 @@ window.__K3_START = function () {
             if (modal.type === "recurring")
                 return React.createElement(RecurringListModal, { onClose: close, recurring: recurring, pockets: pockets, categories: categories, pocketLabel: pocketLabel, setModal: setModal, editRecurring: editRecurring, deleteRecurring: deleteRecurring });
             if (modal.type === "recurringEdit")
-                return React.createElement(RecurringEditModal, { onClose: close, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance });
+                return React.createElement(RecurringEditModal, { onClose: close, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
+            if (modal.type === "projects")
+                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject });
+            if (modal.type === "projectEdit")
+                return React.createElement(ProjectEditModal, { onClose: close, existing: modal.payload, addProject: addProject, editProject: editProject });
             if (modal.type === "loanEdit")
                 return React.createElement(LoanEditModal, { onClose: close, loan: modal.payload, editLoan: editLoan });
             if (modal.type === "pocketDetail")
@@ -5740,7 +5902,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти зміни") : tr("Створити категорію"))));
     }
     /* ---------- Transaction (income/expense) Modal ---------- */
-    function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, payload, markRecurringDone, addTransactionRecurring }) {
+    function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject }) {
         const P = payload || {};
         const isIncome = kind === "income";
         const cats = categories.filter((c) => c.type === kind && !c.archived);
@@ -5758,6 +5920,9 @@ window.__K3_START = function () {
         const [recOn, setRecOn] = useState(false);
         const [recMode, setRecMode] = useState("fixed");
         const [recDay, setRecDay] = useState(null);
+        const [projectId, setProjectId] = useState(editing?.projectId || P.presetProjectId || "");
+        const [prjNew, setPrjNew] = useState(false);
+        const [prjName, setPrjName] = useState("");
         const [error, setError] = useState("");
         const currentPocket = pockets.find((p) => p.id === pocketId);
         const currency = currentPocket?.currency || "UAH";
@@ -5792,7 +5957,7 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть рахунок"));
             if (!categoryId)
                 return setError(tr("Оберіть категорію"));
-            const data = { type: kind, amount: amt, currency, pocketId, categoryId, date, note, receipt };
+            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, receipt };
             if (editing)
                 editTransaction(editing.id, data);
             else if (recOn && addTransactionRecurring) {
@@ -5834,6 +5999,23 @@ window.__K3_START = function () {
                                 React.createElement(X, { size: 14 }))),
                         React.createElement("div", { className: "grid grid-cols-8 gap-2 max-h-28 overflow-y-auto mt-2 p-1.5 rounded-lg", style: { background: "var(--surface)", border: "1px solid var(--border)" } }, ICON_CHOICES.map((k) => (React.createElement("button", { type: "button", key: k, onClick: () => setNewCatIcon(k), className: "w-8 h-8 rounded-lg flex items-center justify-center", style: { background: newCatIcon === k ? "var(--accent)" : "var(--surface2)" } },
                             React.createElement(Icon, { name: k, size: 14, style: { color: newCatIcon === k ? "var(--accent-ink)" : "var(--text-dim)" } })))))))))),
+            React.createElement(Field, { label: tr("Проєкт (необовʼязково)") },
+                React.createElement(Select, { value: prjNew ? "__new__" : projectId, onChange: (e) => { const v = e.target.value; if (v === "__new__") {
+                        setPrjNew(true);
+                    }
+                    else {
+                        setPrjNew(false);
+                        setProjectId(v);
+                    } } },
+                    React.createElement("option", { value: "" }, tr("— без проєкту —")),
+                    (projects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))),
+                    addProject && React.createElement("option", { value: "__new__" }, tr("+ Новий проєкт…"))),
+                prjNew && (React.createElement("div", { className: "flex gap-2 mt-2" },
+                    React.createElement(Input, { value: prjName, onChange: (e) => setPrjName(e.target.value), placeholder: tr("Назва проєкту"), autoFocus: true }),
+                    React.createElement(Button, { type: "button", onClick: () => { const nm = prjName.trim(); if (!nm)
+                            return; const created = addProject({ name: nm, icon: "Home", color: "#6683B4" }); if (created)
+                            setProjectId(created.id); setPrjNew(false); setPrjName(""); } },
+                        React.createElement(Check, { size: 15 }))))),
             React.createElement(Field, { label: tr("Дата") },
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             !editing && (React.createElement("div", { className: "mb-3" },
