@@ -3105,9 +3105,9 @@ window.__K3_START = function () {
                         React.createElement(DonutChart, { data: periodBreakdown }),
                         React.createElement("div", { className: "space-y-1.5 flex-1 min-w-0" }, periodBreakdown.slice(0, 5).map((c, i) => {
                             const cid = ((categories || []).find((cc) => cc.type === "expense" && cc.name === c.name) || {}).id;
-                            return (React.createElement("button", { type: "button", key: i, className: "w-full flex items-center justify-between text-xs gap-2", onClick: () => { if (!cid)
+                            return (React.createElement("button", { type: "button", key: i, className: "w-full min-w-0 flex items-center justify-between text-xs gap-2", onClick: () => { if (!cid)
                                     return; setHistoryPreset({ type: "expense", categoryId: cid, from: pStart, to: pEnd }); setView("history"); } },
-                                React.createElement("span", { className: "flex items-center gap-1.5 truncate" },
+                                React.createElement("span", { className: "flex items-center gap-1.5 truncate min-w-0" },
                                     React.createElement("span", { className: "w-2 h-2 rounded-full shrink-0", style: { background: c.color } }),
                                     tr(c.name)),
                                 React.createElement("span", { className: "flex items-center gap-1 tabular shrink-0", style: { color: "var(--text-dim)" } },
@@ -3124,12 +3124,12 @@ window.__K3_START = function () {
                         return; const v = txToBase(t, baseCurrency, rates); if (t.type === "income")
                         inc += v;
                     else if (t.type === "expense")
-                        exp += v; }); return { pj, inc, exp, net: inc - exp, act2: inc + exp }; }).sort((x, y) => y.act2 - x.act2).slice(0, 5); })().map(({ pj, inc, exp, net }) => (React.createElement("button", { type: "button", key: pj.id, className: "w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" }, onClick: () => { setHistoryPreset({ type: "all", projectId: pj.id, from: pStart, to: pEnd }); setView("history"); } },
+                        exp += v; }); return { pj, inc, exp, net: inc - exp, act2: inc + exp }; }).sort((x, y) => y.act2 - x.act2).slice(0, 5); })().map(({ pj, inc, exp, net }) => (React.createElement("button", { type: "button", key: pj.id, className: "w-full min-w-0 flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" }, onClick: () => { setHistoryPreset({ type: "all", projectId: pj.id, from: pStart, to: pEnd }); setView("history"); } },
                         React.createElement("span", { className: "w-7 h-7 rounded-lg flex items-center justify-center shrink-0", style: { background: (pj.color || "#8B93A3") + "22" } },
                             React.createElement(Icon, { name: pj.icon || "Home", size: 14, style: { color: pj.color || "var(--text-dim)" } })),
                         React.createElement("span", { className: "flex-1 min-w-0 text-left" },
                             React.createElement("span", { className: "block text-sm font-medium truncate" }, tr(pj.name)),
-                            inc > 0.004 && exp > 0.004 && React.createElement("span", { className: "block text-[10px] tabular", style: { color: "var(--text-dim)" } },
+                            inc > 0.004 && exp > 0.004 && React.createElement("span", { className: "block text-[10px] tabular truncate", style: { color: "var(--text-dim)" } },
                                 "+",
                                 fmtMoney(inc, baseCurrency),
                                 " \u00B7 \u2212",
