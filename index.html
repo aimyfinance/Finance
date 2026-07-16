@@ -609,6 +609,9 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Всі проєкти": "All projects",
+        "Зірочка — показувати проєкт на головному.": "Star a project to pin it on the dashboard.",
+        "Обраний": "Favourite",
         "Проєкти": "Projects",
         "Проєкт": "Project",
         "Проєкт (необовʼязково)": "Project (optional)",
@@ -3027,12 +3030,16 @@ window.__K3_START = function () {
                         " (",
                         periodLabel,
                         ")"),
-                    React.createElement("div", { className: "space-y-2" }, projects.filter((x) => !x.archived).map((pj) => ({ pj, spent: periodTx.filter((t) => t.type === "expense" && t.projectId === pj.id).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0) })).sort((x, y) => y.spent - x.spent).map(({ pj, spent }) => (React.createElement("button", { type: "button", key: pj.id, className: "w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" }, onClick: () => { setHistoryPreset({ type: "expense", projectId: pj.id, from: pStart, to: pEnd }); setView("history"); } },
+                    React.createElement("div", { className: "space-y-2" }, (() => { const act = projects.filter((x) => !x.archived); const favs = act.filter((x) => x.fav); return (favs.length ? favs : act).map((pj) => ({ pj, spent: periodTx.filter((t) => t.type === "expense" && t.projectId === pj.id).reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0) })).sort((x, y) => y.spent - x.spent).slice(0, 5); })().map(({ pj, spent }) => (React.createElement("button", { type: "button", key: pj.id, className: "w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" }, onClick: () => { setHistoryPreset({ type: "expense", projectId: pj.id, from: pStart, to: pEnd }); setView("history"); } },
                         React.createElement("span", { className: "w-7 h-7 rounded-lg flex items-center justify-center shrink-0", style: { background: (pj.color || "#8B93A3") + "22" } },
                             React.createElement(Icon, { name: pj.icon || "Home", size: 14, style: { color: pj.color || "var(--text-dim)" } })),
                         React.createElement("span", { className: "flex-1 min-w-0 text-left text-sm font-medium truncate" }, tr(pj.name)),
                         React.createElement("span", { className: "tabular text-sm font-semibold shrink-0" }, fmtMoney(spent, baseCurrency)),
-                        React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } })))))))),
+                        React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } }))))),
+                    React.createElement("button", { type: "button", className: "w-full flex items-center justify-center gap-1 mt-2 text-xs font-medium", style: { color: "var(--accent)" }, onClick: () => setModal({ type: "projects" }) },
+                        tr("Всі проєкти"),
+                        " ",
+                        React.createElement(ChevronRight, { size: 12 }))))),
             nwLen >= 2 && (React.createElement(Card, { "data-tour": "networth", className: "p-4" },
                 React.createElement("div", { className: "flex items-center justify-between mb-3" },
                     React.createElement("h3", { className: "font-display font-semibold text-sm" }, tr("Динаміка капіталу")),
@@ -5175,13 +5182,14 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
     // ---------- Projects: manager + editor ----------
-    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject }) {
+    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject }) {
         const [confirmDel, setConfirmDel] = useState(null);
         const list = (projects || []).filter((x) => !x.archived);
         const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects" } });
         const txCount = (id) => transactions.filter((t) => t.projectId === id).length;
         return (React.createElement(Modal, { title: tr("Проєкти"), onClose: onClose },
             list.length === 0 && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Проєктів ще немає. Створіть перший — «Квартира», «Авто» чи «Ремонт» — і привʼязуйте до нього витрати з форми, імпорту та регулярних платежів.")),
+            list.length > 0 && React.createElement("p", { className: "text-[11px] mb-2", style: { color: "var(--text-dim)" } }, tr("Зірочка — показувати проєкт на головному.")),
             React.createElement("div", { className: "space-y-2.5 mb-3" }, list.map((x) => (React.createElement("div", { key: x.id, className: "flex items-center gap-2.5 rounded-xl p-3", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
                 React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: (x.color || "#8B93A3") + "22" } },
                     React.createElement(Icon, { name: x.icon || "Home", size: 15, style: { color: x.color || "var(--text-dim)" } })),
@@ -5191,6 +5199,8 @@ window.__K3_START = function () {
                         txCount(x.id),
                         " ",
                         tr("операцій"))),
+                React.createElement("button", { onClick: () => editProject(x.id, { fav: !x.fav }), className: "p-1.5 rounded-md shrink-0", "aria-label": tr("Обраний") },
+                    React.createElement(Star, { size: 14, fill: x.fav ? "var(--accent)" : "none", style: { color: x.fav ? "var(--accent)" : "var(--text-dim)" } })),
                 React.createElement("button", { onClick: () => openEdit(x), className: "p-1.5 rounded-md shrink-0", style: { color: "var(--text-dim)" } },
                     React.createElement(Edit3, { size: 14 })),
                 React.createElement("button", { onClick: () => { if (confirmDel === x.id) {
@@ -5410,7 +5420,7 @@ window.__K3_START = function () {
             if (modal.type === "recurringEdit")
                 return React.createElement(RecurringEditModal, { onClose: close, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
             if (modal.type === "projects")
-                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject });
+                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject });
             if (modal.type === "projectEdit")
                 return React.createElement(ProjectEditModal, { onClose: close, existing: modal.payload, addProject: addProject, editProject: editProject });
             if (modal.type === "loanEdit")
