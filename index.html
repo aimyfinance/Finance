@@ -3066,8 +3066,8 @@ window.__K3_START = function () {
                         " ",
                         React.createElement(ChevronRight, { size: 13 }))),
                 React.createElement("div", { "data-tour": "accounts", className: "flex gap-3 overflow-x-auto snap-x pt-1 pb-5 -mx-2 px-2" },
-                    carouselPockets.map((p) => (React.createElement(PocketCard, { key: p.id, pocket: p, balance: pocketBalance(p.id), onClick: () => setModal({ type: "pocketDetail", payload: p.id }), onLongPress: () => setModal({ type: "cardMenu", payload: p.id }), className: "w-64 shrink-0 snap-card" }))),
-                    cryptoFav && (React.createElement("button", { onClick: () => setView("crypto"), className: "bank-card w-64 shrink-0 snap-card text-left cursor-pointer active:scale-[0.98] transition-transform", style: { "--card-accent": "#C9A362" } },
+                    carouselPockets.map((p) => (React.createElement(PocketCard, { key: p.id, pocket: p, balance: pocketBalance(p.id), onClick: () => setModal({ type: "pocketDetail", payload: p.id }), onLongPress: () => setModal({ type: "cardMenu", payload: p.id }), className: "w-72 shrink-0 snap-card" }))),
+                    cryptoFav && (React.createElement("button", { onClick: () => setView("crypto"), className: "bank-card w-72 shrink-0 snap-card text-left cursor-pointer active:scale-[0.98] transition-transform", style: { "--card-accent": "#C9A362" } },
                         React.createElement("div", { className: "bank-card-glow" }),
                         React.createElement("div", { className: "flex items-center justify-between gap-2 mb-8" },
                             React.createElement("span", { className: "flex items-center gap-1.5 text-[11px] font-medium min-w-0", style: { color: "rgba(255,255,255,0.55)" } },
@@ -3328,7 +3328,7 @@ window.__K3_START = function () {
         return (React.createElement("div", { onClick: handleClick, onContextMenu: (e) => { if (onLongPress) {
                 e.preventDefault();
                 onLongPress();
-            } }, onTouchStart: startPress, onTouchEnd: clearPress, onTouchMove: clearPress, onMouseDown: startPress, onMouseUp: clearPress, onMouseLeave: clearPress, className: `bank-card ${onClick ? "cursor-pointer active:scale-[0.98] transition-transform" : ""} ${className}`, style: { "--card-accent": acc.color, WebkitTouchCallout: "none", WebkitUserSelect: "none" } },
+            } }, onTouchStart: startPress, onTouchEnd: clearPress, onTouchMove: clearPress, onMouseDown: startPress, onMouseUp: clearPress, onMouseLeave: clearPress, className: `bank-card h-[176px] flex flex-col ${onClick ? "cursor-pointer active:scale-[0.98] transition-transform" : ""} ${className}`, style: { "--card-accent": acc.color, WebkitTouchCallout: "none", WebkitUserSelect: "none" } },
             React.createElement("div", { className: "bank-card-glow" }),
             React.createElement("div", { className: "flex items-center justify-between gap-2 mb-8" },
                 React.createElement("span", { className: "flex items-center gap-1.5 text-[11px] font-medium min-w-0", style: { color: "rgba(255,255,255,0.55)" } },
@@ -3338,25 +3338,26 @@ window.__K3_START = function () {
                     "K",
                     React.createElement("sup", { style: { color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 } }, "3"))),
             React.createElement("div", { className: "flex items-baseline gap-2 flex-wrap" },
-                React.createElement("p", { className: "font-display font-bold text-2xl tabular text-white" }, fmtMoney(balance, pocket.currency)),
-                pocket.creditLimit > 0 && (() => {
-                    const avail = pocket.creditLimit + balance;
-                    const used = Math.max(0, -balance);
-                    return (React.createElement("div", { className: "mt-1.5" },
-                        React.createElement("p", { className: "text-[11px] mb-1", style: { color: "rgba(255,255,255,0.6)" } },
-                            tr("Доступно"),
-                            " ",
-                            React.createElement("span", { className: "font-semibold tabular", style: { color: "rgba(255,255,255,0.92)" } }, fmtMoney(avail, pocket.currency)),
-                            " \u00B7 ",
-                            tr("використано"),
-                            " ",
-                            fmtMoney(used, pocket.currency),
-                            " ",
-                            tr("з"),
-                            " ",
-                            fmtMoney(pocket.creditLimit, pocket.currency)),
-                        React.createElement(CreditUsageBar, { limit: pocket.creditLimit, balance: balance, height: 4 })));
-                })(),
+                React.createElement("div", { className: "mt-auto" },
+                    React.createElement("p", { className: "font-display font-bold text-2xl tabular text-white" }, fmtMoney(balance, pocket.currency)),
+                    pocket.creditLimit > 0 && (() => {
+                        const avail = pocket.creditLimit + balance;
+                        const used = Math.max(0, -balance);
+                        return (React.createElement("div", { className: "mt-1.5" },
+                            React.createElement("p", { className: "text-[11px] mb-1", style: { color: "rgba(255,255,255,0.6)" } },
+                                tr("Доступно"),
+                                " ",
+                                React.createElement("span", { className: "font-semibold tabular", style: { color: "rgba(255,255,255,0.92)" } }, fmtMoney(avail, pocket.currency)),
+                                " \u00B7 ",
+                                tr("використано"),
+                                " ",
+                                fmtMoney(used, pocket.currency),
+                                " ",
+                                tr("з"),
+                                " ",
+                                fmtMoney(pocket.creditLimit, pocket.currency)),
+                            React.createElement(CreditUsageBar, { limit: pocket.creditLimit, balance: balance, height: 4 })));
+                    })()),
                 React.createElement("span", { className: "text-[10px] font-semibold px-2 py-0.5 rounded-full", style: { background: "rgba(255,255,255,0.12)", color: "#fff" } }, pocket.currency)),
             React.createElement("p", { className: "text-xs mt-1.5 tracking-wider", style: { color: "rgba(255,255,255,0.35)", fontFamily: "monospace" } }, masked),
             React.createElement("div", { className: "flex items-center justify-between gap-2 mt-3" },
@@ -4760,7 +4761,7 @@ window.__K3_START = function () {
             cat: catCi,
         };
     }
-    function StatementImportModal({ onClose, accounts, pockets, categories, transactions, importTransactions, pocketBalance, addCategory, projects, addProject, payload }) {
+    function StatementImportModal({ onClose, onBack, accounts, pockets, categories, transactions, importTransactions, pocketBalance, addCategory, projects, addProject, payload }) {
         const activePockets = pockets.filter((p) => !p.archived);
         const [stage, setStage] = useState("file");
         const [pocketId, setPocketId] = useState((payload && payload.presetPocketId) || activePockets[0]?.id || "");
@@ -4886,7 +4887,7 @@ window.__K3_START = function () {
         };
         const expenseCats = categories.filter((x) => !x.archived && x.type === "expense");
         const incomeCats = categories.filter((x) => !x.archived && x.type === "income");
-        return (React.createElement(Modal, { title: tr("Імпорт виписки (CSV)"), onClose: onClose, wide: true },
+        return (React.createElement(Modal, { title: tr("Імпорт виписки (CSV)"), onClose: onClose, onBack: onBack, wide: true },
             stage === "file" && (React.createElement(React.Fragment, null,
                 React.createElement("p", { className: "text-xs mb-4", style: { color: "var(--text-dim)" } }, tr("Завантажте CSV-виписку з банку — застосунок сам розпізнає колонки й розкладе витрати за категоріями.")),
                 React.createElement(Field, { label: tr("Рахунок, куди імпортувати") },
@@ -5411,7 +5412,7 @@ window.__K3_START = function () {
                 " ",
                 tr("Додати проєкт"))));
     }
-    function ProjectEditModal({ onClose, existing, addProject, editProject }) {
+    function ProjectEditModal({ onClose, onBack, existing, addProject, editProject }) {
         const PRJ_COLORS = ["#6683B4", "#6FA98C", "#D8A24A", "#C77F6E", "#5FA8B8", "#9B87C4", "#C77FA0", "#818CF8"];
         const [name, setName] = useState(existing?.name || "");
         const [icon, setIcon] = useState(existing?.icon || "Home");
@@ -5427,7 +5428,7 @@ window.__K3_START = function () {
                 addProject(data);
             onClose();
         };
-        return (React.createElement(Modal, { title: existing && existing.id ? tr("Редагувати проєкт") : tr("Новий проєкт"), onClose: onClose },
+        return (React.createElement(Modal, { title: existing && existing.id ? tr("Редагувати проєкт") : tr("Новий проєкт"), onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Назва проєкту"), error: error },
                 React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); }, placeholder: tr("напр. Квартира"), autoFocus: true })),
             React.createElement("div", { className: "block mb-3" },
@@ -5484,7 +5485,7 @@ window.__K3_START = function () {
                 " ",
                 tr("Додати платіж"))));
     }
-    function RecurringEditModal({ onClose, existing, accounts, pockets, categories, addRecurring, editRecurring, pocketBalance, projects }) {
+    function RecurringEditModal({ onClose, onBack, existing, accounts, pockets, categories, addRecurring, editRecurring, pocketBalance, projects }) {
         const [kind, setKind] = useState(existing?.kind || "expense");
         const cats = categories.filter((x) => x.type === kind && !x.archived);
         const firstPocket = pockets.find((pp) => !pp.archived);
@@ -5517,7 +5518,7 @@ window.__K3_START = function () {
                 addRecurring(data);
             onClose();
         };
-        return (React.createElement(Modal, { title: existing && existing.id ? tr("Редагувати платіж") : tr("Новий регулярний платіж"), onClose: onClose },
+        return (React.createElement(Modal, { title: existing && existing.id ? tr("Редагувати платіж") : tr("Новий регулярний платіж"), onClose: onClose, onBack: onBack },
             React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
                 React.createElement("button", { type: "button", onClick: () => setKind("expense"), className: "py-2 rounded-lg text-xs font-medium", style: { background: kind === "expense" ? "var(--danger)" : "var(--surface2)", color: kind === "expense" ? "#fff" : "var(--text)" } }, tr("Витрата")),
                 React.createElement("button", { type: "button", onClick: () => setKind("income"), className: "py-2 rounded-lg text-xs font-medium", style: { background: kind === "income" ? "var(--accent)" : "var(--surface2)", color: kind === "income" ? "var(--accent-ink)" : "var(--text)" } }, tr("Дохід"))),
@@ -5583,11 +5584,11 @@ window.__K3_START = function () {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
-                return React.createElement(AccountModal, { onClose: close, existing: modal.payload && modal.payload.id ? modal.payload : null, presetBank: modal.payload && !modal.payload.id ? (modal.payload.bank || "") : "", addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, currencies: currencies });
+                return React.createElement(AccountModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload && modal.payload.id ? modal.payload : null, presetBank: modal.payload && !modal.payload.id ? (modal.payload.bank || "") : "", addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, currencies: currencies });
             if (modal.type === "pocket")
-                return React.createElement(PocketModal, { onClose: close, accountId: modal.payload.accountId, existing: modal.payload.existing, accounts: accounts, pockets: pockets, addPocket: addPocket, editPocket: editPocket, currencies: currencies });
+                return React.createElement(PocketModal, { onClose: close, onBack: modal.returnTo ? close : undefined, accountId: modal.payload.accountId, existing: modal.payload.existing, accounts: accounts, pockets: pockets, addPocket: addPocket, editPocket: editPocket, currencies: currencies });
             if (modal.type === "cardMenu")
-                return React.createElement(CardMenuModal, { onClose: close, pocketId: modal.payload, returnTo: modal.returnTo, pockets: pockets, getPocket: getPocket, setModal: setModal, archivePocket: archivePocket, deletePocket: deletePocket, movePocket: movePocket });
+                return React.createElement(CardMenuModal, { onClose: close, onBack: modal.returnTo ? close : undefined, pocketId: modal.payload, returnTo: modal.returnTo, pockets: pockets, getPocket: getPocket, setModal: setModal, archivePocket: archivePocket, deletePocket: deletePocket, movePocket: movePocket });
             if (modal.type === "category")
                 return React.createElement(CategoryModal, { onClose: close, existing: modal.payload, addCategory: addCategory, editCategory: editCategory });
             if (modal.type === "transaction")
@@ -5603,7 +5604,7 @@ window.__K3_START = function () {
             if (modal.type === "txDetail")
                 return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "statementImport")
-                return React.createElement(StatementImportModal, { onClose: close, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject, payload: modal.payload });
+                return React.createElement(StatementImportModal, { onClose: close, onBack: modal.returnTo ? close : undefined, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject, payload: modal.payload });
             if (modal.type === "cryptoTrade")
                 return React.createElement(CryptoTradeModal, { onClose: close, payload: modal.payload, accounts: accounts, pockets: pockets, crypto: crypto, cryptoPrices: cryptoPrices, rates: rates, tradeCrypto: tradeCrypto, pocketBalance: pocketBalance });
             if (modal.type === "catBudgets")
@@ -5613,11 +5614,11 @@ window.__K3_START = function () {
             if (modal.type === "recurring")
                 return React.createElement(RecurringListModal, { onClose: close, recurring: recurring, pockets: pockets, categories: categories, pocketLabel: pocketLabel, setModal: setModal, editRecurring: editRecurring, deleteRecurring: deleteRecurring });
             if (modal.type === "recurringEdit")
-                return React.createElement(RecurringEditModal, { onClose: close, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
+                return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
             if (modal.type === "projects")
                 return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, setView: setView, setHistoryPreset: setHistoryPreset });
             if (modal.type === "projectEdit")
-                return React.createElement(ProjectEditModal, { onClose: close, existing: modal.payload, addProject: addProject, editProject: editProject });
+                return React.createElement(ProjectEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, addProject: addProject, editProject: editProject });
             if (modal.type === "loanEdit")
                 return React.createElement(LoanEditModal, { onClose: close, loan: modal.payload, editLoan: editLoan });
             if (modal.type === "pocketDetail")
@@ -5633,7 +5634,7 @@ window.__K3_START = function () {
             if (modal.type === "crypto")
                 return React.createElement(CryptoModal, { onClose: close, existing: modal.payload, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto });
             if (modal.type === "bankRename")
-                return React.createElement(BankRenameModal, { onClose: close, bank: modal.payload && modal.payload.bank, renameBank: renameBank });
+                return React.createElement(BankRenameModal, { onClose: close, onBack: modal.returnTo ? close : undefined, bank: modal.payload && modal.payload.bank, renameBank: renameBank });
             return null;
         })();
         // A modal opened from an open card keeps that card visible underneath (true sheet-over-card look)
@@ -5873,7 +5874,7 @@ window.__K3_START = function () {
                     confirmArc ? tr("Підтвердити архівацію?") : tr("Архівувати субрахунок")))));
     }
     /* ---------- Card long-press menu ---------- */
-    function CardMenuModal({ onClose, pocketId, returnTo, pockets, getPocket, setModal, archivePocket, deletePocket, movePocket }) {
+    function CardMenuModal({ onClose, onBack, pocketId, returnTo, pockets, getPocket, setModal, archivePocket, deletePocket, movePocket }) {
         const pk = getPocket(pocketId);
         const [confirmDel, setConfirmDel] = useState(false);
         const [confirmArc, setConfirmArc] = useState(false);
@@ -5887,11 +5888,11 @@ window.__K3_START = function () {
         const Row = ({ icon: Ic, label, onClick, danger, disabled }) => (React.createElement("button", { onClick: onClick, disabled: disabled, className: "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium disabled:opacity-30", style: { color: danger ? "var(--danger)" : "var(--text)", background: "transparent" } },
             React.createElement(Ic, { size: 18, style: { color: danger ? "var(--danger)" : "var(--text-dim)" } }),
             label));
-        return (React.createElement(Modal, { title: `${tr(acc.name)} · ${pk.currency}`, onClose: onClose },
+        return (React.createElement(Modal, { title: `${tr(acc.name)} · ${pk.currency}`, onClose: onClose, onBack: onBack },
             React.createElement("div", { className: "space-y-0.5" },
                 React.createElement(Row, { icon: ChevronRight, label: tr("Відкрити рахунок"), onClick: () => setModal({ type: "pocketDetail", payload: pocketId }) }),
                 React.createElement(Row, { icon: Edit3, label: tr("Редагувати рахунок (назва, колір, тип)"), onClick: () => setModal({ type: "account", payload: acc, returnTo }) }),
-                React.createElement(Row, { icon: ArrowDownRight, label: tr("Імпорт виписки на цей рахунок"), onClick: () => setModal({ type: "import", payload: { presetPocketId: pocket.id }, returnTo }) }),
+                React.createElement(Row, { icon: ArrowDownRight, label: tr("Імпорт виписки на цей рахунок"), onClick: () => setModal({ type: "import", payload: { presetPocketId: pk.id }, returnTo }) }),
                 React.createElement(Row, { icon: Coins, label: tr("Змінити валюту / баланс"), onClick: () => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk }, returnTo }) }),
                 !confirmArc ? (React.createElement(Row, { icon: Archive, label: tr("Архівувати картку"), onClick: () => setConfirmArc(true) })) : (React.createElement("div", { className: "px-1 py-2" },
                     React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Архівувати цю картку?")),
@@ -5905,7 +5906,7 @@ window.__K3_START = function () {
                         React.createElement(Button, { variant: "secondary", onClick: () => setConfirmDel(false) }, tr("Скасувати"))))))));
     }
     /* ---------- Account Modal (creates account + its first currency pocket) ---------- */
-    function BankRenameModal({ onClose, bank, renameBank }) {
+    function BankRenameModal({ onClose, onBack, bank, renameBank }) {
         const [name, setName] = useState(bank || "");
         const [error, setError] = useState("");
         const submit = () => {
@@ -5916,13 +5917,13 @@ window.__K3_START = function () {
                 renameBank(bank, v);
             onClose();
         };
-        return (React.createElement(Modal, { title: tr("Перейменувати банк"), onClose: onClose },
+        return (React.createElement(Modal, { title: tr("Перейменувати банк"), onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Назва банку"), error: error },
                 React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); } })),
             React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Нова назва застосується до всіх рахунків цього банку.")),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, tr("Зберегти"))));
     }
-    function AccountModal({ onClose, existing, presetBank, addAccountWithPocket, editAccount, currencies }) {
+    function AccountModal({ onClose, onBack, existing, presetBank, addAccountWithPocket, editAccount, currencies }) {
         const [name, setName] = useState(existing?.name || "");
         const [bank, setBank] = useState(existing?.bank || presetBank || "");
         const [type, setType] = useState(existing?.type || (presetBank ? "card" : "cash"));
@@ -5946,7 +5947,7 @@ window.__K3_START = function () {
             }
             onClose();
         };
-        return (React.createElement(Modal, { title: existing ? tr("Редагувати рахунок") : tr("Новий рахунок"), onClose: onClose },
+        return (React.createElement(Modal, { title: existing ? tr("Редагувати рахунок") : tr("Новий рахунок"), onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Назва"), error: error },
                 React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); }, placeholder: tr("Напр. Чорна картка") })),
             React.createElement(Field, { label: bankRequired ? tr("Банк") : tr("Банк (необовʼязково) — для групування"), error: bankError },
@@ -5968,7 +5969,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, existing ? tr("Зберегти зміни") : tr("Створити рахунок"))));
     }
     /* ---------- Pocket Modal (add / edit a currency sub-account) ---------- */
-    function PocketModal({ onClose, accountId, existing, accounts, pockets, addPocket, editPocket, currencies }) {
+    function PocketModal({ onClose, onBack, accountId, existing, accounts, pockets, addPocket, editPocket, currencies }) {
         const account = accounts.find((a) => a.id === accountId);
         const availableCurrencies = currencies || CURRENCIES;
         const [currency, setCurrency] = useState(existing?.currency || availableCurrencies[0] || "UAH");
@@ -5988,7 +5989,7 @@ window.__K3_START = function () {
                 addPocket(accountId, currency, balance, name, clVal);
             onClose();
         };
-        return (React.createElement(Modal, { title: existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`, onClose: onClose },
+        return (React.createElement(Modal, { title: existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`, onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Назва субрахунку (необовʼязково)") },
                 React.createElement(Input, { value: name, onChange: (e) => setName(e.target.value), placeholder: tr("Напр. Заначка, Зарплатна") })),
             React.createElement(Field, { label: tr("Валюта"), error: error },
