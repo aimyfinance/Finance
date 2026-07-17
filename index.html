@@ -637,6 +637,17 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Для кредитної картки. Доступно = ліміт + баланс.": "For a credit card. Available = limit + balance.",
+        "Кредитний ліміт": "Credit limit",
+        "Кредитний ліміт (необовʼязково)": "Credit limit (optional)",
+        "Доступно": "Available",
+        "використано": "used",
+        "з": "of",
+        "ліміт": "limit",
+        "Увага: лишилось": "Warning: only",
+        "кредитного ліміту": "of the credit limit left",
+        "Кредитні ліміти": "Credit limits",
+        "лишилось": "left",
         "K³ перечепився": "K³ stumbled",
         "Сталася помилка інтерфейсу. Ваші дані в безпеці.": "An interface error occurred. Your data is safe.",
         "Перезавантажити": "Reload",
@@ -2320,8 +2331,8 @@ window.__K3_START = function () {
             order.splice(to, 0, moved);
             update({ accounts: order.flatMap((k) => buckets[k]) });
         };
-        const addPocket = (accountId, currency, initialBalance, name) => {
-            update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), archived: false }] });
+        const addPocket = (accountId, currency, initialBalance, name, creditLimitArg) => {
+            update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), creditLimit: creditLimitArg || null, archived: false }] });
             notify(tr("Валютний субрахунок додано"));
         };
         const editPocket = (id, patch) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
@@ -2367,7 +2378,25 @@ window.__K3_START = function () {
             const fxNow = rates[tx.currency] != null ? rates[tx.currency] : (tx.fx != null ? tx.fx : 1);
             return { ...tx, bv: Math.round(((tx.amount * fxNow) / (rates[baseCurrency] || 1)) * 100) / 100, bvBase: baseCurrency };
         };
-        const addTransaction = (tx) => { update({ transactions: [stampBV({ id: uid("tx"), createdAt: new Date().toISOString(), fx: (tx.currency ? (rates[tx.currency] || 1) : 1), ...tx }), ...transactions] }); notify(tr("Операцію збережено")); };
+        const addTransaction = (tx) => {
+            update({ transactions: [stampBV({ id: uid("tx"), createdAt: new Date().toISOString(), fx: (tx.currency ? (rates[tx.currency] || 1) : 1), ...tx }), ...transactions] });
+            let warned = false;
+            if (tx.pocketId && (tx.type === "expense" || tx.type === "income")) {
+                const pp = pockets.find((x) => x.id === tx.pocketId);
+                if (pp && pp.creditLimit > 0) {
+                    const prev = pocketBalance(pp.id);
+                    const nb = prev + (tx.type === "income" ? tx.amount : -tx.amount);
+                    const prevPct = (pp.creditLimit + prev) / pp.creditLimit;
+                    const newPct = (pp.creditLimit + nb) / pp.creditLimit;
+                    if (newPct <= 0.2 && prevPct > 0.2) {
+                        notify(tr("Увага: лишилось") + " " + Math.max(0, Math.round(newPct * 100)) + "% " + tr("кредитного ліміту"));
+                        warned = true;
+                    }
+                }
+            }
+            if (!warned)
+                notify(tr("Операцію збережено"));
+        };
         const editTransaction = (id, patch) => update({ transactions: transactions.map((t) => (t.id === id ? stampBV({ ...t, ...patch }) : t)) });
         const deleteTransaction = (id) => { update({ transactions: transactions.filter((t) => t.id !== id) }); notify(tr("Операцію видалено")); };
         const duplicateTransaction = (tx) => { update({ transactions: [stampBV({ ...tx, id: uid("tx"), createdAt: new Date().toISOString(), date: new Date().toISOString().slice(0, 10), fx: (tx.currency ? (rates[tx.currency] || 1) : 1) }), ...transactions] }); notify(tr("Операцію дубльовано")); };
@@ -2605,7 +2634,12 @@ window.__K3_START = function () {
                 notify(tr("Створено за розкладом") + ": " + n);
         }, []);
         const overdueReminders = reminders.filter((r) => !r.done && new Date(r.date) < new Date(new Date().setHours(0, 0, 0, 0)));
-        const bellCount = overdueReminders.length + pendingRecurring.length;
+        const creditWarnings = pockets.filter((pp) => !pp.archived && pp.creditLimit > 0).map((pp) => {
+            const bal = pocketBalance(pp.id);
+            const avail = pp.creditLimit + bal;
+            return { pocket: pp, label: pocketLabel(pp.id), bal, avail, pct: avail / pp.creditLimit };
+        }).filter((w) => w.pct <= 0.2);
+        const bellCount = overdueReminders.length + pendingRecurring.length + creditWarnings.length;
         const applyPin = (v) => { savePin(v); setPinState(v); };
         const applyPinDelay = (sec) => { savePinDelay(sec); setPinDelayState(sec); };
         const exportBackup = async () => {
@@ -2775,7 +2809,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -2821,6 +2855,13 @@ window.__K3_START = function () {
             })));
     }
     /* ============================== CHARTS (dependency-free) ============================== */
+    function CreditUsageBar({ limit, balance, height = 6 }) {
+        const used = Math.max(0, -balance);
+        const pct = Math.min(100, Math.round((used / (limit || 1)) * 100));
+        const color = pct >= 80 ? "var(--danger)" : pct >= 60 ? "var(--accent)" : "#6FA98C";
+        return (React.createElement("div", { className: "w-full rounded-full overflow-hidden", style: { height, background: "var(--surface2)" } },
+            React.createElement("div", { style: { width: pct + "%", height: "100%", background: color, borderRadius: 999, transition: "width .3s ease" } })));
+    }
     function DonutChart({ data, size = 150, thickness = 26 }) {
         const total = data.reduce((s, d) => s + d.value, 0) || 1;
         const r = (size - thickness) / 2;
@@ -3298,6 +3339,24 @@ window.__K3_START = function () {
                     React.createElement("sup", { style: { color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 } }, "3"))),
             React.createElement("div", { className: "flex items-baseline gap-2 flex-wrap" },
                 React.createElement("p", { className: "font-display font-bold text-2xl tabular text-white" }, fmtMoney(balance, pocket.currency)),
+                pocket.creditLimit > 0 && (() => {
+                    const avail = pocket.creditLimit + balance;
+                    const used = Math.max(0, -balance);
+                    return (React.createElement("div", { className: "mt-1.5" },
+                        React.createElement("p", { className: "text-[11px] mb-1", style: { color: "rgba(255,255,255,0.6)" } },
+                            tr("Доступно"),
+                            " ",
+                            React.createElement("span", { className: "font-semibold tabular", style: { color: "rgba(255,255,255,0.92)" } }, fmtMoney(avail, pocket.currency)),
+                            " \u00B7 ",
+                            tr("використано"),
+                            " ",
+                            fmtMoney(used, pocket.currency),
+                            " ",
+                            tr("з"),
+                            " ",
+                            fmtMoney(pocket.creditLimit, pocket.currency)),
+                        React.createElement(CreditUsageBar, { limit: pocket.creditLimit, balance: balance, height: 4 })));
+                })(),
                 React.createElement("span", { className: "text-[10px] font-semibold px-2 py-0.5 rounded-full", style: { background: "rgba(255,255,255,0.12)", color: "#fff" } }, pocket.currency)),
             React.createElement("p", { className: "text-xs mt-1.5 tracking-wider", style: { color: "rgba(255,255,255,0.35)", fontFamily: "monospace" } }, masked),
             React.createElement("div", { className: "flex items-center justify-between gap-2 mt-3" },
@@ -3640,7 +3699,17 @@ window.__K3_START = function () {
                             React.createElement("div", { className: "flex items-center gap-2 min-w-0" },
                                 React.createElement(Badge, { color: acc.color }, p.currency),
                                 p.name && React.createElement("span", { className: "text-xs font-medium truncate", style: { color: "var(--text)" } }, tr(p.name))),
-                            React.createElement("p", { className: "font-semibold text-sm tabular shrink-0" }, fmtMoney(pocketBalance(p.id), p.currency)),
+                            p.creditLimit > 0 ? (() => {
+                                const bal2 = pocketBalance(p.id);
+                                const avail2 = p.creditLimit + bal2;
+                                const pct2 = (avail2 / p.creditLimit) * 100;
+                                return (React.createElement("span", { className: "text-right shrink-0" },
+                                    React.createElement("span", { className: "block font-semibold text-sm tabular", style: { color: pct2 <= 20 ? "var(--danger)" : "var(--text)" } }, fmtMoney(avail2, p.currency)),
+                                    React.createElement("span", { className: "block text-[10px] tabular", style: { color: "var(--text-dim)" } },
+                                        tr("ліміт"),
+                                        " ",
+                                        fmtMoney(p.creditLimit, p.currency))));
+                            })() : React.createElement("p", { className: "font-semibold text-sm tabular shrink-0" }, fmtMoney(pocketBalance(p.id), p.currency)),
                             React.createElement("div", { className: "flex gap-2 shrink-0" }, showArchived ? (React.createElement("button", { onClick: (e) => { e.stopPropagation(); archivePocket(p.id); }, className: "p-1 rounded-md flex items-center gap-1 text-[11px] font-semibold", style: { color: "var(--accent)" } },
                                 React.createElement(RotateCcw, { size: 13 }),
                                 " ",
@@ -5510,7 +5579,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset }) {
+    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset, creditWarnings }) {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
@@ -5554,7 +5623,7 @@ window.__K3_START = function () {
             if (modal.type === "pocketDetail")
                 return React.createElement(PocketDetailModal, { pocketId: modal.payload, onClose: close, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, categories: categories, pockets: pockets, accounts: accounts, setModal: setModal, editTransaction: editTransaction, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, archivePocket: archivePocket });
             if (modal.type === "reminders")
-                return React.createElement(RemindersModal, { onClose: close, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, currencies: currencies });
+                return React.createElement(RemindersModal, { onClose: close, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, currencies: currencies, creditWarnings: creditWarnings });
             if (modal.type === "goal")
                 return React.createElement(GoalModal, { onClose: close, existing: modal.payload, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, currencies: currencies });
             if (modal.type === "goalContribute")
@@ -5578,7 +5647,7 @@ window.__K3_START = function () {
             body);
     }
     /* ---------- Reminders (bell) ---------- */
-    function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, currencies }) {
+    function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, currencies, creditWarnings }) {
         const [editing, setEditing] = useState(null); // null | "new" | reminder object
         const [title, setTitle] = useState("");
         const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -5616,6 +5685,20 @@ window.__K3_START = function () {
                 React.createElement("button", { onClick: onClose, className: "p-2 rounded-lg", style: { color: "var(--text-dim)" } },
                     React.createElement(X, { size: 20 }))),
             React.createElement("div", { className: "px-5 py-5 max-w-xl mx-auto space-y-4" },
+                creditWarnings && creditWarnings.length > 0 && (React.createElement(Card, { className: "p-4", style: { border: "1px solid rgba(199,90,74,0.4)", background: "rgba(199,90,74,0.06)" } },
+                    React.createElement("h3", { className: "font-display font-semibold text-sm mb-2 flex items-center gap-1.5" },
+                        React.createElement(AlertTriangle, { size: 15, style: { color: "var(--danger)" } }),
+                        " ",
+                        tr("Кредитні ліміти")),
+                    React.createElement("div", { className: "space-y-1.5" }, creditWarnings.map((w) => (React.createElement("p", { key: w.pocket.id, className: "text-xs" },
+                        w.label,
+                        " \u00B7 ",
+                        tr("лишилось"),
+                        " ",
+                        React.createElement("span", { className: "font-semibold tabular" }, fmtMoney(w.avail, w.pocket.currency)),
+                        " (",
+                        Math.max(0, Math.round(w.pct * 100)),
+                        "%)")))))),
                 editing ? (React.createElement(Card, { className: "p-5" },
                     React.createElement("h3", { className: "font-display font-semibold text-sm mb-3" }, editing === "new" ? tr("Нове нагадування") : tr("Редагувати нагадування")),
                     React.createElement(Field, { label: tr("Що зробити"), error: error },
@@ -5731,6 +5814,24 @@ window.__K3_START = function () {
                     acc.bank && React.createElement("span", { className: "text-[10px] font-medium px-2 py-0.5 rounded-full", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, tr(acc.bank))),
                 React.createElement("div", { className: "flex items-baseline gap-2 flex-wrap" },
                     React.createElement("h1", { className: "font-display font-extrabold text-4xl tabular", style: { color: "#F3F0E8" } }, fmtMoney(balance, pocket.currency)),
+                    pocket.creditLimit > 0 && (() => {
+                        const avail = pocket.creditLimit + balance;
+                        const used = Math.max(0, -balance);
+                        return (React.createElement("div", { className: "mt-2.5" },
+                            React.createElement("p", { className: "text-xs mb-1.5", style: { color: "rgba(243,240,232,0.75)" } },
+                                tr("Доступно"),
+                                " ",
+                                React.createElement("span", { className: "font-bold tabular", style: { color: "#F3F0E8" } }, fmtMoney(avail, pocket.currency)),
+                                " \u00B7 ",
+                                tr("використано"),
+                                " ",
+                                fmtMoney(used, pocket.currency),
+                                " ",
+                                tr("з"),
+                                " ",
+                                fmtMoney(pocket.creditLimit, pocket.currency)),
+                            React.createElement(CreditUsageBar, { limit: pocket.creditLimit, balance: balance, height: 6 })));
+                    })(),
                     React.createElement("span", { className: "text-[10px] font-semibold px-2 py-0.5 rounded-full", style: { background: "rgba(255,255,255,0.12)", color: "#fff" } }, pocket.currency)),
                 pocket.name && React.createElement("p", { className: "text-sm mt-1 font-medium", style: { color: "rgba(255,255,255,0.72)" } }, tr(pocket.name)),
                 siblings.length > 1 && (React.createElement("div", { "data-noswipe": true, className: "flex gap-2 overflow-x-auto mt-4 -mx-1 px-1 pb-0.5" }, siblings.map((s) => {
@@ -5873,15 +5974,18 @@ window.__K3_START = function () {
         const [currency, setCurrency] = useState(existing?.currency || availableCurrencies[0] || "UAH");
         const [name, setName] = useState(existing?.name || "");
         const [balance, setBalance] = useState(existing ? String(existing.initialBalance) : "0");
+        const [creditLimit, setCreditLimit] = useState(existing && existing.creditLimit != null ? String(existing.creditLimit) : "");
         const [error, setError] = useState("");
         const currencyChanged = existing && currency !== existing.currency;
         const submit = () => {
             if (!currency)
                 return setError(tr("Оберіть валюту"));
+            const clP = parseFloat(String(creditLimit).replace(",", "."));
+            const clVal = clP > 0 ? Math.round(clP * 100) / 100 : null;
             if (existing)
-                editPocket(existing.id, { currency, initialBalance: parseFloat(balance) || 0, name: name.trim() });
+                editPocket(existing.id, { creditLimit: clVal, currency, initialBalance: parseFloat(balance) || 0, name: name.trim() });
             else
-                addPocket(accountId, currency, balance, name);
+                addPocket(accountId, currency, balance, name, clVal);
             onClose();
         };
         return (React.createElement(Modal, { title: existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`, onClose: onClose },
@@ -5894,6 +5998,9 @@ window.__K3_START = function () {
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement("button", { type: "button", onClick: () => setBalance((v) => { const s = String(v); return s.charAt(0) === "-" ? s.slice(1) : "-" + s; }), className: "w-11 shrink-0 rounded-lg text-base font-semibold", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, "\u00B1"),
                     React.createElement(Input, { type: "number", step: "0.01", value: balance, onChange: (e) => setBalance(e.target.value), placeholder: "0" }))),
+            React.createElement(Field, { label: tr("Кредитний ліміт (необовʼязково)") },
+                React.createElement(Input, { type: "number", step: "0.01", inputMode: "decimal", value: creditLimit, onChange: (e) => setCreditLimit(e.target.value), placeholder: "0" }),
+                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Для кредитної картки. Доступно = ліміт + баланс."))),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, existing ? tr("Зберегти зміни") : tr("Додати субрахунок"))));
     }
     /* ---------- Category Modal ---------- */
