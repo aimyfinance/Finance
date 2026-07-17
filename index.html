@@ -5892,7 +5892,7 @@ window.__K3_START = function () {
             React.createElement("div", { className: "space-y-0.5" },
                 React.createElement(Row, { icon: ChevronRight, label: tr("Відкрити рахунок"), onClick: () => setModal({ type: "pocketDetail", payload: pocketId }) }),
                 React.createElement(Row, { icon: Edit3, label: tr("Редагувати рахунок (назва, колір, тип)"), onClick: () => setModal({ type: "account", payload: acc, returnTo }) }),
-                React.createElement(Row, { icon: ArrowDownRight, label: tr("Імпорт виписки на цей рахунок"), onClick: () => setModal({ type: "import", payload: { presetPocketId: pk.id }, returnTo }) }),
+                React.createElement(Row, { icon: ArrowDownRight, label: tr("Імпорт виписки на цей рахунок"), onClick: () => setModal({ type: "statementImport", payload: { presetPocketId: pk.id }, returnTo }) }),
                 React.createElement(Row, { icon: Coins, label: tr("Змінити валюту / баланс"), onClick: () => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk }, returnTo }) }),
                 !confirmArc ? (React.createElement(Row, { icon: Archive, label: tr("Архівувати картку"), onClick: () => setConfirmArc(true) })) : (React.createElement("div", { className: "px-1 py-2" },
                     React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Архівувати цю картку?")),
