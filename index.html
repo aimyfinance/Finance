@@ -1749,10 +1749,11 @@ window.__K3_START = function () {
         return React.createElement("textarea", { ...props, style: inputStyle(), className: "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition resize-none" });
     }
     function Modal({ title, onClose, children, wide, onBack }) {
+        useBodyScrollLock();
         title = tr(title);
         return (React.createElement("div", { className: "fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4", style: { background: "rgba(0,0,0,0.55)" }, onMouseDown: (e) => { if (e.target === e.currentTarget)
                 onClose(); } },
-            React.createElement("div", { className: `w-full ${wide ? "sm:max-w-lg" : "sm:max-w-md"} max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border`, style: { background: "var(--surface)", borderColor: "var(--border)" } },
+            React.createElement("div", { className: `w-full ${wide ? "sm:max-w-lg" : "sm:max-w-md"} max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border`, style: { overscrollBehavior: "contain", background: "var(--surface)", borderColor: "var(--border)" } },
                 React.createElement("div", { className: "flex items-center justify-between px-5 py-4 border-b sticky top-0", style: { borderColor: "var(--border)", background: "var(--surface)" } },
                     React.createElement("div", { className: "flex items-center min-w-0" },
                         onBack && React.createElement("button", { onClick: onBack, "aria-label": tr("Назад"), className: "p-1 -ml-1.5 mr-1 rounded-lg", style: { color: "var(--text-dim)" } },
@@ -1762,29 +1763,78 @@ window.__K3_START = function () {
                         React.createElement(X, { size: 18 }))),
                 React.createElement("div", { className: "p-5" }, children))));
     }
+    // iOS-надійний замок скролу фону, поки відкрито оверлей: body фіксується
+    // на місці й повертається на ту саму позицію після закриття. Вкладені
+    // оверлеї безпечні — кожен запамʼятовує попередній стан.
+    function useBodyScrollLock() {
+        useEffect(() => {
+            const b = document.body;
+            const y = window.scrollY || window.pageYOffset || 0;
+            const prev = { position: b.style.position, top: b.style.top, left: b.style.left, right: b.style.right, width: b.style.width, overflow: b.style.overflow };
+            b.style.position = "fixed";
+            b.style.top = -y + "px";
+            b.style.left = "0";
+            b.style.right = "0";
+            b.style.width = "100%";
+            b.style.overflow = "hidden";
+            return () => {
+                b.style.position = prev.position;
+                b.style.top = prev.top;
+                b.style.left = prev.left;
+                b.style.right = prev.right;
+                b.style.width = prev.width;
+                b.style.overflow = prev.overflow;
+                window.scrollTo(0, y);
+            };
+        }, []);
+    }
     function Badge({ children, color }) {
         return React.createElement("span", { className: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", style: { background: `${color}22`, color } }, children);
     }
-    // Swipe a row left (on touch) to reveal action buttons on the right.
+    // Свайп вліво відкриває дії рядка. Строгий замок осі: жест мусить початися
+    // і лишатися горизонтальним, тож вертикальний скрол його ніколи не тригерить.
     function SwipeRow({ children, actions, rounded = false }) {
         const [open, setOpen] = useState(false);
         const sx = React.useRef(0), sy = React.useRef(0);
-        const w = actions.length * 66;
-        const onTouchStart = (e) => { const t = e.touches[0]; sx.current = t.clientX; sy.current = t.clientY; };
+        const axis = React.useRef(null);
+        const w = (actions ? actions.length : 0) * 66;
+        const onTouchStart = (e) => { const t = e.touches[0]; sx.current = t.clientX; sy.current = t.clientY; axis.current = null; };
+        const onTouchMove = (e) => {
+            if (axis.current)
+                return;
+            const t = e.touches[0];
+            const dx = Math.abs(t.clientX - sx.current), dy = Math.abs(t.clientY - sy.current);
+            if (dx < 8 && dy < 8)
+                return;
+            axis.current = dx > dy * 1.5 ? "h" : "v";
+        };
         const onTouchEnd = (e) => {
             const t = e.changedTouches[0];
             const dx = t.clientX - sx.current, dy = t.clientY - sy.current;
-            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40)
-                setOpen(dx < 0);
+            const wasH = axis.current === "h";
+            axis.current = null;
+            if (!wasH)
+                return;
+            if (Math.abs(dx) < 56)
+                return;
+            if (Math.abs(dx) < Math.abs(dy) * 2)
+                return;
+            setOpen(dx < 0);
         };
-        return (React.createElement("div", { className: `relative overflow-hidden ${rounded ? "rounded-2xl" : ""}`, onTouchStart: onTouchStart, onTouchEnd: onTouchEnd },
+        if (!actions || !actions.length)
+            return React.createElement(React.Fragment, null, children);
+        return (React.createElement("div", { className: `relative overflow-hidden ${rounded ? "rounded-2xl" : ""}`, onTouchStart: onTouchStart, onTouchMove: onTouchMove, onTouchEnd: onTouchEnd },
             React.createElement("div", { className: "absolute inset-y-0 right-0 flex", style: { background: "var(--surface2)" } }, actions.map((a, i) => {
                 const Ic = a.icon;
                 return (React.createElement("button", { key: i, onClick: () => { a.onClick(); setOpen(false); }, className: "flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium", style: { width: 66, background: a.bg, color: a.fg || "#fff" } },
                     React.createElement(Ic, { size: 16 }),
                     a.label));
             })),
-            React.createElement("div", { style: { transform: `translateX(${open ? -w : 0}px)`, transition: "transform .2s ease", position: "relative" } }, children)));
+            React.createElement("div", { onClickCapture: (e) => { if (open) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setOpen(false);
+                } }, style: { transform: `translateX(${open ? -w : 0}px)`, transition: "transform .2s ease", position: "relative" } }, children)));
     }
     // PIN lock screen shown on app open when a PIN is set
     function LockScreen({ pin, onUnlock }) {
@@ -5649,6 +5699,7 @@ window.__K3_START = function () {
     }
     /* ---------- Reminders (bell) ---------- */
     function RemindersModal({ onClose, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, currencies, creditWarnings }) {
+        useBodyScrollLock();
         const [editing, setEditing] = useState(null); // null | "new" | reminder object
         const [title, setTitle] = useState("");
         const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -5750,6 +5801,7 @@ window.__K3_START = function () {
             React.createElement("span", { className: "text-[11px] font-medium text-center leading-tight", style: { color: "var(--text-dim)" } }, label)));
     }
     function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocketLabel, transactions, categories, pockets, accounts, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket }) {
+        useBodyScrollLock();
         const [pid, setPid] = useState(pocketId);
         const [confirmArc, setConfirmArc] = useState(false);
         const swipeRef = React.useRef(null);
