@@ -4045,7 +4045,7 @@ window.__K3_START = function () {
                         React.createElement("div", { className: "group flex items-center", style: { background: "var(--surface)" } },
                             React.createElement("div", { className: "flex-1 min-w-0" },
                                 React.createElement(TxRow, { tx: tx, categories: categories, pocketLabel: pocketLabel, onClick: () => setModal({ type: "txDetail", payload: tx }) })),
-                            React.createElement("div", { className: "hidden group-hover:flex items-center gap-2 pr-4 shrink-0" },
+                            React.createElement("div", { className: "hidden md:group-hover:flex items-center gap-2 pr-4 shrink-0" },
                                 (tx.type === "income" || tx.type === "expense") && (React.createElement("button", { onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } }), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
                                     React.createElement(Edit3, { size: 14 }))),
                                 React.createElement("button", { onClick: () => duplicateTransaction(tx), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
