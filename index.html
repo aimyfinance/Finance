@@ -637,6 +637,20 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "У крипто": "To crypto",
+        "Криптою": "With crypto",
+        "Інше": "Other",
+        "Монета": "Coin",
+        "Отримано монет": "Coins received",
+        "Віддано монет": "Coins paid",
+        "Оберіть монету": "Choose a coin",
+        "Вкажіть кількість монет": "Enter the coin amount",
+        "Недостатньо монет у портфелі": "Not enough coins in the portfolio",
+        "Спершу додайте монету в Крипто-портфелі — тоді повернення можна буде зарахувати в неї.": "Add the coin to your Crypto portfolio first — then the repayment can be credited there.",
+        "Борг зменшиться без руху на рахунках і в портфелі — для бартеру, прощення боргу чи обліку деінде.": "The debt will shrink with no movement in accounts or the portfolio — for barter, forgiveness, or records kept elsewhere.",
+        "портфель зросте": "portfolio grows",
+        "портфель зменшиться": "portfolio shrinks",
+        "монета": "coin",
         "Сортування": "Sort",
         "За вартістю": "By value",
         "За назвою": "By name",
@@ -2507,7 +2521,7 @@ window.__K3_START = function () {
             update({ loans: [newLoan, ...loans], transactions: [tx, ...transactions] });
             notify(isDebt ? tr("Борг додано") : tr("Позику створено"));
         };
-        const registerLoanReturn = (loanId, debtAmount, returnPocketId, receivedAmount, receivedCurrency, date, note) => {
+        const registerLoanReturn = (loanId, debtAmount, returnPocketId, receivedAmount, receivedCurrency, date, note, coin) => {
             const loan = loans.find((l) => l.id === loanId);
             if (!loan)
                 return;
@@ -2517,13 +2531,18 @@ window.__K3_START = function () {
             const newReturned = Math.round((loan.returned + amt) * 100) / 100;
             const newStatus = newReturned >= loan.amount - 0.005 ? "returned" : "partial";
             const defNote = (isDebt ? tr("Погашення боргу: ") : tr("Повернення позики: ")) + loan.borrower;
-            // If no pocket is chosen, only the debt shrinks (repaid outside the app: crypto, cash, goods…)
+            // Без рахунку повернення або приземляється в крипто-портфель (coin),
+            // або лише зменшує борг (бартер/прощення/облік деінде).
+            const coinOk = coin && coin.coinId && coin.coinAmount > 0;
             const txs = returnPocketId
                 ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: receivedAmount != null ? receivedAmount : amt, currency: receivedCurrency || loan.currency, pocketId: returnPocketId, loanId, note: note || defNote }]
-                : [];
+                : coinOk
+                    ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency: loan.currency, pocketId: null, coinId: coin.coinId, coinAmount: coin.coinAmount, loanId, note: note || defNote }]
+                    : [];
             update({
                 loans: loans.map((l) => (l.id === loanId ? { ...l, returned: newReturned, status: newStatus } : l)),
                 transactions: [...txs, ...transactions],
+                ...(coinOk ? { crypto: crypto.map((h) => (h.coinId === coin.coinId ? { ...h, amount: Math.round(((h.amount || 0) + (isDebt ? -coin.coinAmount : coin.coinAmount)) * 1e8) / 1e8 } : h)) } : {}),
             });
             notify(newStatus === "returned" ? (isDebt ? tr("Борг повністю погашено") : tr("Позику повністю повернено")) : (isDebt ? tr("Часткове погашення зареєстровано") : tr("Часткове повернення зареєстровано")));
         };
@@ -3508,6 +3527,8 @@ window.__K3_START = function () {
             amountColor = "var(--accent)";
         }
         const TypeIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
+        if (tx.coinId && !tx.pocketId)
+            sub = tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "");
         return (React.createElement("div", { onClick: onClick, className: `flex items-center gap-3 px-4 py-3 ${onClick ? "cursor-pointer hover:opacity-80" : ""}` },
             React.createElement("div", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0", style: { background: "var(--surface2)" } },
                 React.createElement(TypeIcon, { size: 16, style: { color: "var(--text-dim)" } })),
@@ -5786,7 +5807,7 @@ window.__K3_START = function () {
             if (modal.type === "loan")
                 return React.createElement(LoanModal, { onClose: close, accounts: accounts, pockets: pockets, addLoan: addLoan, direction: (modal.payload && modal.payload.direction) || "out", pocketBalance: pocketBalance });
             if (modal.type === "loanReturn")
-                return React.createElement(LoanReturnModal, { onClose: close, loan: modal.payload, accounts: accounts, pockets: pockets, registerLoanReturn: registerLoanReturn, loanRemaining: loanRemaining, pocketBalance: pocketBalance });
+                return React.createElement(LoanReturnModal, { onClose: close, loan: modal.payload, accounts: accounts, pockets: pockets, registerLoanReturn: registerLoanReturn, loanRemaining: loanRemaining, pocketBalance: pocketBalance, crypto: crypto });
             if (modal.type === "txDetail")
                 return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "statementImport")
@@ -6589,7 +6610,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, tr("Зберегти"))));
     }
     /* ---------- Loan Return Modal ---------- */
-    function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn, loanRemaining, pocketBalance }) {
+    function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn, loanRemaining, pocketBalance, crypto }) {
         const isDebt = loan.direction === "in";
         const active = pockets.filter((p) => !p.archived);
         const remaining = loanRemaining(loan);
@@ -6600,10 +6621,14 @@ window.__K3_START = function () {
         const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
         const [note, setNote] = useState("");
         const [error, setError] = useState("");
+        const [coinId, setCoinId] = useState("");
+        const [coinAmt, setCoinAmt] = useState("");
+        const holdings = crypto || [];
         const pk = pockets.find((p) => p.id === pocketId);
         const cross = mode === "pocket" && pk && pk.currency !== loan.currency;
         const amtNum = parseFloat(String(amount).replace(",", ".")) || 0;
         const recNum = parseFloat(String(received).replace(",", ".")) || 0;
+        const coinNum = parseFloat(String(coinAmt).replace(",", ".")) || 0;
         const submit = () => {
             if (!(amtNum > 0))
                 return setError(tr("Введіть коректну суму повернення"));
@@ -6615,6 +6640,18 @@ window.__K3_START = function () {
                 if (cross && !(recNum > 0))
                     return setError(tr("Вкажіть суму в валюті рахунку"));
                 registerLoanReturn(loan.id, amtNum, pocketId, cross ? recNum : amtNum, pk.currency, date, note);
+            }
+            else if (mode === "crypto") {
+                if (!coinId)
+                    return setError(tr("Оберіть монету"));
+                if (!(coinNum > 0))
+                    return setError(tr("Вкажіть кількість монет"));
+                if (isDebt) {
+                    const h = holdings.find((x) => x.coinId === coinId);
+                    if (!h || (h.amount || 0) < coinNum - 1e-9)
+                        return setError(tr("Недостатньо монет у портфелі"));
+                }
+                registerLoanReturn(loan.id, amtNum, null, null, null, date, note, { coinId, coinAmount: coinNum });
             }
             else {
                 registerLoanReturn(loan.id, amtNum, null, null, null, date, note);
@@ -6630,7 +6667,8 @@ window.__K3_START = function () {
                 React.createElement(Input, { type: "number", step: "0.01", value: amount, onChange: (e) => { setAmount(e.target.value); setError(""); } })),
             React.createElement("div", { className: "flex gap-1.5 p-1 rounded-xl mb-3", style: { background: "var(--surface2)" } },
                 React.createElement("button", { onClick: () => { setMode("pocket"); setError(""); }, className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: seg(mode === "pocket") }, isDebt ? tr("З рахунку") : tr("На рахунок")),
-                React.createElement("button", { onClick: () => { setMode("outside"); setError(""); }, className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: seg(mode === "outside") }, tr("Поза рахунками"))),
+                React.createElement("button", { onClick: () => { setMode("crypto"); setError(""); }, className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: seg(mode === "crypto") }, isDebt ? tr("Криптою") : tr("У крипто")),
+                React.createElement("button", { onClick: () => { setMode("outside"); setError(""); }, className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: seg(mode === "outside") }, tr("Інше"))),
             mode === "pocket" ? (React.createElement(React.Fragment, null,
                 React.createElement(Field, { label: isDebt ? tr("Рахунок, з якого сплачуєте") : tr("Рахунок зарахування") },
                     React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: pocketId, onChange: (v) => { setPocketId(v); setError(""); }, tint: isDebt ? "out" : "in", pocketBalance: pocketBalance })),
@@ -6643,7 +6681,25 @@ window.__K3_START = function () {
                         " = ",
                         (recNum / amtNum).toFixed(4),
                         " ",
-                        pk.currency)))))) : (React.createElement("p", { className: "text-xs mb-3 px-3 py-2 rounded-lg", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" } }, tr("Борг зменшиться, але баланси рахунків не зміняться — напр., повернули криптою, товаром чи готівкою поза обліком."))),
+                        pk.currency)))))) : mode === "crypto" ? (React.createElement(React.Fragment, null, holdings.length === 0 ? (React.createElement("p", { className: "text-xs mb-3 px-3 py-2 rounded-lg", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" } }, tr("Спершу додайте монету в Крипто-портфелі — тоді повернення можна буде зарахувати в неї."))) : (React.createElement(React.Fragment, null,
+                React.createElement(Field, { label: tr("Монета") },
+                    React.createElement(Select, { value: coinId, onChange: (e) => { setCoinId(e.target.value); setError(""); } },
+                        React.createElement("option", { value: "" }, tr("— оберіть —")),
+                        holdings.map((h) => React.createElement("option", { key: h.coinId, value: h.coinId },
+                            (h.symbol || h.coinId).toUpperCase(),
+                            " \u00B7 ",
+                            h.name || h.coinId)))),
+                React.createElement(Field, { label: isDebt ? tr("Віддано монет") : tr("Отримано монет") },
+                    React.createElement(Input, { type: "number", step: "0.00000001", inputMode: "decimal", value: coinAmt, onChange: (e) => { setCoinAmt(e.target.value); setError(""); }, placeholder: "0" })),
+                amtNum > 0 && coinNum > 0 && (React.createElement("p", { className: "text-[11px] -mt-2 mb-3", style: { color: "var(--text-dim)" } },
+                    "\u2248 1 ",
+                    ((holdings.find((h) => h.coinId === coinId) || {}).symbol || tr("монета")).toUpperCase(),
+                    " = ",
+                    (amtNum / coinNum).toFixed(2),
+                    " ",
+                    loan.currency,
+                    " \u00B7 ",
+                    isDebt ? tr("портфель зменшиться") : tr("портфель зросте"))))))) : (React.createElement("p", { className: "text-xs mb-3 px-3 py-2 rounded-lg", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" } }, tr("Борг зменшиться без руху на рахунках і в портфелі — для бартеру, прощення боргу чи обліку деінде."))),
             React.createElement(Field, { label: tr("Дата") },
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Field, { label: tr("Коментар") },
