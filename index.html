@@ -637,6 +637,15 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "+ Нова монета…": "+ New coin…",
+        "Пошук монети (напр., USDT)": "Search a coin (e.g., USDT)",
+        "Шукаю…": "Searching…",
+        "Обрана монета зʼявиться в Крипто-портфелі автоматично.": "The chosen coin will appear in your Crypto portfolio automatically.",
+        "Історія повернень": "Repayment history",
+        "Записів повернень ще немає.": "No repayment records yet.",
+        "Зміни й видалення одразу перераховують залишок і статус позики.": "Edits and deletions immediately recalculate the remaining amount and status.",
+        "Відновити з архіву": "Restore from archive",
+        "Без рахунку": "No account",
         "Запис видалено, борг відкориговано": "Record deleted, debt adjusted",
         "Запис видалено. Залишок боргу відкоригуйте вручну (крос-валютний запис старого формату).": "Record deleted. Adjust the remaining debt manually (legacy cross-currency record).",
         "Суму повернення оновлено": "Repayment amount updated",
@@ -2586,7 +2595,7 @@ window.__K3_START = function () {
                 ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: receivedAmount != null ? receivedAmount : amt, currency: receivedCurrency || loan.currency, pocketId: returnPocketId, loanAmt: amt, loanId, note: note || defNote }]
                 : coinOk
                     ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency: loan.currency, pocketId: null, coinId: coin.coinId, coinAmount: coin.coinAmount, loanAmt: amt, loanId, note: note || defNote }]
-                    : [];
+                    : [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency: loan.currency, pocketId: null, loanAmt: amt, loanId, note: note || defNote }];
             update({
                 loans: loans.map((l) => (l.id === loanId ? { ...l, returned: newReturned, status: newStatus } : l)),
                 transactions: [...txs, ...transactions],
@@ -3577,6 +3586,8 @@ window.__K3_START = function () {
         const TypeIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
         if (tx.coinId && !tx.pocketId)
             sub = tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "");
+        else if (tx.loanId && !tx.pocketId && (tx.type === "loan_return" || tx.type === "debt_repay"))
+            sub = tr("Без рахунку");
         return (React.createElement("div", { onClick: onClick, className: `flex items-center gap-3 px-4 py-3 ${onClick ? "cursor-pointer hover:opacity-80" : ""}` },
             React.createElement("div", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0", style: { background: "var(--surface2)" } },
                 React.createElement(TypeIcon, { size: 16, style: { color: "var(--text-dim)" } })),
@@ -4338,9 +4349,12 @@ window.__K3_START = function () {
                                 React.createElement("div", null,
                                     React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, isIn ? tr("Залишок до сплати") : tr("Залишок боргу")),
                                     React.createElement("p", { className: "font-semibold tabular", style: { color: remaining > 0 ? "var(--warn)" : "var(--accent)" } }, fmtMoney(remaining, loan.currency))),
-                                React.createElement("div", null,
-                                    React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, isIn ? tr("Погашено") : tr("Повернено")),
-                                    React.createElement("p", { className: "font-semibold tabular" }, fmtMoney(loan.returned, loan.currency))),
+                                React.createElement("button", { type: "button", className: "text-left", onClick: () => { if (loan.returned > 0)
+                                        setModal({ type: "loanRepays", payload: loan }); } },
+                                    React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } },
+                                        isIn ? tr("Погашено") : tr("Повернено"),
+                                        loan.returned > 0 ? " ›" : ""),
+                                    React.createElement("p", { className: "font-semibold tabular", style: loan.returned > 0 ? { color: "var(--accent)" } : undefined }, fmtMoney(loan.returned, loan.currency))),
                                 React.createElement("div", null,
                                     React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, isIn ? tr("Термін сплати") : tr("Дата повернення")),
                                     React.createElement("p", { className: "font-semibold" }, fmtDate(loan.dueDate)))),
@@ -4348,7 +4362,15 @@ window.__K3_START = function () {
                                 isIn ? tr("Отримано на: ") : tr("Видано з: "),
                                 pk ? `${pk.account?.name} · ${pk.currency}` : "—"),
                             React.createElement("p", { className: "text-xs mb-3", style: { color: days < 0 ? "var(--danger)" : "var(--text-dim)" } }, days === 0 ? tr("Строк сьогодні") : days > 0 ? tr(`Залишилось ${days} дн.`) : tr(`Прострочено на ${Math.abs(days)} дн.`)),
-                            loan.status !== "returned" && (React.createElement(Button, { variant: "secondary", className: "w-full", onClick: () => setModal({ type: "loanReturn", payload: loan }) }, isIn ? tr("Зареєструвати погашення") : tr("Зареєструвати повернення"))))));
+                            loan.status !== "returned" && (React.createElement(Button, { variant: "secondary", className: "w-full", onClick: () => setModal({ type: "loanReturn", payload: loan }) }, isIn ? tr("Зареєструвати погашення") : tr("Зареєструвати повернення"))),
+                            (st === "returned" || loan.archived) && (React.createElement("div", { className: "mt-2 space-y-2" },
+                                loan.archived && React.createElement(Button, { variant: "secondary", className: "w-full", onClick: () => archiveLoan(loan.id) },
+                                    React.createElement(Archive, { size: 15 }),
+                                    " ",
+                                    tr("Відновити з архіву")),
+                                loan.returned > 0 && React.createElement(Button, { variant: "secondary", className: "w-full", onClick: () => setModal({ type: "loanRepays", payload: loan }) },
+                                    tr("Історія повернень"),
+                                    " \u2192"))))));
                 }),
                 list.length === 0 && React.createElement("p", { className: "text-sm col-span-full text-center py-10", style: { color: "var(--text-dim)" } }, isIn ? tr("Немає боргів у цій категорії") : tr("Немає позик у цій категорії")))));
     }
@@ -5866,7 +5888,9 @@ window.__K3_START = function () {
             if (modal.type === "loan")
                 return React.createElement(LoanModal, { onClose: close, accounts: accounts, pockets: pockets, addLoan: addLoan, direction: (modal.payload && modal.payload.direction) || "out", pocketBalance: pocketBalance });
             if (modal.type === "loanReturn")
-                return React.createElement(LoanReturnModal, { onClose: close, loan: modal.payload, accounts: accounts, pockets: pockets, registerLoanReturn: registerLoanReturn, loanRemaining: loanRemaining, pocketBalance: pocketBalance, crypto: crypto });
+                return React.createElement(LoanReturnModal, { onClose: close, loan: modal.payload, accounts: accounts, pockets: pockets, registerLoanReturn: registerLoanReturn, loanRemaining: loanRemaining, pocketBalance: pocketBalance, crypto: crypto, addCrypto: addCrypto });
+            if (modal.type === "loanRepays")
+                return React.createElement(LoanRepaysModal, { onClose: close, loan: modal.payload, transactions: transactions, updateRepayAmount: updateRepayAmount, deleteTransaction: deleteTransaction, pocketLabel: pocketLabel });
             if (modal.type === "txDetail")
                 return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency, updateRepayAmount: updateRepayAmount });
             if (modal.type === "statementImport")
@@ -6669,7 +6693,44 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, tr("Зберегти"))));
     }
     /* ---------- Loan Return Modal ---------- */
-    function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn, loanRemaining, pocketBalance, crypto }) {
+    function LoanRepaysModal({ onClose, loan, transactions, updateRepayAmount, deleteTransaction, pocketLabel }) {
+        const [editId, setEditId] = useState(null);
+        const [amt, setAmt] = useState("");
+        const [delId, setDelId] = useState(null);
+        const rows = transactions.filter((t) => t.loanId === loan.id && (t.type === "loan_return" || t.type === "debt_repay")).sort((x, y) => (y.date || "").localeCompare(x.date || ""));
+        const la = (t) => (t.loanAmt != null ? t.loanAmt : (t.currency === loan.currency ? t.amount : null));
+        return (React.createElement(Modal, { title: tr("Історія повернень") + ": " + loan.borrower, onClose: onClose },
+            rows.length === 0 && React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Записів повернень ще немає.")),
+            React.createElement("div", { className: "space-y-2.5" }, rows.map((t) => {
+                const v = la(t);
+                return (React.createElement("div", { key: t.id, className: "rounded-xl p-3", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+                    React.createElement("div", { className: "flex items-center gap-2" },
+                        React.createElement("div", { className: "flex-1 min-w-0" },
+                            React.createElement("p", { className: "text-sm font-semibold tabular" }, v != null ? fmtMoney(v, loan.currency) : fmtMoney(t.amount, t.currency)),
+                            React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                                fmtDate(t.date),
+                                " \u00B7 ",
+                                t.coinId && !t.pocketId ? tr("Крипто-портфель") + (t.coinAmount ? " · " + t.coinAmount : "") : t.pocketId ? pocketLabel(t.pocketId) : tr("Без рахунку"))),
+                        v != null && (React.createElement("button", { onClick: () => { setEditId(editId === t.id ? null : t.id); setAmt(String(v)); setDelId(null); }, className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
+                            React.createElement(Edit3, { size: 14 }))),
+                        React.createElement("button", { onClick: () => { if (delId === t.id) {
+                                deleteTransaction(t.id);
+                                setDelId(null);
+                                setEditId(null);
+                            }
+                            else {
+                                setDelId(t.id);
+                                setTimeout(() => setDelId((x) => (x === t.id ? null : x)), 2800);
+                            } }, className: "p-1.5 rounded-lg", style: { color: delId === t.id ? "#fff" : "var(--danger)", background: delId === t.id ? "var(--danger)" : "transparent" } }, delId === t.id ? React.createElement("span", { className: "text-[10px] font-bold px-1 whitespace-nowrap" }, tr("Точно?")) : React.createElement(Trash2, { size: 14 }))),
+                    editId === t.id && (React.createElement("div", { className: "flex gap-2 mt-2" },
+                        React.createElement(Input, { type: "number", step: "0.01", inputMode: "decimal", value: amt, onChange: (e) => setAmt(e.target.value), autoFocus: true }),
+                        React.createElement(Button, { onClick: () => { const nv = parseFloat(String(amt).replace(",", ".")); if (!(nv >= 0))
+                                return; updateRepayAmount(t.id, nv); setEditId(null); } },
+                            React.createElement(Check, { size: 15 }))))));
+            })),
+            React.createElement("p", { className: "text-[11px] mt-3", style: { color: "var(--text-dim)" } }, tr("Зміни й видалення одразу перераховують залишок і статус позики."))));
+    }
+    function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn, loanRemaining, pocketBalance, crypto, addCrypto }) {
         const isDebt = loan.direction === "in";
         const active = pockets.filter((p) => !p.archived);
         const remaining = loanRemaining(loan);
@@ -6683,11 +6744,51 @@ window.__K3_START = function () {
         const [coinId, setCoinId] = useState("");
         const [coinAmt, setCoinAmt] = useState("");
         const holdings = crypto || [];
+        const [coinNew, setCoinNew] = useState(false);
+        const [coinQ, setCoinQ] = useState("");
+        const [coinRes, setCoinRes] = useState([]);
+        const [coinBusy, setCoinBusy] = useState(false);
+        useEffect(() => {
+            const q = coinQ.trim();
+            if (q.length < 2) {
+                setCoinRes([]);
+                setCoinBusy(false);
+                return;
+            }
+            setCoinBusy(true);
+            const timer = setTimeout(async () => {
+                try {
+                    const resp = await fetch("https://api.coingecko.com/api/v3/search?query=" + encodeURIComponent(q));
+                    const data = await resp.json();
+                    setCoinRes((data && data.coins ? data.coins : []).slice(0, 6).map((x) => ({ id: x.id, symbol: (x.symbol || "").toUpperCase(), name: x.name })));
+                }
+                catch (e) {
+                    setCoinRes([]);
+                }
+                setCoinBusy(false);
+            }, 400);
+            return () => clearTimeout(timer);
+        }, [coinQ]);
         const pk = pockets.find((p) => p.id === pocketId);
         const cross = mode === "pocket" && pk && pk.currency !== loan.currency;
         const amtNum = parseFloat(String(amount).replace(",", ".")) || 0;
         const recNum = parseFloat(String(received).replace(",", ".")) || 0;
         const coinNum = parseFloat(String(coinAmt).replace(",", ".")) || 0;
+        const localQ = coinQ.trim().toLowerCase();
+        const localCoins = localQ.length >= 2 ? CRYPTO_COINS.filter((cc) => cc.name.toLowerCase().includes(localQ) || cc.symbol.toLowerCase().includes(localQ)).slice(0, 4).map((cc) => ({ id: cc.id, symbol: (cc.symbol || "").toUpperCase(), name: cc.name })) : [];
+        const seenC = {};
+        const coinList = localCoins.concat(coinRes).filter((r) => (seenC[r.id] ? false : (seenC[r.id] = 1)));
+        const pickCoin = (r) => { if (addCrypto)
+            addCrypto({ coinId: r.id, symbol: r.symbol, name: r.name, amount: 0 }); setCoinId(r.id); setCoinNew(false); setCoinQ(""); setCoinRes([]); const sym = String(r.symbol || "").toUpperCase(); if (sym === String(loan.currency).toUpperCase() && coinNum > 0)
+            setAmount(String(coinNum)); };
+        const coinSearchBlock = (React.createElement("div", { className: "mb-3" },
+            React.createElement(Input, { value: coinQ, onChange: (e) => setCoinQ(e.target.value), placeholder: tr("Пошук монети (напр., USDT)"), autoFocus: true }),
+            coinBusy && React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Шукаю…")),
+            coinList.length > 0 && (React.createElement("div", { className: "flex flex-wrap gap-1.5 mt-2" }, coinList.map((r) => (React.createElement("button", { key: r.id, type: "button", onClick: () => pickCoin(r), className: "px-2.5 py-1.5 rounded-full text-xs", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } },
+                r.symbol,
+                " \u00B7 ",
+                r.name))))),
+            React.createElement("p", { className: "text-[10px] mt-1.5", style: { color: "var(--text-dim)" } }, tr("Обрана монета зʼявиться в Крипто-портфелі автоматично."))));
         const submit = () => {
             if (!(amtNum > 0))
                 return setError(tr("Введіть коректну суму повернення"));
@@ -6740,7 +6841,7 @@ window.__K3_START = function () {
                         " = ",
                         (recNum / amtNum).toFixed(4),
                         " ",
-                        pk.currency)))))) : mode === "crypto" ? (React.createElement(React.Fragment, null, holdings.length === 0 ? (React.createElement("p", { className: "text-xs mb-3 px-3 py-2 rounded-lg", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" } }, tr("Спершу додайте монету в Крипто-портфелі — тоді повернення можна буде зарахувати в неї."))) : (React.createElement(React.Fragment, null,
+                        pk.currency)))))) : mode === "crypto" ? (React.createElement(React.Fragment, null, holdings.length === 0 ? ({ coinSearchBlock }) : (React.createElement(React.Fragment, null,
                 React.createElement(Field, { label: tr("Монета") },
                     React.createElement(Select, { value: coinId, onChange: (e) => { const v = e.target.value; setCoinId(v); const sym = ((holdings.find((h) => h.coinId === v) || {}).symbol || "").toUpperCase(); if (sym && sym === String(loan.currency).toUpperCase() && coinNum > 0)
                             setAmount(String(coinNum)); setError(""); } },
@@ -6749,6 +6850,8 @@ window.__K3_START = function () {
                             (h.symbol || h.coinId).toUpperCase(),
                             " \u00B7 ",
                             h.name || h.coinId)))),
+                !coinNew && React.createElement("button", { type: "button", onClick: () => setCoinNew(true), className: "text-xs font-medium mb-3 -mt-1", style: { color: "var(--accent)" } }, tr("+ Нова монета…")),
+                coinNew && coinSearchBlock,
                 React.createElement(Field, { label: isDebt ? tr("Віддано монет") : tr("Отримано монет") },
                     React.createElement(Input, { type: "number", step: "0.00000001", inputMode: "decimal", value: coinAmt, onChange: (e) => { const v = e.target.value; setCoinAmt(v); const sym = ((holdings.find((h) => h.coinId === coinId) || {}).symbol || "").toUpperCase(); if (sym && sym === String(loan.currency).toUpperCase())
                             setAmount(v); setError(""); }, placeholder: "0" })),
