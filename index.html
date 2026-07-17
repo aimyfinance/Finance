@@ -637,6 +637,9 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Сортування": "Sort",
+        "За вартістю": "By value",
+        "За назвою": "By name",
         "Вибрати": "Select",
         "До проєкту": "To project",
         "Перенести": "Move",
@@ -2206,6 +2209,8 @@ window.__K3_START = function () {
         const cryptoPrices = state.cryptoPrices || {};
         const cryptoFav = state.cryptoFav !== false;
         const toggleCryptoFav = () => update({ cryptoFav: !(state.cryptoFav !== false) });
+        const cryptoSort = state.cryptoSort || "value";
+        const setCryptoSort = (v) => update({ cryptoSort: v });
         const update = (patch) => setState((s) => ({ ...s, ...patch }));
         const notify = (msg) => setToast(msg);
         /* ---------- pocket / account helpers ---------- */
@@ -2864,7 +2869,7 @@ window.__K3_START = function () {
                         view === "loans" && (React.createElement(LoansView, { loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
-                        view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav })),
+                        view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort })),
                         view === "settings" && (React.createElement(SettingsView, { baseCurrency: baseCurrency, rates: rates, rateMode: state.rateMode || {}, includeLoansInTotal: includeLoansInTotal, update: update, session: session, setToast: setToast, pin: pin, applyPin: applyPin, pinDelay: pinDelay, applyPinDelay: applyPinDelay, exportBackup: exportBackup, importBackup: importBackup, exportCSV: exportCSV, setView: setView, setModal: setModal, autoRefresh: state.autoRefresh || "open" }))))),
             React.createElement("div", { "data-tour": "nav", className: "md:hidden fixed bottom-0 left-0 right-0 z-30 border-t flex items-stretch", style: { background: "var(--surface)", borderColor: "var(--border)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 MOBILE_NAV.map((item) => {
@@ -4419,7 +4424,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, mode === "add" ? tr("Поповнити ціль") : tr("Зняти кошти"))));
     }
     /* ============================== CRYPTO PORTFOLIO ============================== */
-    function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates, setModal, refreshCryptoPrices, setToast, cryptoFav, toggleCryptoFav }) {
+    function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates, setModal, refreshCryptoPrices, setToast, cryptoFav, toggleCryptoFav, cryptoSort, setCryptoSort }) {
         const [busy, setBusy] = useState(false);
         // Auto-load live prices on open if some are missing or the cache is stale (>10 min),
         // so the portfolio value (and the total capital) reflect the market without a manual tap.
@@ -4466,8 +4471,14 @@ window.__K3_START = function () {
                         React.createElement(RefreshCw, { size: 15, className: busy ? "spin" : "" }),
                         " ",
                         busy ? tr("Оновлення…") : tr("Оновити ціни")))),
+            crypto.length > 1 && (React.createElement("div", { className: "flex items-center gap-2" },
+                React.createElement("span", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                    tr("Сортування"),
+                    ":"),
+                React.createElement("button", { onClick: () => setCryptoSort && setCryptoSort("value"), className: "px-2.5 py-1 rounded-full text-[11px] font-medium", style: { background: cryptoSort !== "name" ? "var(--accent)" : "var(--surface2)", color: cryptoSort !== "name" ? "var(--accent-ink)" : "var(--text-dim)" } }, tr("За вартістю")),
+                React.createElement("button", { onClick: () => setCryptoSort && setCryptoSort("name"), className: "px-2.5 py-1 rounded-full text-[11px] font-medium", style: { background: cryptoSort === "name" ? "var(--accent)" : "var(--surface2)", color: cryptoSort === "name" ? "var(--accent-ink)" : "var(--text-dim)" } }, tr("За назвою")))),
             React.createElement("div", { className: "space-y-3" },
-                crypto.map((c) => {
+                crypto.slice().sort((x, y) => cryptoSort === "name" ? String(x.name || x.symbol || "").localeCompare(String(y.name || y.symbol || ""), "uk") : valBase(y) - valBase(x)).map((c) => {
                     const price = cryptoPrices[c.coinId] || 0;
                     const v = valBase(c);
                     return (React.createElement(Card, { key: c.id, className: "p-4 flex items-center justify-between gap-3" },
