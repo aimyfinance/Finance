@@ -637,6 +637,11 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Запис видалено, борг відкориговано": "Record deleted, debt adjusted",
+        "Запис видалено. Залишок боргу відкоригуйте вручну (крос-валютний запис старого формату).": "Record deleted. Adjust the remaining debt manually (legacy cross-currency record).",
+        "Суму повернення оновлено": "Repayment amount updated",
+        "Зараховано в борг": "Applied to the debt",
+        "борг закриється повністю": "the debt will close in full",
         "У крипто": "To crypto",
         "Криптою": "With crypto",
         "Інше": "Other",
@@ -2480,7 +2485,50 @@ window.__K3_START = function () {
                 notify(tr("Операцію збережено"));
         };
         const editTransaction = (id, patch) => update({ transactions: transactions.map((t) => (t.id === id ? stampBV({ ...t, ...patch }) : t)) });
-        const deleteTransaction = (id) => { update({ transactions: transactions.filter((t) => t.id !== id) }); notify(tr("Операцію видалено")); };
+        const deleteTransaction = (id) => {
+            const tx = transactions.find((t) => t.id === id);
+            const patch = { transactions: transactions.filter((t) => t.id !== id) };
+            let msg = tr("Операцію видалено");
+            if (tx && tx.loanId && (tx.type === "loan_return" || tx.type === "debt_repay")) {
+                const loan = loans.find((l) => l.id === tx.loanId);
+                if (loan) {
+                    const la = tx.loanAmt != null ? tx.loanAmt : (tx.currency === loan.currency ? tx.amount : null);
+                    if (la != null) {
+                        const newReturned = Math.max(0, Math.round((loan.returned - la) * 100) / 100);
+                        const newStatus = newReturned >= loan.amount - 0.005 ? "returned" : newReturned > 0 ? "partial" : "active";
+                        patch.loans = loans.map((l) => (l.id === loan.id ? { ...l, returned: newReturned, status: newStatus } : l));
+                        msg = tr("Запис видалено, борг відкориговано");
+                    }
+                    else {
+                        msg = tr("Запис видалено. Залишок боргу відкоригуйте вручну (крос-валютний запис старого формату).");
+                    }
+                }
+                if (tx.coinId && tx.coinAmount > 0) {
+                    const dir = tx.type === "debt_repay" ? 1 : -1;
+                    patch.crypto = crypto.map((h) => (h.coinId === tx.coinId ? { ...h, amount: Math.round(((h.amount || 0) + dir * tx.coinAmount) * 1e8) / 1e8 } : h));
+                }
+            }
+            update(patch);
+            notify(msg);
+        };
+        const updateRepayAmount = (txId, newAmt) => {
+            const tx = transactions.find((t) => t.id === txId);
+            if (!tx || !tx.loanId)
+                return;
+            const loan = loans.find((l) => l.id === tx.loanId);
+            if (!loan)
+                return;
+            const oldLa = tx.loanAmt != null ? tx.loanAmt : (tx.currency === loan.currency ? tx.amount : 0);
+            const otherReturned = Math.max(0, Math.round((loan.returned - oldLa) * 100) / 100);
+            const la = Math.max(0, Math.min(Math.round(newAmt * 100) / 100, Math.round((loan.amount - otherReturned) * 100) / 100));
+            const newReturned = Math.round((otherReturned + la) * 100) / 100;
+            const newStatus = newReturned >= loan.amount - 0.005 ? "returned" : newReturned > 0 ? "partial" : "active";
+            update({
+                loans: loans.map((l) => (l.id === loan.id ? { ...l, returned: newReturned, status: newStatus } : l)),
+                transactions: transactions.map((t) => (t.id === txId ? { ...t, loanAmt: la, amount: t.currency === loan.currency ? la : t.amount } : t)),
+            });
+            notify(tr("Суму повернення оновлено"));
+        };
         const duplicateTransaction = (tx) => { update({ transactions: [stampBV({ ...tx, id: uid("tx"), createdAt: new Date().toISOString(), date: new Date().toISOString().slice(0, 10), fx: (tx.currency ? (rates[tx.currency] || 1) : 1) }), ...transactions] }); notify(tr("Операцію дубльовано")); };
         const importTransactions = (rows) => {
             if (!rows || !rows.length)
@@ -2535,9 +2583,9 @@ window.__K3_START = function () {
             // або лише зменшує борг (бартер/прощення/облік деінде).
             const coinOk = coin && coin.coinId && coin.coinAmount > 0;
             const txs = returnPocketId
-                ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: receivedAmount != null ? receivedAmount : amt, currency: receivedCurrency || loan.currency, pocketId: returnPocketId, loanId, note: note || defNote }]
+                ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: receivedAmount != null ? receivedAmount : amt, currency: receivedCurrency || loan.currency, pocketId: returnPocketId, loanAmt: amt, loanId, note: note || defNote }]
                 : coinOk
-                    ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency: loan.currency, pocketId: null, coinId: coin.coinId, coinAmount: coin.coinAmount, loanId, note: note || defNote }]
+                    ? [{ id: uid("tx"), createdAt: new Date().toISOString(), type: isDebt ? "debt_repay" : "loan_return", date, amount: amt, currency: loan.currency, pocketId: null, coinId: coin.coinId, coinAmount: coin.coinAmount, loanAmt: amt, loanId, note: note || defNote }]
                     : [];
             update({
                 loans: loans.map((l) => (l.id === loanId ? { ...l, returned: newReturned, status: newStatus } : l)),
@@ -2908,7 +2956,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -3540,8 +3588,10 @@ window.__K3_START = function () {
                 React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } }, fmtDate(tx.date)))));
     }
     /* Tap on a transaction anywhere → full details */
-    function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring, projects, rates, baseCurrency }) {
+    function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring, projects, rates, baseCurrency, updateRepayAmount }) {
         const [confirmDel, setConfirmDel] = useState(false);
+        const [repayEdit, setRepayEdit] = useState(false);
+        const [repayAmt, setRepayAmt] = useState("");
         const cat = categories.find((x) => x.id === tx.categoryId);
         const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу", crypto_buy: "Купівля крипто", crypto_sell: "Продаж крипто" };
         const dual = tx.type === "transfer" || tx.type === "exchange";
@@ -3586,10 +3636,19 @@ window.__K3_START = function () {
                     React.createElement(Edit3, { size: 14 }),
                     " ",
                     tr("Редагувати"))),
+                (tx.type === "loan_return" || tx.type === "debt_repay") && updateRepayAmount && (React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { setRepayEdit((v) => !v); setRepayAmt(String(tx.loanAmt != null ? tx.loanAmt : tx.amount)); } },
+                    React.createElement(Edit3, { size: 14 }),
+                    " ",
+                    tr("Сума"))),
                 tx.type !== "crypto_buy" && tx.type !== "crypto_sell" && React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { duplicateTransaction(tx); onClose(); } },
                     React.createElement(Plus, { size: 14 }),
                     " ",
                     tr("Дублювати"))),
+            repayEdit && (React.createElement("div", { className: "flex gap-2 mt-3" },
+                React.createElement(Input, { type: "number", step: "0.01", inputMode: "decimal", value: repayAmt, onChange: (e) => setRepayAmt(e.target.value), autoFocus: true }),
+                React.createElement(Button, { onClick: () => { const v = parseFloat(String(repayAmt).replace(",", ".")); if (!(v >= 0))
+                        return; updateRepayAmount(tx.id, v); onClose(); } },
+                    React.createElement(Check, { size: 15 })))),
             confirmDel ? (React.createElement("div", { className: "flex items-center justify-between mt-3 text-sm" },
                 React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Видалити операцію?")),
                 React.createElement("div", { className: "flex gap-2" },
@@ -5787,7 +5846,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset, creditWarnings }) {
+    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset, creditWarnings, updateRepayAmount }) {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
@@ -5809,7 +5868,7 @@ window.__K3_START = function () {
             if (modal.type === "loanReturn")
                 return React.createElement(LoanReturnModal, { onClose: close, loan: modal.payload, accounts: accounts, pockets: pockets, registerLoanReturn: registerLoanReturn, loanRemaining: loanRemaining, pocketBalance: pocketBalance, crypto: crypto });
             if (modal.type === "txDetail")
-                return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency });
+                return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency, updateRepayAmount: updateRepayAmount });
             if (modal.type === "statementImport")
                 return React.createElement(StatementImportModal, { onClose: close, onBack: modal.returnTo ? close : undefined, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject, payload: modal.payload });
             if (modal.type === "cryptoTrade")
@@ -6683,14 +6742,21 @@ window.__K3_START = function () {
                         " ",
                         pk.currency)))))) : mode === "crypto" ? (React.createElement(React.Fragment, null, holdings.length === 0 ? (React.createElement("p", { className: "text-xs mb-3 px-3 py-2 rounded-lg", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" } }, tr("Спершу додайте монету в Крипто-портфелі — тоді повернення можна буде зарахувати в неї."))) : (React.createElement(React.Fragment, null,
                 React.createElement(Field, { label: tr("Монета") },
-                    React.createElement(Select, { value: coinId, onChange: (e) => { setCoinId(e.target.value); setError(""); } },
+                    React.createElement(Select, { value: coinId, onChange: (e) => { const v = e.target.value; setCoinId(v); const sym = ((holdings.find((h) => h.coinId === v) || {}).symbol || "").toUpperCase(); if (sym && sym === String(loan.currency).toUpperCase() && coinNum > 0)
+                            setAmount(String(coinNum)); setError(""); } },
                         React.createElement("option", { value: "" }, tr("— оберіть —")),
                         holdings.map((h) => React.createElement("option", { key: h.coinId, value: h.coinId },
                             (h.symbol || h.coinId).toUpperCase(),
                             " \u00B7 ",
                             h.name || h.coinId)))),
                 React.createElement(Field, { label: isDebt ? tr("Віддано монет") : tr("Отримано монет") },
-                    React.createElement(Input, { type: "number", step: "0.00000001", inputMode: "decimal", value: coinAmt, onChange: (e) => { setCoinAmt(e.target.value); setError(""); }, placeholder: "0" })),
+                    React.createElement(Input, { type: "number", step: "0.00000001", inputMode: "decimal", value: coinAmt, onChange: (e) => { const v = e.target.value; setCoinAmt(v); const sym = ((holdings.find((h) => h.coinId === coinId) || {}).symbol || "").toUpperCase(); if (sym && sym === String(loan.currency).toUpperCase())
+                            setAmount(v); setError(""); }, placeholder: "0" })),
+                React.createElement("p", { className: "text-[11px] -mt-1 mb-2", style: { color: "var(--text-dim)" } },
+                    tr("Зараховано в борг"),
+                    ": ",
+                    React.createElement("strong", { className: "tabular", style: { color: "var(--text)" } }, fmtMoney(amtNum, loan.currency)),
+                    amtNum >= remaining - 0.005 ? " · " + tr("борг закриється повністю") : ""),
                 amtNum > 0 && coinNum > 0 && (React.createElement("p", { className: "text-[11px] -mt-2 mb-3", style: { color: "var(--text-dim)" } },
                     "\u2248 1 ",
                     ((holdings.find((h) => h.coinId === coinId) || {}).symbol || tr("монета")).toUpperCase(),
