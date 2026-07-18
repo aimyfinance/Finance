@@ -637,6 +637,9 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "за курсом на день кожної операції — зафіксована вартість не «пливе» при подальших змінах курсів.": "at the rate on each transaction's date — the locked-in value doesn't drift when rates change later.",
+        "Суми з різних валют зведені до базової": "Amounts in different currencies are converted to the base currency",
+        "Разом": "Total",
         "+ Нова монета…": "+ New coin…",
         "Пошук монети (напр., USDT)": "Search a coin (e.g., USDT)",
         "Шукаю…": "Searching…",
@@ -4032,6 +4035,7 @@ window.__K3_START = function () {
         const [selSub, setSelSub] = useState(null);
         const [selPrjNew, setSelPrjNew] = useState(false);
         const [selPrjName, setSelPrjName] = useState("");
+        const [prjPnlInfo, setPrjPnlInfo] = useState(false);
         const [dateFrom, setDateFrom] = useState("");
         const [dateTo, setDateTo] = useState("");
         const [showFilters, setShowFilters] = useState(false);
@@ -4197,19 +4201,39 @@ window.__K3_START = function () {
                     inc += v;
                 else if (t.type === "expense")
                     exp += v; });
+                const net = inc - exp;
                 const prj = (projects || []).find((x) => x.id === filterProject);
-                return (React.createElement(Card, { className: "p-3 flex items-center justify-between gap-2 animate-in" },
-                    React.createElement("span", { className: "text-xs font-semibold flex items-center gap-1.5 min-w-0" },
-                        prj && React.createElement(Icon, { name: prj.icon || "Home", size: 13, style: { color: prj.color } }),
-                        React.createElement("span", { className: "truncate" }, prj ? tr(prj.name) : tr("Проєкт"))),
-                    React.createElement("span", { className: "text-xs tabular text-right shrink-0" },
-                        React.createElement("span", { className: "font-semibold", style: { color: "var(--danger)" } },
-                            tr("Витрати"),
-                            ": \u2212",
-                            fmtMoney(exp, baseCurrency)),
-                        inc > 0.005 && React.createElement("span", { style: { color: "var(--text-dim)" } },
-                            " \u00B7 +",
-                            fmtMoney(inc, baseCurrency)))));
+                return (React.createElement(Card, { className: "p-4 animate-in" },
+                    React.createElement("div", { className: "flex items-center gap-2 mb-2.5" },
+                        React.createElement("span", { className: "text-sm font-display font-semibold flex items-center gap-1.5 min-w-0 flex-1" },
+                            prj && React.createElement(Icon, { name: prj.icon || "Home", size: 15, style: { color: prj.color } }),
+                            React.createElement("span", { className: "truncate" }, prj ? tr(prj.name) : tr("Проєкт")),
+                            React.createElement("span", { className: "text-[11px] font-normal", style: { color: "var(--text-dim)" } },
+                                "\u00B7 ",
+                                "P&L")),
+                        React.createElement("button", { onClick: () => setPrjPnlInfo(!prjPnlInfo), "aria-label": "info", className: "w-6 h-6 rounded-full border text-[11px] font-semibold shrink-0", style: { borderColor: prjPnlInfo ? "var(--accent)" : "var(--border)", color: prjPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "i")),
+                    prjPnlInfo && (React.createElement("p", { className: "text-[11px] mb-2.5 px-3 py-2 rounded-lg", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
+                        tr("Суми з різних валют зведені до базової"),
+                        " (",
+                        baseCurrency,
+                        ") ",
+                        tr("за курсом на день кожної операції — зафіксована вартість не «пливе» при подальших змінах курсів."))),
+                    React.createElement("div", { className: "space-y-1.5" },
+                        React.createElement("div", { className: "flex items-center justify-between text-xs" },
+                            React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Доходи")),
+                            React.createElement("span", { className: "tabular font-medium", style: { color: "var(--accent)" } },
+                                "+",
+                                fmtMoney(inc, baseCurrency))),
+                        React.createElement("div", { className: "flex items-center justify-between text-xs" },
+                            React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Витрати")),
+                            React.createElement("span", { className: "tabular font-medium", style: { color: "var(--danger)" } },
+                                "\u2212",
+                                fmtMoney(exp, baseCurrency))),
+                        React.createElement("div", { className: "pt-1.5 flex items-center justify-between", style: { borderTop: "1px solid var(--border)" } },
+                            React.createElement("span", { className: "text-xs font-semibold" }, tr("Разом")),
+                            React.createElement("span", { className: "tabular font-display font-bold text-base", style: { color: net >= 0 ? "var(--accent)" : "var(--danger)" } },
+                                net >= 0 ? "+" : "−",
+                                fmtMoney(Math.abs(net), baseCurrency))))));
             })(),
             selMode && (() => {
                 const ids = Object.keys(selIds);
