@@ -3622,7 +3622,7 @@ window.__K3_START = function () {
                 cat ? React.createElement(Row, { k: tr("Категорія"), v: tr(cat.name) }) : null,
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount ? React.createElement(Row, { k: tr("Монета"), v: `${tx.coinAmount} ${tx.coinSymbol || ""}` }) : null,
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount > 0 ? React.createElement(Row, { k: tr("Курс"), v: `1 ${tx.coinSymbol || ""} = ${(tx.amount / tx.coinAmount).toFixed(4)} ${tx.currency}` }) : null,
-                !dual && React.createElement(Row, { k: tr("Рахунок"), v: pocketLabel(tx.pocketId) }),
+                !dual && React.createElement(Row, { k: tr("Рахунок"), v: tx.coinId && !tx.pocketId ? tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "") : (tx.loanId && !tx.pocketId && (tx.type === "loan_return" || tx.type === "debt_repay")) ? tr("Без рахунку") : pocketLabel(tx.pocketId) }),
                 tx.projectId && (() => { const pj = (projects || []).find((x) => x.id === tx.projectId); return pj ? React.createElement(Row, { k: tr("Проєкт"), v: tr(pj.name) }) : null; })(),
                 dual && React.createElement(Row, { k: tr("З рахунку"), v: pocketLabel(tx.fromPocketId) }),
                 dual && React.createElement(Row, { k: tr("На рахунок"), v: pocketLabel(tx.toPocketId) }),
