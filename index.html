@@ -6155,8 +6155,8 @@ window.__K3_START = function () {
         const history = useMemo(() => transactions
             .filter((t) => t.pocketId === pid || t.fromPocketId === pid || t.toPocketId === pid)
             .sort(byRecent), [transactions, pid]);
-        return (React.createElement("div", { className: "fixed inset-0 z-50 overflow-y-auto animate-in", style: { background: "var(--bg)" }, onTouchStart: onSwipeStart, onTouchEnd: onSwipeEnd },
-            React.createElement("div", { className: "relative px-5 pb-6 overflow-hidden", style: { background: "linear-gradient(160deg, #2B3757 0%, #1A2742 55%, #0E1626 100%)", paddingTop: "calc(1rem + env(safe-area-inset-top))", borderBottom: "3px solid #C9A362", borderRadius: 28, margin: "10px 10px 0", boxShadow: "0 14px 34px rgba(14,22,38,0.35)" } },
+        return (React.createElement("div", { className: "fixed inset-0 z-50 overflow-y-auto animate-in", style: { background: "var(--bg)" } },
+            React.createElement("div", { className: "relative px-5 pb-6 overflow-hidden", onTouchStart: onSwipeStart, onTouchEnd: onSwipeEnd, style: { background: "linear-gradient(160deg, #2B3757 0%, #1A2742 55%, #0E1626 100%)", paddingTop: "calc(1rem + env(safe-area-inset-top))", borderBottom: "3px solid #C9A362", borderRadius: 28, margin: "10px 10px 0", boxShadow: "0 14px 34px rgba(14,22,38,0.35)" } },
                 React.createElement("div", { className: "absolute pointer-events-none", style: { top: -70, right: -50, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,163,98,0.16), transparent 65%)" } }),
                 React.createElement("div", { className: "flex items-center justify-between mb-6" },
                     React.createElement("div", { className: "flex items-center gap-2" },
