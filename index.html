@@ -1825,28 +1825,37 @@ window.__K3_START = function () {
                         React.createElement(X, { size: 18 }))),
                 React.createElement("div", { className: "p-5" }, children))));
     }
-    // iOS-надійний замок скролу фону, поки відкрито оверлей: body фіксується
-    // на місці й повертається на ту саму позицію після закриття. Вкладені
-    // оверлеї безпечні — кожен запамʼятовує попередній стан.
+    // iOS-надійний замок скролу фону з ЛІЧИЛЬНИКОМ: перший оверлей заморожує body,
+    // останній — розморожує. Порядок закриття вкладених вікон не має значення
+    // (одночасне закриття двох оверлеїв раніше могло лишити body замороженим).
+    let __bodyLockCount = 0;
+    let __bodyLockPrev = null;
     function useBodyScrollLock() {
         useEffect(() => {
-            const b = document.body;
-            const y = window.scrollY || window.pageYOffset || 0;
-            const prev = { position: b.style.position, top: b.style.top, left: b.style.left, right: b.style.right, width: b.style.width, overflow: b.style.overflow };
-            b.style.position = "fixed";
-            b.style.top = -y + "px";
-            b.style.left = "0";
-            b.style.right = "0";
-            b.style.width = "100%";
-            b.style.overflow = "hidden";
+            if (__bodyLockCount === 0) {
+                const b = document.body;
+                __bodyLockPrev = { position: b.style.position, top: b.style.top, left: b.style.left, right: b.style.right, width: b.style.width, overflow: b.style.overflow, y: window.scrollY || window.pageYOffset || 0 };
+                b.style.position = "fixed";
+                b.style.top = -__bodyLockPrev.y + "px";
+                b.style.left = "0";
+                b.style.right = "0";
+                b.style.width = "100%";
+                b.style.overflow = "hidden";
+            }
+            __bodyLockCount++;
             return () => {
-                b.style.position = prev.position;
-                b.style.top = prev.top;
-                b.style.left = prev.left;
-                b.style.right = prev.right;
-                b.style.width = prev.width;
-                b.style.overflow = prev.overflow;
-                window.scrollTo(0, y);
+                __bodyLockCount = Math.max(0, __bodyLockCount - 1);
+                if (__bodyLockCount === 0 && __bodyLockPrev) {
+                    const b = document.body;
+                    b.style.position = __bodyLockPrev.position;
+                    b.style.top = __bodyLockPrev.top;
+                    b.style.left = __bodyLockPrev.left;
+                    b.style.right = __bodyLockPrev.right;
+                    b.style.width = __bodyLockPrev.width;
+                    b.style.overflow = __bodyLockPrev.overflow;
+                    window.scrollTo(0, __bodyLockPrev.y);
+                    __bodyLockPrev = null;
+                }
             };
         }, []);
     }
