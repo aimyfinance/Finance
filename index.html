@@ -2941,7 +2941,7 @@ window.__K3_START = function () {
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[11px] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
                         view === "dashboard" && (React.createElement(Dashboard, { accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
-                        view === "history" && (React.createElement(HistoryView, { transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
+                        view === "history" && (React.createElement(HistoryView, { transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
                         view === "loans" && (React.createElement(LoansView, { loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
@@ -3992,7 +3992,7 @@ window.__K3_START = function () {
                 list.length === 0 && typeFilter !== "crypto" && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("Немає рахунків у цій категорії")))));
     }
     /* ============================== HISTORY VIEW ============================== */
-    function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, projects, addProject, assignProjectBulk, deleteTransactionsBulk, moveTransactionsBulk }) {
+    function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, rates, baseCurrency, projects, addProject, assignProjectBulk, deleteTransactionsBulk, moveTransactionsBulk }) {
         const [search, setSearch] = useState("");
         const [showImportHint, setShowImportHint] = useState(false);
         const [filterType, setFilterType] = useState("all");
@@ -4191,6 +4191,26 @@ window.__K3_START = function () {
                     React.createElement(ChevronDown, { size: 13, style: { transform: "rotate(180deg)" } }),
                     " ",
                     tr("Згорнути")))),
+            filterProject && (() => {
+                let inc = 0, exp = 0;
+                filtered.forEach((t) => { const v = txToBase(t, baseCurrency, rates); if (t.type === "income")
+                    inc += v;
+                else if (t.type === "expense")
+                    exp += v; });
+                const prj = (projects || []).find((x) => x.id === filterProject);
+                return (React.createElement(Card, { className: "p-3 flex items-center justify-between gap-2 animate-in" },
+                    React.createElement("span", { className: "text-xs font-semibold flex items-center gap-1.5 min-w-0" },
+                        prj && React.createElement(Icon, { name: prj.icon || "Home", size: 13, style: { color: prj.color } }),
+                        React.createElement("span", { className: "truncate" }, prj ? tr(prj.name) : tr("Проєкт"))),
+                    React.createElement("span", { className: "text-xs tabular text-right shrink-0" },
+                        React.createElement("span", { className: "font-semibold", style: { color: "var(--danger)" } },
+                            tr("Витрати"),
+                            ": \u2212",
+                            fmtMoney(exp, baseCurrency)),
+                        inc > 0.005 && React.createElement("span", { style: { color: "var(--text-dim)" } },
+                            " \u00B7 +",
+                            fmtMoney(inc, baseCurrency)))));
+            })(),
             selMode && (() => {
                 const ids = Object.keys(selIds);
                 const selTx = transactions.filter((t) => selIds[t.id]);
