@@ -637,6 +637,11 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Гаманець перейменовано": "Wallet renamed",
+        "Видалити гаманець": "Delete wallet",
+        "Перейменувати": "Rename",
+        "У цьому гаманці поки немає монет.": "No coins in this wallet yet.",
+        "Разом у гаманці": "Wallet total",
         "Недостатньо монет у цьому гаманці": "Not enough coins in this wallet",
         "Недостатньо монет у гаманці": "Not enough coins in the wallet",
         "Перенесено між гаманцями": "Moved between wallets",
@@ -2677,6 +2682,13 @@ window.__K3_START = function () {
             update({ crypto: list });
             notify(tr("Перенесено між гаманцями"));
         };
+        const renameCryptoWallet = (id, name) => {
+            const nm = String(name || "").trim();
+            if (!nm)
+                return;
+            update({ cryptoWallets: cryptoWallets.map((w) => (w.id === id ? { ...w, name: nm } : w)) });
+            notify(tr("Гаманець перейменовано"));
+        };
         const deleteCryptoWallet = (id) => {
             if (crypto.some((cc) => (cc.walletId || null) === id)) {
                 notify(tr("Гаманець не порожній — спершу перенесіть монети"));
@@ -3023,7 +3035,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -4695,12 +4707,9 @@ window.__K3_START = function () {
                 React.createElement("span", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
                     tr("Гаманці"),
                     ":"),
-                React.createElement("span", { className: "px-2.5 py-1 rounded-full text-[11px] font-medium", style: { background: "var(--surface2)", color: "var(--text-dim)" } }, tr("Основний")),
-                (cryptoWallets || []).map((w) => (React.createElement("span", { key: w.id, className: "px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } },
-                    w.name,
-                    React.createElement("button", { onClick: () => deleteCryptoWallet(w.id), "aria-label": "del", style: { color: "var(--text-dim)" } },
-                        React.createElement(X, { size: 10 }))))),
-                !wNew && React.createElement("button", { onClick: () => setWNew(true), className: "px-2.5 py-1 rounded-full text-[11px] font-medium", style: { border: "1px dashed var(--border)", color: "var(--text-dim)" } }, tr("+ Гаманець")),
+                React.createElement("button", { onClick: () => setModal({ type: "cryptoWallet", payload: null }), className: "px-3 py-1.5 rounded-full text-xs font-semibold", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, tr("Основний")),
+                (cryptoWallets || []).map((w) => (React.createElement("button", { key: w.id, onClick: () => setModal({ type: "cryptoWallet", payload: w.id }), className: "px-3 py-1.5 rounded-full text-xs font-semibold", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, w.name))),
+                !wNew && React.createElement("button", { onClick: () => setWNew(true), className: "px-3 py-1.5 rounded-full text-xs font-semibold", style: { border: "1px dashed var(--border)", color: "var(--text-dim)" } }, tr("+ Гаманець")),
                 wNew && (React.createElement("span", { className: "flex items-center gap-1.5" },
                     React.createElement("input", { value: wName, onChange: (e) => setWName(e.target.value), placeholder: tr("Назва"), autoFocus: true, className: "px-2 py-1 rounded-lg text-[11px] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", width: 110, color: "var(--text)" } }),
                     React.createElement("button", { onClick: () => { if (addCryptoWallet(wName)) {
@@ -4912,7 +4921,49 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, mode === "buy" ? tr("Купити") : tr("Продати")),
             picker && React.createElement(CoinPicker, { selected: coin, onPick: (x) => { setCoin(x); setPicker(false); setError(""); }, onClose: () => setPicker(false) })));
     }
-    function CryptoModal({ onClose, existing, addCrypto, editCrypto, deleteCrypto, cryptoWallets }) {
+    function WalletDetailModal({ onClose, walletId, cryptoWallets, crypto, cryptoPrices, rates, baseCurrency, setModal, renameCryptoWallet, deleteCryptoWallet }) {
+        const wid = walletId || null;
+        const w = wid ? (cryptoWallets || []).find((x) => x.id === wid) : null;
+        const isMain = !wid;
+        const rows = (crypto || []).filter((cc) => (cc.walletId || null) === wid);
+        const val = (cc) => convert((cc.amount || 0) * (cryptoPrices[cc.coinId] || 0), "USD", baseCurrency, rates);
+        const total = rows.reduce((s, cc) => s + val(cc), 0);
+        const canDel = !rows.length;
+        const [ren, setRen] = useState(false);
+        const [name, setName] = useState(w ? w.name : "");
+        return (React.createElement(Modal, { title: isMain ? tr("Основний") : (w ? w.name : tr("Гаманець")), onClose: onClose },
+            React.createElement("div", { className: "rounded-xl p-4 mb-4 text-center", style: { background: "var(--surface2)" } },
+                React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } }, tr("Разом у гаманці")),
+                React.createElement("p", { className: "font-display font-extrabold text-2xl tabular" }, fmtMoney(total, baseCurrency))),
+            React.createElement("div", { className: "space-y-2" },
+                rows.map((cc) => (React.createElement("div", { key: cc.id, className: "flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" } },
+                    React.createElement("div", { className: "w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[10px]", style: { background: "var(--surface)", color: "var(--accent)" } }, cc.symbol),
+                    React.createElement("div", { className: "flex-1 min-w-0" },
+                        React.createElement("p", { className: "text-sm font-semibold truncate" },
+                            cc.amount,
+                            " ",
+                            cc.symbol),
+                        React.createElement("p", { className: "text-[11px] truncate", style: { color: "var(--text-dim)" } }, tr(cc.name))),
+                    React.createElement("p", { className: "text-sm font-bold tabular shrink-0" }, (cryptoPrices[cc.coinId] || 0) > 0 ? fmtMoney(val(cc), baseCurrency) : "—"),
+                    React.createElement("button", { onClick: () => setModal({ type: "crypto", payload: cc, returnTo: { type: "cryptoWallet", payload: walletId } }), className: "p-1.5 rounded-lg shrink-0", style: { color: "var(--text-dim)" } },
+                        React.createElement(Edit3, { size: 13 }))))),
+                rows.length === 0 && React.createElement("p", { className: "text-xs text-center py-6", style: { color: "var(--text-dim)" } }, tr("У цьому гаманці поки немає монет."))),
+            !isMain && (React.createElement("div", { className: "mt-4 space-y-2" },
+                !ren && React.createElement(Button, { variant: "secondary", className: "w-full", onClick: () => { setRen(true); setName(w ? w.name : ""); } },
+                    React.createElement(Edit3, { size: 14 }),
+                    " ",
+                    tr("Перейменувати")),
+                ren && (React.createElement("div", { className: "flex gap-2" },
+                    React.createElement(Input, { value: name, onChange: (e) => setName(e.target.value), autoFocus: true }),
+                    React.createElement(Button, { type: "button", onClick: () => { if (name.trim()) {
+                            renameCryptoWallet(wid, name.trim());
+                            setRen(false);
+                        } } },
+                        React.createElement(Check, { size: 15 })))),
+                React.createElement("button", { onClick: () => { deleteCryptoWallet(wid); if (canDel)
+                        onClose(); }, className: "w-full text-center text-xs font-medium py-1", style: { color: canDel ? "var(--danger)" : "var(--text-dim)", opacity: canDel ? 1 : 0.6 } }, tr("Видалити гаманець"))))));
+    }
+    function CryptoModal({ onClose, onBack, existing, addCrypto, editCrypto, deleteCrypto, cryptoWallets }) {
         const [walletId, setWalletId] = useState((existing && existing.walletId) || "");
         const isEdit = existing && existing.id;
         const [coin, setCoin] = useState(existing && existing.coinId
@@ -4936,7 +4987,7 @@ window.__K3_START = function () {
                 addCrypto(data);
             onClose();
         };
-        return (React.createElement(Modal, { title: isEdit ? tr("Редагувати актив") : tr("Додати крипто-актив"), onClose: onClose },
+        return (React.createElement(Modal, { title: isEdit ? tr("Редагувати актив") : tr("Додати крипто-актив"), onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Криптовалюта") },
                 React.createElement("button", { onClick: () => setPicker(true), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
                     React.createElement("span", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[10px]", style: { background: "var(--surface)", color: "var(--accent)" } }, coin ? coin.symbol.slice(0, 5) : "—"),
@@ -6054,7 +6105,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets }) {
+    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet }) {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
@@ -6108,7 +6159,9 @@ window.__K3_START = function () {
             if (modal.type === "help")
                 return React.createElement(HelpModal, { onClose: close, startTour: startTour });
             if (modal.type === "crypto")
-                return React.createElement(CryptoModal, { onClose: close, existing: modal.payload, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, cryptoWallets: cryptoWallets });
+                return React.createElement(CryptoModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, cryptoWallets: cryptoWallets });
+            if (modal.type === "cryptoWallet")
+                return React.createElement(WalletDetailModal, { onClose: close, walletId: modal.payload, cryptoWallets: cryptoWallets, crypto: crypto, cryptoPrices: cryptoPrices, rates: rates, baseCurrency: baseCurrency, setModal: setModal, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet });
             if (modal.type === "bankRename")
                 return React.createElement(BankRenameModal, { onClose: close, onBack: modal.returnTo ? close : undefined, bank: modal.payload && modal.payload.bank, renameBank: renameBank });
             return null;
