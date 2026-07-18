@@ -4036,6 +4036,7 @@ window.__K3_START = function () {
         const [selPrjNew, setSelPrjNew] = useState(false);
         const [selPrjName, setSelPrjName] = useState("");
         const [prjPnlInfo, setPrjPnlInfo] = useState(false);
+        const [prjPnlOpen, setPrjPnlOpen] = useState(false);
         const [dateFrom, setDateFrom] = useState("");
         const [dateTo, setDateTo] = useState("");
         const [showFilters, setShowFilters] = useState(false);
@@ -4195,7 +4196,7 @@ window.__K3_START = function () {
                     React.createElement(ChevronDown, { size: 13, style: { transform: "rotate(180deg)" } }),
                     " ",
                     tr("Згорнути")))),
-            filterProject && (() => {
+            filterProject !== "all" && filterProject !== "__none__" && (() => {
                 let inc = 0, exp = 0;
                 filtered.forEach((t) => { const v = txToBase(t, baseCurrency, rates); if (t.type === "income")
                     inc += v;
@@ -4203,37 +4204,44 @@ window.__K3_START = function () {
                     exp += v; });
                 const net = inc - exp;
                 const prj = (projects || []).find((x) => x.id === filterProject);
-                return (React.createElement(Card, { className: "p-4 animate-in" },
-                    React.createElement("div", { className: "flex items-center gap-2 mb-2.5" },
-                        React.createElement("span", { className: "text-sm font-display font-semibold flex items-center gap-1.5 min-w-0 flex-1" },
-                            prj && React.createElement(Icon, { name: prj.icon || "Home", size: 15, style: { color: prj.color } }),
-                            React.createElement("span", { className: "truncate" }, prj ? tr(prj.name) : tr("Проєкт")),
+                return (React.createElement(Card, { className: "animate-in overflow-hidden" },
+                    React.createElement("button", { type: "button", onClick: () => setPrjPnlOpen(!prjPnlOpen), className: "w-full px-4 py-3 flex items-center gap-2 text-left" },
+                        prj && React.createElement(Icon, { name: prj.icon || "Home", size: 15, style: { color: prj.color } }),
+                        React.createElement("span", { className: "truncate text-sm font-display font-semibold flex-1 min-w-0" },
+                            prj ? tr(prj.name) : tr("Проєкт"),
+                            " ",
                             React.createElement("span", { className: "text-[11px] font-normal", style: { color: "var(--text-dim)" } },
                                 "\u00B7 ",
                                 "P&L")),
-                        React.createElement("button", { onClick: () => setPrjPnlInfo(!prjPnlInfo), "aria-label": "info", className: "w-6 h-6 rounded-full border text-[11px] font-semibold shrink-0", style: { borderColor: prjPnlInfo ? "var(--accent)" : "var(--border)", color: prjPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "i")),
-                    prjPnlInfo && (React.createElement("p", { className: "text-[11px] mb-2.5 px-3 py-2 rounded-lg", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
-                        tr("Суми з різних валют зведені до базової"),
-                        " (",
-                        baseCurrency,
-                        ") ",
-                        tr("за курсом на день кожної операції — зафіксована вартість не «пливе» при подальших змінах курсів."))),
-                    React.createElement("div", { className: "space-y-1.5" },
-                        React.createElement("div", { className: "flex items-center justify-between text-xs" },
-                            React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Доходи")),
-                            React.createElement("span", { className: "tabular font-medium", style: { color: "var(--accent)" } },
-                                "+",
-                                fmtMoney(inc, baseCurrency))),
-                        React.createElement("div", { className: "flex items-center justify-between text-xs" },
-                            React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Витрати")),
-                            React.createElement("span", { className: "tabular font-medium", style: { color: "var(--danger)" } },
-                                "\u2212",
-                                fmtMoney(exp, baseCurrency))),
-                        React.createElement("div", { className: "pt-1.5 flex items-center justify-between", style: { borderTop: "1px solid var(--border)" } },
-                            React.createElement("span", { className: "text-xs font-semibold" }, tr("Разом")),
-                            React.createElement("span", { className: "tabular font-display font-bold text-base", style: { color: net >= 0 ? "var(--accent)" : "var(--danger)" } },
-                                net >= 0 ? "+" : "−",
-                                fmtMoney(Math.abs(net), baseCurrency))))));
+                        React.createElement("span", { className: "tabular text-sm font-bold shrink-0", style: { color: net >= 0 ? "var(--accent)" : "var(--danger)" } },
+                            net >= 0 ? "+" : "−",
+                            fmtMoney(Math.abs(net), baseCurrency)),
+                        React.createElement(ChevronDown, { size: 15, className: "shrink-0 transition-transform", style: { color: "var(--text-dim)", transform: prjPnlOpen ? "rotate(180deg)" : "none" } })),
+                    prjPnlOpen && (React.createElement("div", { className: "px-4 pb-4" },
+                        React.createElement("div", { className: "space-y-1.5" },
+                            React.createElement("div", { className: "flex items-center justify-between text-xs" },
+                                React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Доходи")),
+                                React.createElement("span", { className: "tabular font-medium", style: { color: "var(--accent)" } },
+                                    "+",
+                                    fmtMoney(inc, baseCurrency))),
+                            React.createElement("div", { className: "flex items-center justify-between text-xs" },
+                                React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Витрати")),
+                                React.createElement("span", { className: "tabular font-medium", style: { color: "var(--danger)" } },
+                                    "\u2212",
+                                    fmtMoney(exp, baseCurrency))),
+                            React.createElement("div", { className: "pt-1.5 flex items-center justify-between", style: { borderTop: "1px solid var(--border)" } },
+                                React.createElement("span", { className: "text-xs font-semibold flex items-center gap-1.5" },
+                                    tr("Разом"),
+                                    React.createElement("button", { onClick: () => setPrjPnlInfo(!prjPnlInfo), "aria-label": "info", className: "w-5 h-5 rounded-full border text-[10px] font-semibold", style: { borderColor: prjPnlInfo ? "var(--accent)" : "var(--border)", color: prjPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "i")),
+                                React.createElement("span", { className: "tabular font-display font-bold text-base", style: { color: net >= 0 ? "var(--accent)" : "var(--danger)" } },
+                                    net >= 0 ? "+" : "−",
+                                    fmtMoney(Math.abs(net), baseCurrency)))),
+                        prjPnlInfo && (React.createElement("p", { className: "text-[11px] mt-2.5 px-3 py-2 rounded-lg", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
+                            tr("Суми з різних валют зведені до базової"),
+                            " (",
+                            baseCurrency,
+                            ") ",
+                            tr("за курсом на день кожної операції — зафіксована вартість не «пливе» при подальших змінах курсів.")))))));
             })(),
             selMode && (() => {
                 const ids = Object.keys(selIds);
@@ -5703,11 +5711,24 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
     // ---------- Projects: manager + editor ----------
-    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, setView, setHistoryPreset }) {
+    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, setView, setHistoryPreset, rates, baseCurrency }) {
         const [confirmDel, setConfirmDel] = useState(null);
         const list = (projects || []).filter((x) => !x.archived);
         const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects" } });
         const txCount = (id) => transactions.filter((t) => t.projectId === id).length;
+        const prjNet = useMemo(() => {
+            const m = {};
+            (transactions || []).forEach((t) => {
+                if (!t.projectId)
+                    return;
+                const v = txToBase(t, baseCurrency, rates);
+                if (t.type === "income")
+                    m[t.projectId] = (m[t.projectId] || 0) + v;
+                else if (t.type === "expense")
+                    m[t.projectId] = (m[t.projectId] || 0) - v;
+            });
+            return m;
+        }, [transactions, rates, baseCurrency]);
         return (React.createElement(Modal, { title: tr("Проєкти"), onClose: onClose, onBack: onClose },
             list.length === 0 && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Проєктів ще немає. Створіть перший — «Квартира», «Авто» чи «Ремонт» — і привʼязуйте до нього витрати з форми, імпорту та регулярних платежів.")),
             list.length > 0 && React.createElement("p", { className: "text-[11px] mb-2", style: { color: "var(--text-dim)" } }, tr("Зірочка — показувати проєкт на головному.")),
@@ -5726,7 +5747,10 @@ window.__K3_START = function () {
                             " ",
                             tr("операцій"),
                             " ",
-                            React.createElement(ChevronRight, { size: 11, style: { display: "inline", verticalAlign: "-1px" } })))),
+                            React.createElement(ChevronRight, { size: 11, style: { display: "inline", verticalAlign: "-1px" } }))),
+                    (() => { const n = prjNet[x.id] || 0; return React.createElement("span", { className: "ml-auto tabular text-xs font-semibold shrink-0", style: { color: n >= 0 ? "var(--accent)" : "var(--danger)" } },
+                        n >= 0 ? "+" : "−",
+                        fmtMoney(Math.abs(n), baseCurrency)); })()),
                 React.createElement("button", { onClick: () => editProject(x.id, { fav: !x.fav }), className: "p-1.5 rounded-md shrink-0", "aria-label": tr("Обраний") },
                     React.createElement(Star, { size: 14, fill: x.fav ? "var(--accent)" : "none", style: { color: x.fav ? "var(--accent)" : "var(--text-dim)" } })),
                 React.createElement("button", { onClick: () => openEdit(x), className: "p-1.5 rounded-md shrink-0", style: { color: "var(--text-dim)" } },
@@ -5950,7 +5974,7 @@ window.__K3_START = function () {
             if (modal.type === "recurringEdit")
                 return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
             if (modal.type === "projects")
-                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, setView: setView, setHistoryPreset: setHistoryPreset });
+                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "projectEdit")
                 return React.createElement(ProjectEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, addProject: addProject, editProject: editProject });
             if (modal.type === "loanEdit")
