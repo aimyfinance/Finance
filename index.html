@@ -637,6 +637,9 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Для банківської — останні 4 цифри, для готівки — будь-які на ваш смак.": "For a bank card — its last 4 digits; for cash — any digits you like.",
+        "4 цифри для картки (необовʼязково)": "4 digits for the card (optional)",
+        "Останні 4 цифри картки": "Card last 4 digits",
         "Показники на кшталт кредитних лімітів і пільгових періодів обчислюються виключно на основі операцій, внесених вами в застосунок, і є орієнтовними. Вони не замінюють офіційну інформацію банку — точні суми, дати та умови завжди перевіряйте у своєму банку.": "Figures such as credit limits and grace periods are calculated solely from the transactions you have entered in the app and are approximate. They do not replace official bank information — always verify exact amounts, dates and terms with your bank.",
         "Розрахунки та нагадування.": "Calculations and reminders.",
         "Орієнтовно, за внесеними в K³ операціями. Точні дати перевіряйте у своєму банку.": "Approximate, based on transactions entered in K³. Verify exact dates with your bank.",
@@ -645,7 +648,7 @@ window.__K3_START = function () {
         "Пільгові періоди": "Grace periods",
         "Пільговий прострочено на": "Grace overdue by",
         "Пільговий: лишилось": "Grace: left",
-        "Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку.": "How many days the bank charges no interest. Counting starts the day the card balance goes negative.",
+        "Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку.": "How many days the bank charges no interest. Counting starts the day the balance goes negative. The estimate is based on transactions entered in K³ — verify exact dates with your bank.",
         "Пільговий період (днів)": "Grace period (days)",
         "Керувати": "Manage",
         "Гаманець перейменовано": "Wallet renamed",
@@ -2445,8 +2448,8 @@ window.__K3_START = function () {
             order.splice(to, 0, moved);
             update({ accounts: order.flatMap((k) => buckets[k]) });
         };
-        const addPocket = (accountId, currency, initialBalance, name, creditLimitArg, graceDaysArg) => {
-            update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), creditLimit: creditLimitArg || null, graceDays: graceDaysArg || null, archived: false }] });
+        const addPocket = (accountId, currency, initialBalance, name, creditLimitArg, graceDaysArg, last4Arg) => {
+            update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), creditLimit: creditLimitArg || null, graceDays: graceDaysArg || null, last4: last4Arg || null, archived: false }] });
             notify(tr("Валютний субрахунок додано"));
         };
         const editPocket = (id, patch) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
@@ -6594,6 +6597,7 @@ window.__K3_START = function () {
         const [balance, setBalance] = useState(existing ? String(existing.initialBalance) : "0");
         const [creditLimit, setCreditLimit] = useState(existing && existing.creditLimit != null ? String(existing.creditLimit) : "");
         const [graceDays, setGraceDays] = useState(existing && existing.graceDays != null ? String(existing.graceDays) : "");
+        const [last4, setLast4] = useState((existing && existing.last4) || "");
         const [error, setError] = useState("");
         const currencyChanged = existing && currency !== existing.currency;
         const submit = () => {
@@ -6603,10 +6607,11 @@ window.__K3_START = function () {
             const clVal = clP > 0 ? Math.round(clP * 100) / 100 : null;
             const gdP = parseInt(String(graceDays), 10);
             const gdVal = gdP > 0 ? gdP : null;
+            const l4Val = String(last4).replace(/\D/g, "").slice(0, 4) || null;
             if (existing)
-                editPocket(existing.id, { creditLimit: clVal, graceDays: gdVal, currency, initialBalance: parseFloat(balance) || 0, name: name.trim() });
+                editPocket(existing.id, { creditLimit: clVal, graceDays: gdVal, last4: l4Val, currency, initialBalance: parseFloat(balance) || 0, name: name.trim() });
             else
-                addPocket(accountId, currency, balance, name, clVal, gdVal);
+                addPocket(accountId, currency, balance, name, clVal, gdVal, l4Val);
             onClose();
         };
         return (React.createElement(Modal, { title: existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`, onClose: onClose, onBack: onBack },
@@ -6624,7 +6629,10 @@ window.__K3_START = function () {
                 React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Для кредитної картки. Доступно = ліміт + баланс."))),
             React.createElement(Field, { label: tr("Пільговий період (днів)") },
                 React.createElement(Input, { type: "number", step: "1", inputMode: "numeric", value: graceDays, onChange: (e) => setGraceDays(e.target.value), placeholder: "55" }),
-                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс картки пішов у мінус."))),
+                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку."))),
+            React.createElement(Field, { label: tr("4 цифри для картки (необовʼязково)") },
+                React.createElement(Input, { inputMode: "numeric", maxLength: 4, value: last4, onChange: (e) => setLast4(e.target.value.replace(/\D/g, "").slice(0, 4)), placeholder: "1111" }),
+                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Для банківської — останні 4 цифри, для готівки — будь-які на ваш смак."))),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, existing ? tr("Зберегти зміни") : tr("Додати субрахунок"))));
     }
     /* ---------- Category Modal ---------- */
