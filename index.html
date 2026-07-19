@@ -3627,8 +3627,7 @@ window.__K3_START = function () {
                 "\u23F3 ",
                 grace.left >= 0 ? tr("Пільговий: лишилось") + " " + grace.left + " " + tr("дн.") : tr("Пільговий прострочено на") + " " + (-grace.left) + " " + tr("дн.")))),
             React.createElement("div", { className: "flex items-baseline gap-2 flex-wrap" },
-                React.createElement("p", { className: "font-display font-bold text-2xl tabular text-white" }, fmtMoney(balance, pocket.currency)),
-                React.createElement("span", { className: "text-[10px] font-semibold px-2 py-0.5 rounded-full", style: { background: "rgba(255,255,255,0.12)", color: "#fff" } }, pocket.currency)),
+                React.createElement("p", { className: "font-display font-bold text-2xl tabular text-white" }, fmtMoney(balance, pocket.currency))),
             pocket.creditLimit > 0 && (() => {
                 const avail = pocket.creditLimit + balance;
                 return (React.createElement("div", { className: "mt-1.5" },
@@ -6451,8 +6450,7 @@ window.__K3_START = function () {
                             tr("борг"),
                             " ",
                             fmtMoney(gi.debt, pocket.currency)));
-                    })(),
-                    React.createElement("span", { className: "text-[10px] font-semibold px-2 py-0.5 rounded-full", style: { background: "rgba(255,255,255,0.12)", color: "#fff" } }, pocket.currency)),
+                    })()),
                 pocket.name && React.createElement("p", { className: "text-sm mt-1 font-medium", style: { color: "rgba(255,255,255,0.72)" } }, tr(pocket.name)),
                 siblings.length > 1 && (React.createElement("div", { "data-noswipe": true, className: "flex gap-2 overflow-x-auto mt-4 -mx-1 px-1 pb-0.5" }, siblings.map((s) => {
                     const on = s.id === pid;
