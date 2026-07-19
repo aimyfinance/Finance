@@ -637,6 +637,11 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Не почув — спробуйте ще раз": "Didn't catch that — please try again",
+        "Не вдалося розпізнати — спробуйте ще раз": "Couldn't recognize — please try again",
+        "Дозвольте доступ до мікрофона в налаштуваннях браузера": "Allow microphone access in your browser settings",
+        "Слухаю… скажіть суму і опис": "Listening… say the amount and description",
+        "Надиктувати голосом": "Dictate by voice",
         "Для банківської — останні 4 цифри, для готівки — будь-які на ваш смак.": "For a bank card — its last 4 digits; for cash — any digits you like.",
         "4 цифри для картки (необовʼязково)": "4 digits for the card (optional)",
         "Останні 4 цифри картки": "Card last 4 digits",
@@ -6684,6 +6689,27 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти зміни") : tr("Створити категорію"))));
     }
     /* ---------- Transaction (income/expense) Modal ---------- */
+    // Розбір надиктованої фрази: перше число = сума (+ копійки), валютні слова
+    // вирізаються, решта стає описом. Свідомо простий — v1.
+    function parseVoiceTx(raw) {
+        let s = " " + String(raw || "").replace(/\u00a0/g, " ") + " ";
+        let amount = "";
+        const m = s.match(/(\d[\d\s]*(?:[.,]\d{1,2})?)/);
+        if (m) {
+            amount = m[1].replace(/\s+/g, "").replace(",", ".");
+            s = s.replace(m[1], " ");
+        }
+        const kop = s.match(/(\d{1,2})\s*(копійок|копійки|копійка|коп|центів|цента|цент|cents|cent)/i);
+        if (amount && kop) {
+            amount = String(Math.round((parseFloat(amount) + parseFloat(kop[1]) / 100) * 100) / 100);
+            s = s.replace(kop[0], " ");
+        }
+        [/(гривень|гривні|гривня|грн)/gi, /(доларів|долара|долар|баксів|бакси)/gi, /(євро)/gi, /(hryvnias|hryvnia|dollars|dollar|bucks|euros|euro)/gi].forEach((re) => { s = s.replace(re, " "); });
+        let note = s.replace(/\s+/g, " ").trim();
+        if (note)
+            note = note[0].toUpperCase() + note.slice(1);
+        return { amount, note };
+    }
     function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions }) {
         const P = payload || {};
         const isIncome = kind === "income";
@@ -6697,6 +6723,47 @@ window.__K3_START = function () {
         const [newCatMode, setNewCatMode] = useState(false);
         const [newCatName, setNewCatName] = useState("");
         const [newCatIcon, setNewCatIcon] = useState("MoreHorizontal");
+        const voiceRef = useRef(null);
+        const [voiceOn, setVoiceOn] = useState(false);
+        const [vMsg, setVMsg] = useState("");
+        const voiceSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+        const startVoice = () => {
+            if (voiceOn) {
+                try {
+                    voiceRef.current && voiceRef.current.stop();
+                }
+                catch (e) { }
+                setVoiceOn(false);
+                return;
+            }
+            const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SRC)
+                return;
+            const rec = new SRC();
+            rec.lang = LANG === "en" ? "en-US" : "uk-UA";
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+            rec.onresult = (ev) => {
+                const t = ((ev.results && ev.results[0] && ev.results[0][0] && ev.results[0][0].transcript) || "").trim();
+                const pr = parseVoiceTx(t);
+                if (pr.amount)
+                    setAmount(pr.amount);
+                if (pr.note)
+                    setNote(pr.note);
+                setVMsg(t ? "" : tr("Не почув — спробуйте ще раз"));
+            };
+            rec.onerror = (ev) => { setVoiceOn(false); setVMsg(ev && ev.error === "not-allowed" ? tr("Дозвольте доступ до мікрофона в налаштуваннях браузера") : tr("Не вдалося розпізнати — спробуйте ще раз")); };
+            rec.onend = () => setVoiceOn(false);
+            voiceRef.current = rec;
+            setVMsg("");
+            setVoiceOn(true);
+            try {
+                rec.start();
+            }
+            catch (e) {
+                setVoiceOn(false);
+            }
+        };
         const [date, setDate] = useState(editing?.date || P.presetDate || new Date().toISOString().slice(0, 10));
         const [receipt, setReceipt] = useState(editing?.receipt || null);
         const [recOn, setRecOn] = useState(false);
@@ -6790,6 +6857,12 @@ window.__K3_START = function () {
             onClose();
         };
         return (React.createElement(Modal, { title: editing ? tr("Редагувати операцію") : isIncome ? tr("Додати дохід") : tr("Додати витрату"), onClose: onClose },
+            voiceSupported && (React.createElement("div", { className: "mb-3" },
+                React.createElement("button", { type: "button", onClick: startVoice, className: "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium", style: { border: "1px dashed " + (voiceOn ? "var(--danger)" : "var(--border)"), color: voiceOn ? "var(--danger)" : "var(--text-dim)", background: voiceOn ? "rgba(217,119,87,0.08)" : "transparent" } },
+                    React.createElement(Mic, { size: 15, className: voiceOn ? "animate-pulse" : "" }),
+                    " ",
+                    voiceOn ? tr("Слухаю… скажіть суму і опис") : tr("Надиктувати голосом")),
+                vMsg && React.createElement("p", { className: "text-[11px] mt-1 text-center", style: { color: "var(--text-dim)" } }, vMsg))),
             React.createElement(Field, { label: tr("Опис / коментар") },
                 React.createElement(Input, { value: note, onChange: (e) => setNote(e.target.value), placeholder: isIncome ? tr("напр. Зарплата за липень") : tr("напр. Продукти в АТБ") }),
                 (() => {
