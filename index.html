@@ -3642,9 +3642,13 @@ window.__K3_START = function () {
                         fmtMoney(pocket.creditLimit, pocket.currency)),
                     React.createElement(CreditUsageBar, { limit: pocket.creditLimit, balance: balance, height: 4 })));
             })(),
-            React.createElement("div", { className: "flex items-center justify-between gap-2 mt-auto pt-2" },
-                React.createElement("p", { className: "text-sm font-medium truncate", style: { color: "rgba(255,255,255,0.75)" } }, tr(acc.name)),
-                acc.bank && React.createElement("span", { className: "text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, tr(acc.bank)))));
+            React.createElement("div", { className: "mt-auto pt-2" },
+                pocket.last4 && React.createElement("p", { className: "text-[11px] tabular mb-1", style: { color: "rgba(255,255,255,0.5)", letterSpacing: "0.16em" } },
+                    "\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 ",
+                    pocket.last4),
+                React.createElement("div", { className: "flex items-center justify-between gap-2" },
+                    React.createElement("p", { className: "text-sm font-medium truncate", style: { color: "rgba(255,255,255,0.75)" } }, tr(acc.name)),
+                    acc.bank && React.createElement("span", { className: "text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, tr(acc.bank))))));
     }
     function TxRow({ tx, categories, pocketLabel, onClick }) {
         let label = "", sub = "", amountStr = "", amountColor = "var(--text)";
@@ -6617,6 +6621,9 @@ window.__K3_START = function () {
         return (React.createElement(Modal, { title: existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`, onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Назва субрахунку (необовʼязково)") },
                 React.createElement(Input, { value: name, onChange: (e) => setName(e.target.value), placeholder: tr("Напр. Заначка, Зарплатна") })),
+            React.createElement(Field, { label: tr("4 цифри для картки (необовʼязково)") },
+                React.createElement(Input, { inputMode: "numeric", maxLength: 4, value: last4, onChange: (e) => setLast4(e.target.value.replace(/\D/g, "").slice(0, 4)), placeholder: "1111" }),
+                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Для банківської — останні 4 цифри, для готівки — будь-які на ваш смак."))),
             React.createElement(Field, { label: tr("Валюта"), error: error },
                 React.createElement(Select, { value: currency, onChange: (e) => setCurrency(e.target.value) }, availableCurrencies.map((c) => React.createElement("option", { key: c, value: c }, c)))),
             currencyChanged && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--warn)" } }, tr("Зміна валюти не конвертує вже наявні операції — вони залишаться у своїх сумах.")),
@@ -6630,9 +6637,6 @@ window.__K3_START = function () {
             React.createElement(Field, { label: tr("Пільговий період (днів)") },
                 React.createElement(Input, { type: "number", step: "1", inputMode: "numeric", value: graceDays, onChange: (e) => setGraceDays(e.target.value), placeholder: "55" }),
                 React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку."))),
-            React.createElement(Field, { label: tr("4 цифри для картки (необовʼязково)") },
-                React.createElement(Input, { inputMode: "numeric", maxLength: 4, value: last4, onChange: (e) => setLast4(e.target.value.replace(/\D/g, "").slice(0, 4)), placeholder: "1111" }),
-                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Для банківської — останні 4 цифри, для готівки — будь-які на ваш смак."))),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, existing ? tr("Зберегти зміни") : tr("Додати субрахунок"))));
     }
     /* ---------- Category Modal ---------- */
