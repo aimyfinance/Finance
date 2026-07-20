@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-</head>
+<meta name="k3-build" content="2026-07-20 13:10 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -637,6 +637,11 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Онлайн-курс. Зміни його вручну, якщо реальний курс інший — у цій операції він зафіксується назавжди.": "Online rate. Change it manually if the real rate differs — it will be locked into this transaction forever.",
+        "застосувати": "apply",
+        "Онлайн-курс": "Online rate",
+        "Сума переказу": "Transfer amount",
+        "Сума обміну": "Amount to exchange",
         "Для банківської — останні 4 цифри, для готівки — будь-які на ваш смак.": "For a bank card — its last 4 digits; for cash — any digits you like.",
         "4 цифри для картки (необовʼязково)": "4 digits for the card (optional)",
         "Останні 4 цифри картки": "Card last 4 digits",
@@ -1479,6 +1484,8 @@ window.__K3_START = function () {
         [/^прострочено на (.+) дн\.$/, "$1 days overdue"],
         [/^Сума \((.+)\)$/, "Amount ($1)"],
         [/^Сума списання \((.+)\)$/, "Amount to debit ($1)"],
+        [/^Сума обміну \((.+)\)$/, "Amount to exchange ($1)"],
+        [/^Сума переказу \((.+)\)$/, "Transfer amount ($1)"],
         [/^Сума зарахування \((.+)\)$/, "Amount received ($1)"],
         [/^Сума повернення \((.+)\)$/, "Return amount ($1)"],
         [/^Сума погашення \((.+)\)$/, "Repayment amount ($1)"],
@@ -6900,23 +6907,73 @@ window.__K3_START = function () {
         const active = pockets.filter((p) => !p.archived);
         const [fromPocketId, setFromPocketId] = useState(presetFromPocketId || active[0]?.id || "");
         const [toPocketId, setToPocketId] = useState(active.find((p) => p.id !== (presetFromPocketId || active[0]?.id))?.id || active[0]?.id || "");
+        const curListEx = Array.from(new Set(active.map((p) => p.currency)));
+        const [fromCur, setFromCur] = useState(() => (active.find((p) => p.id === (presetFromPocketId || active[0]?.id)) || active[0] || {}).currency || "UAH");
+        const [toCur, setToCur] = useState(() => {
+            const f = (active.find((p) => p.id === (presetFromPocketId || active[0]?.id)) || active[0] || {}).currency || "UAH";
+            return curListEx.find((cc) => cc !== f) || f;
+        });
         const [fromAmount, setFromAmount] = useState("");
         const [rate, setRate] = useState("1");
         const rateNum = parseFloat(String(rate).replace(",", ".")) || 0;
         const [toAmount, setToAmount] = useState("");
-        const [fee, setFee] = useState(0);
         const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
         const [note, setNote] = useState("");
         const [error, setError] = useState("");
         const [manualTo, setManualTo] = useState(false);
+        const pickCur = (side, v) => {
+            const setCur = side === "from" ? setFromCur : setToCur;
+            const setPk = side === "from" ? setFromPocketId : setToPocketId;
+            setCur(v);
+            const cand = active.find((p) => p.currency === v);
+            if (cand)
+                setPk(cand.id);
+            const other = side === "from" ? toCur : fromCur;
+            if (v === other) {
+                const alt = curListEx.find((cc) => cc !== v);
+                if (alt) {
+                    (side === "from" ? setToCur : setFromCur)(alt);
+                    const oc = active.find((p) => p.currency === alt);
+                    if (oc)
+                        (side === "from" ? setToPocketId : setFromPocketId)(oc.id);
+                }
+            }
+        };
+        useEffect(() => {
+            if (!isExchange)
+                return;
+            if (!fromPocket || fromPocket.currency !== fromCur) {
+                const cand = active.find((p) => p.currency === fromCur);
+                if (cand)
+                    setFromPocketId(cand.id);
+            }
+            if (!toPocket || toPocket.currency !== toCur || toPocketId === fromPocketId) {
+                const cand = active.find((p) => p.currency === toCur && p.id !== fromPocketId);
+                if (cand)
+                    setToPocketId(cand.id);
+            }
+        }, [isExchange, fromCur, toCur, fromPocketId, toPocketId]);
+        useEffect(() => {
+            if (isExchange)
+                return;
+            if (toPocketId === fromPocketId) {
+                const alt = active.find((p) => p.id !== fromPocketId);
+                if (alt)
+                    setToPocketId(alt.id);
+            }
+        }, [isExchange, fromPocketId, toPocketId]);
         const fromPocket = pockets.find((p) => p.id === fromPocketId);
         const toPocket = pockets.find((p) => p.id === toPocketId);
-        const fromCurrency = fromPocket?.currency || "UAH";
-        const toCurrency = toPocket?.currency || "UAH";
+        const fromCurrency = isExchange ? fromCur : (fromPocket?.currency || "UAH");
+        const toCurrency = isExchange ? toCur : (toPocket?.currency || "UAH");
         const crossCurrency = fromCurrency !== toCurrency;
+        const quoteFrom = !(crossCurrency && fromCurrency === "UAH");
+        const quoteCur = quoteFrom ? fromCurrency : toCurrency;
+        const otherCur = quoteFrom ? toCurrency : fromCurrency;
+        const onlineRate = crossCurrency ? Math.round(convert(1, quoteCur, otherCur, rates) * 10000) / 10000 : 1;
         useEffect(() => {
             if (crossCurrency)
-                setRate(String(Math.round(convert(1, fromCurrency, toCurrency, rates) * 10000) / 10000));
+                setRate(String(Math.round(convert(1, quoteFrom ? fromCurrency : toCurrency, quoteFrom ? toCurrency : fromCurrency, rates) * 10000) / 10000));
             else
                 setRate("1");
         }, [fromCurrency, toCurrency, crossCurrency]);
@@ -6924,10 +6981,9 @@ window.__K3_START = function () {
             if (manualTo)
                 return;
             const amt = parseFloat(fromAmount) || 0;
-            const f = parseFloat(fee) || 0;
-            const computed = crossCurrency ? amt * rateNum - f : amt - f;
+            const computed = crossCurrency ? (quoteFrom ? amt * rateNum : (rateNum > 0 ? amt / rateNum : 0)) : amt;
             setToAmount(computed > 0 ? Math.round(computed * 100) / 100 : 0);
-        }, [fromAmount, rateNum, fee, crossCurrency, manualTo]);
+        }, [fromAmount, rateNum, crossCurrency, manualTo]);
         const submit = () => {
             const amt = parseFloat(fromAmount);
             if (!amt || amt <= 0)
@@ -6939,22 +6995,41 @@ window.__K3_START = function () {
             const to = parseFloat(toAmount);
             if (!to || to <= 0)
                 return setError(tr("Сума зарахування має бути додатною"));
-            addTransaction({ type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? rateNum : 1, fee: parseFloat(fee) || 0, note });
+            addTransaction({ type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? (quoteFrom ? rateNum : (rateNum > 0 ? Math.round((1 / rateNum) * 1e6) / 1e6 : 0)) : 1, fee: 0, note });
             onClose();
         };
         return (React.createElement(Modal, { title: isExchange ? tr("Обмін валюти") : tr("Переказ між рахунками"), onClose: onClose },
+            isExchange ? (React.createElement(Field, { label: tr("Сума обміну"), error: error },
+                React.createElement("div", { className: "flex gap-2" },
+                    React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }),
+                    React.createElement("select", { value: fromCur, onChange: (e) => pickCur("from", e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))) : (React.createElement(Field, { label: `${tr("Сума переказу")} (${fromCurrency})`, error: error },
+                React.createElement(Input, { type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }))),
+            crossCurrency && (React.createElement(Field, { label: `Курс обміну (1 ${quoteCur} = X ${otherCur})` },
+                React.createElement(Input, { type: "number", value: rate, onChange: (e) => { setRate(e.target.value); setManualTo(false); } }),
+                Math.abs(rateNum - onlineRate) > 1e-9 ? (React.createElement("button", { type: "button", onClick: () => { setRate(String(onlineRate)); setManualTo(false); }, className: "text-[11px] mt-1", style: { color: "var(--accent)" } },
+                    tr("Онлайн-курс"),
+                    ": 1 ",
+                    quoteCur,
+                    " = ",
+                    onlineRate,
+                    " ",
+                    otherCur,
+                    " \u2014 ",
+                    tr("застосувати"))) : (React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Онлайн-курс. Зміни його вручну, якщо реальний курс інший — у цій операції він зафіксується назавжди."))))),
+            crossCurrency && (isExchange ? (React.createElement(Field, { label: tr("Сума зарахування") },
+                React.createElement("div", { className: "flex gap-2" },
+                    React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: toAmount, onChange: (e) => { setToAmount(e.target.value); setManualTo(true); } }),
+                    React.createElement("select", { value: toCur, onChange: (e) => pickCur("to", e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))) : (React.createElement(Field, { label: `Сума зарахування (${toCurrency})` },
+                React.createElement(Input, { type: "number", step: "0.01", value: toAmount, onChange: (e) => { setToAmount(e.target.value); setManualTo(true); } })))),
             React.createElement(Field, { label: tr("Рахунок списання") },
-                React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: fromPocketId, onChange: setFromPocketId, tint: "out", pocketBalance: pocketBalance })),
+                React.createElement(PocketSelect, { accounts: accounts, pockets: isExchange ? active.filter((pp) => pp.currency === fromCur) : pockets, value: fromPocketId, onChange: (v) => { setFromPocketId(v); if (v === toPocketId) {
+                        const alt = active.find((pp) => pp.id !== v);
+                        if (alt)
+                            setToPocketId(alt.id);
+                    } }, tint: "out", pocketBalance: pocketBalance })),
             React.createElement(Field, { label: tr("Рахунок зарахування") },
-                React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: toPocketId, onChange: setToPocketId, excludePocketId: fromPocketId, tint: "in", pocketBalance: pocketBalance })),
-            React.createElement(Field, { label: `Сума списання (${fromCurrency})`, error: error },
-                React.createElement(Input, { type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } })),
-            crossCurrency && (React.createElement(Field, { label: `Курс обміну (1 ${fromCurrency} = X ${toCurrency})` },
-                React.createElement(Input, { type: "number", value: rate, onChange: (e) => setRate(e.target.value) }))),
-            React.createElement(Field, { label: `Комісія (${crossCurrency ? toCurrency : fromCurrency}, необов'язково)` },
-                React.createElement(Input, { type: "number", step: "0.01", value: fee, onChange: (e) => setFee(e.target.value) })),
-            React.createElement(Field, { label: `Сума зарахування (${toCurrency})` },
-                React.createElement(Input, { type: "number", step: "0.01", value: toAmount, onChange: (e) => { setToAmount(e.target.value); setManualTo(true); } })),
+                React.createElement(PocketSelect, { accounts: accounts, pockets: isExchange ? active.filter((pp) => pp.currency === toCur) : pockets, value: toPocketId, onChange: (v) => { if (v === fromPocketId)
+                        setFromPocketId(toPocketId); setToPocketId(v); }, excludePocketId: fromPocketId, tint: "in", pocketBalance: pocketBalance })),
             React.createElement(Field, { label: tr("Дата") },
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Field, { label: tr("Коментар") },
@@ -7276,5 +7351,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-</body>
+<script>console.log("K³ build: 2026-07-20 13:10 UTC");</script></body>
 </html>
