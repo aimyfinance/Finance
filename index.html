@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-20 13:48 UTC"/></head>
+<meta name="k3-build" content="2026-07-20 14:29 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -2173,7 +2173,8 @@ window.__K3_START = function () {
             prevViewRef.current = lastViewRef.current;
             lastViewRef.current = view;
         } }, [view]);
-        const goBackView = () => { const t = prevViewRef.current && prevViewRef.current !== view ? prevViewRef.current : "dashboard"; setView(t); };
+        useEffect(() => { window.scrollTo(0, 0); }, [view]);
+        const goBackView = () => setView("dashboard");
         const [modal, setModal] = useState(null);
         const [historyPreset, setHistoryPreset] = useState(null); // filters handed to History by tappable dashboard numbers
         const [toast, setToast] = useState(null);
@@ -7379,5 +7380,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-20 13:48 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-20 14:29 UTC");</script></body>
 </html>
