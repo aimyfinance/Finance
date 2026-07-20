@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-20 13:10 UTC"/></head>
+<meta name="k3-build" content="2026-07-20 13:48 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -637,6 +637,7 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Оберіть два різні рахунки": "Select two different accounts",
         "Онлайн-курс. Зміни його вручну, якщо реальний курс інший — у цій операції він зафіксується назавжди.": "Online rate. Change it manually if the real rate differs — it will be locked into this transaction forever.",
         "застосувати": "apply",
         "Онлайн-курс": "Online rate",
@@ -6939,6 +6940,13 @@ window.__K3_START = function () {
                 }
             }
         };
+        const pickTrCur = (v) => {
+            setFromCur(v);
+            setToCur(v);
+            const list = active.filter((p) => p.currency === v);
+            setFromPocketId(list[0] ? list[0].id : "");
+            setToPocketId(list[1] ? list[1].id : (list[0] ? list[0].id : ""));
+        };
         useEffect(() => {
             if (!isExchange)
                 return;
@@ -6956,16 +6964,30 @@ window.__K3_START = function () {
         useEffect(() => {
             if (isExchange)
                 return;
+            if (!fromPocket || fromPocket.currency !== fromCur) {
+                const cand = active.find((p) => p.currency === fromCur);
+                if (cand)
+                    setFromPocketId(cand.id);
+            }
+            if (!toPocket || toPocket.currency !== fromCur) {
+                const cand = active.find((p) => p.currency === fromCur && p.id !== fromPocketId);
+                if (cand)
+                    setToPocketId(cand.id);
+            }
+        }, [isExchange, fromCur, fromPocketId, toPocketId]);
+        useEffect(() => {
+            if (isExchange)
+                return;
             if (toPocketId === fromPocketId) {
-                const alt = active.find((p) => p.id !== fromPocketId);
+                const alt = active.find((p) => p.id !== fromPocketId && p.currency === fromCur);
                 if (alt)
                     setToPocketId(alt.id);
             }
         }, [isExchange, fromPocketId, toPocketId]);
         const fromPocket = pockets.find((p) => p.id === fromPocketId);
         const toPocket = pockets.find((p) => p.id === toPocketId);
-        const fromCurrency = isExchange ? fromCur : (fromPocket?.currency || "UAH");
-        const toCurrency = isExchange ? toCur : (toPocket?.currency || "UAH");
+        const fromCurrency = fromCur;
+        const toCurrency = isExchange ? toCur : fromCur;
         const crossCurrency = fromCurrency !== toCurrency;
         const quoteFrom = !(crossCurrency && fromCurrency === "UAH");
         const quoteCur = quoteFrom ? fromCurrency : toCurrency;
@@ -6992,6 +7014,10 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть рахунки"));
             if (fromPocketId === toPocketId)
                 return setError(tr("Оберіть різні рахунки"));
+            if (!fromPocket || !toPocket || fromPocketId === toPocketId) {
+                setError(tr("Оберіть два різні рахунки"));
+                return;
+            }
             const to = parseFloat(toAmount);
             if (!to || to <= 0)
                 return setError(tr("Сума зарахування має бути додатною"));
@@ -7002,8 +7028,10 @@ window.__K3_START = function () {
             isExchange ? (React.createElement(Field, { label: tr("Сума обміну"), error: error },
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }),
-                    React.createElement("select", { value: fromCur, onChange: (e) => pickCur("from", e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))) : (React.createElement(Field, { label: `${tr("Сума переказу")} (${fromCurrency})`, error: error },
-                React.createElement(Input, { type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }))),
+                    React.createElement("select", { value: fromCur, onChange: (e) => pickCur("from", e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))) : (React.createElement(Field, { label: tr("Сума переказу"), error: error },
+                React.createElement("div", { className: "flex gap-2" },
+                    React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }),
+                    React.createElement("select", { value: fromCur, onChange: (e) => pickTrCur(e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))),
             crossCurrency && (React.createElement(Field, { label: `Курс обміну (1 ${quoteCur} = X ${otherCur})` },
                 React.createElement(Input, { type: "number", value: rate, onChange: (e) => { setRate(e.target.value); setManualTo(false); } }),
                 Math.abs(rateNum - onlineRate) > 1e-9 ? (React.createElement("button", { type: "button", onClick: () => { setRate(String(onlineRate)); setManualTo(false); }, className: "text-[11px] mt-1", style: { color: "var(--accent)" } },
@@ -7022,13 +7050,13 @@ window.__K3_START = function () {
                     React.createElement("select", { value: toCur, onChange: (e) => pickCur("to", e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))) : (React.createElement(Field, { label: `Сума зарахування (${toCurrency})` },
                 React.createElement(Input, { type: "number", step: "0.01", value: toAmount, onChange: (e) => { setToAmount(e.target.value); setManualTo(true); } })))),
             React.createElement(Field, { label: tr("Рахунок списання") },
-                React.createElement(PocketSelect, { accounts: accounts, pockets: isExchange ? active.filter((pp) => pp.currency === fromCur) : pockets, value: fromPocketId, onChange: (v) => { setFromPocketId(v); if (v === toPocketId) {
-                        const alt = active.find((pp) => pp.id !== v);
+                React.createElement(PocketSelect, { accounts: accounts, pockets: active.filter((pp) => pp.currency === fromCur), value: fromPocketId, onChange: (v) => { setFromPocketId(v); if (v === toPocketId) {
+                        const alt = active.find((pp) => pp.id !== v && pp.currency === (isExchange ? toCur : fromCur));
                         if (alt)
                             setToPocketId(alt.id);
                     } }, tint: "out", pocketBalance: pocketBalance })),
             React.createElement(Field, { label: tr("Рахунок зарахування") },
-                React.createElement(PocketSelect, { accounts: accounts, pockets: isExchange ? active.filter((pp) => pp.currency === toCur) : pockets, value: toPocketId, onChange: (v) => { if (v === fromPocketId)
+                React.createElement(PocketSelect, { accounts: accounts, pockets: active.filter((pp) => pp.currency === (isExchange ? toCur : fromCur)), value: toPocketId, onChange: (v) => { if (v === fromPocketId)
                         setFromPocketId(toPocketId); setToPocketId(v); }, excludePocketId: fromPocketId, tint: "in", pocketBalance: pocketBalance })),
             React.createElement(Field, { label: tr("Дата") },
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
@@ -7351,5 +7379,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-20 13:10 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-20 13:48 UTC");</script></body>
 </html>
