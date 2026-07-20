@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-20 14:29 UTC"/></head>
+<meta name="k3-build" content="2026-07-20 17:28 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -5759,6 +5759,12 @@ window.__K3_START = function () {
                     React.createElement(Tags, { size: 15 }),
                     " ",
                     tr("Керувати категоріями"))),
+            React.createElement(SettingsSection, { icon: Home, title: React.createElement(React.Fragment, null, tr("Проєкти")), open: openSec === "sec9", onToggle: () => setOpenSec(openSec === "sec9" ? "" : "sec9") },
+                React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Обʼєднуйте витрати за обʼєктами: квартира, будинок, авто, ремонт. Аналітика на головному покаже, скільки коштує кожен.")),
+                React.createElement(Button, { variant: "secondary", onClick: () => setModal && setModal({ type: "projects" }) },
+                    React.createElement(Home, { size: 15 }),
+                    " ",
+                    tr("Керувати проєктами"))),
             React.createElement(SettingsSection, { icon: PiggyBank, title: React.createElement(React.Fragment, null, tr("Цілі накопичень")), open: openSec === "sec1", onToggle: () => setOpenSec(openSec === "sec1" ? "" : "sec1") },
                 React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Ставте фінансові цілі (відпустка, техніка, подушка безпеки) і відстежуйте прогрес накопичень.")),
                 React.createElement(Button, { variant: "secondary", onClick: () => setView && setView("goals") },
@@ -5855,12 +5861,6 @@ window.__K3_START = function () {
                     React.createElement(RefreshCw, { size: 15 }),
                     " ",
                     tr("Керувати платежами"))),
-            React.createElement(SettingsSection, { icon: Home, title: React.createElement(React.Fragment, null, tr("Проєкти")), open: openSec === "sec9", onToggle: () => setOpenSec(openSec === "sec9" ? "" : "sec9") },
-                React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Обʼєднуйте витрати за обʼєктами: квартира, будинок, авто, ремонт. Аналітика на головному покаже, скільки коштує кожен.")),
-                React.createElement(Button, { variant: "secondary", onClick: () => setModal && setModal({ type: "projects" }) },
-                    React.createElement(Home, { size: 15 }),
-                    " ",
-                    tr("Керувати проєктами"))),
             React.createElement(Card, { className: "p-5" },
                 React.createElement(Field, { label: tr("Базова валюта (для загального балансу)") },
                     React.createElement(Select, { value: base, onChange: (e) => setBase(e.target.value) }, activeCurs.map((c) => React.createElement("option", { key: c, value: c }, c)))),
@@ -6797,6 +6797,8 @@ window.__K3_START = function () {
             onClose();
         };
         return (React.createElement(Modal, { title: editing ? tr("Редагувати операцію") : isIncome ? tr("Додати дохід") : tr("Додати витрату"), onClose: onClose },
+            React.createElement(Field, { label: `Сума (${currency})`, error: error },
+                React.createElement(Input, { type: "number", step: "0.01", value: amount, onChange: (e) => { setAmount(e.target.value); setError(""); }, placeholder: "0.00", autoFocus: !!P.focusAmount })),
             React.createElement(Field, { label: tr("Опис / коментар") },
                 React.createElement(Input, { value: note, onChange: (e) => setNote(e.target.value), placeholder: isIncome ? tr("напр. Зарплата за липень") : tr("напр. Продукти в АТБ") }),
                 (() => {
@@ -6823,8 +6825,6 @@ window.__K3_START = function () {
                             setPrjNew(false);
                         } }, className: "px-2.5 py-1 rounded-full text-xs", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, s.note)))));
                 })()),
-            React.createElement(Field, { label: `Сума (${currency})`, error: error },
-                React.createElement(Input, { type: "number", step: "0.01", value: amount, onChange: (e) => { setAmount(e.target.value); setError(""); }, placeholder: "0.00", autoFocus: !!P.focusAmount })),
             React.createElement(Field, { label: tr("Рахунок") },
                 React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: pocketId, onChange: setPocketId, tint: isIncome ? "in" : "out", pocketBalance: pocketBalance })),
             React.createElement("div", { className: "block mb-3" },
@@ -7380,5 +7380,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-20 14:29 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-20 17:28 UTC");</script></body>
 </html>
