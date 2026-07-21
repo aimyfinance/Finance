@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-21 13:40 UTC"/></head>
+<meta name="k3-build" content="2026-07-21 20:34 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -2876,7 +2876,8 @@ window.__K3_START = function () {
             if (n > 0)
                 notify(tr("Створено за розкладом") + ": " + n);
         }, []);
-        const overdueReminders = reminders.filter((r) => !r.done && new Date(r.date) < new Date(new Date().setHours(0, 0, 0, 0)));
+        const todayLocalStr = (() => { const t = new Date(); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"); })();
+        const overdueReminders = reminders.filter((r) => !r.done && r.date <= todayLocalStr);
         const creditWarnings = pockets.filter((pp) => !pp.archived && pp.creditLimit > 0).map((pp) => {
             const bal = pocketBalance(pp.id);
             const avail = pp.creditLimit + bal;
@@ -6370,7 +6371,9 @@ window.__K3_START = function () {
                 React.createElement("div", { className: "space-y-2" },
                     sorted.map((r) => {
                         const days = daysBetween(new Date(), r.date);
-                        const overdue = !r.done && new Date(r.date) < today;
+                        const __t = new Date();
+                        const __todayStr = __t.getFullYear() + "-" + String(__t.getMonth() + 1).padStart(2, "0") + "-" + String(__t.getDate()).padStart(2, "0");
+                        const overdue = !r.done && r.date <= __todayStr;
                         return (React.createElement(Card, { key: r.id, className: `p-4 ${r.done ? "opacity-50" : ""}`, style: overdue ? { borderColor: "var(--danger)" } : {} },
                             React.createElement("div", { className: "flex items-start gap-3" },
                                 React.createElement("button", { onClick: () => toggleReminderDone(r.id), className: "mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center shrink-0", style: { borderColor: r.done ? "var(--accent)" : "var(--border)", background: r.done ? "var(--accent)" : "transparent" } }, r.done && React.createElement(Check, { size: 12, color: "#08110D" })),
@@ -7430,5 +7433,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-21 13:40 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-21 20:34 UTC");</script></body>
 </html>
