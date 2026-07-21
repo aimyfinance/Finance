@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-20 17:28 UTC"/></head>
+<meta name="k3-build" content="2026-07-21 09:47 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -6927,6 +6927,7 @@ window.__K3_START = function () {
             const setCur = side === "from" ? setFromCur : setToCur;
             const setPk = side === "from" ? setFromPocketId : setToPocketId;
             setCur(v);
+            setManualTo(false);
             const cand = active.find((p) => p.currency === v);
             if (cand)
                 setPk(cand.id);
@@ -7006,7 +7007,7 @@ window.__K3_START = function () {
             const amt = parseFloat(fromAmount) || 0;
             const computed = crossCurrency ? (quoteFrom ? amt * rateNum : (rateNum > 0 ? amt / rateNum : 0)) : amt;
             setToAmount(computed > 0 ? Math.round(computed * 100) / 100 : 0);
-        }, [fromAmount, rateNum, crossCurrency, manualTo]);
+        }, [fromAmount, rateNum, crossCurrency, manualTo, fromCurrency, toCurrency]);
         const submit = () => {
             const amt = parseFloat(fromAmount);
             if (!amt || amt <= 0)
@@ -7380,5 +7381,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-20 17:28 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-21 09:47 UTC");</script></body>
 </html>
