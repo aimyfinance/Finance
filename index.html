@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-21 12:46 UTC"/></head>
+<meta name="k3-build" content="2026-07-21 13:30 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -639,6 +639,8 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Разом витрат": "Total spent",
+        "Звіт за категоріями": "Category report",
         "Оберіть два різні рахунки": "Select two different accounts",
         "Онлайн-курс. Зміни його вручну, якщо реальний курс інший — у цій операції він зафіксується назавжди.": "Online rate. Change it manually if the real rate differs — it will be locked into this transaction forever.",
         "застосувати": "apply",
@@ -3241,6 +3243,7 @@ window.__K3_START = function () {
         const [period, setPeriod] = useState("month");
         const [customFrom, setCustomFrom] = useState("");
         const [customTo, setCustomTo] = useState("");
+        const [catReport, setCatReport] = useState(false);
         const nowD = new Date();
         const isoD = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
         let pStart = "", pEnd = "";
@@ -3441,7 +3444,10 @@ window.__K3_START = function () {
                             ")"),
                         React.createElement("button", { onClick: () => setModal({ type: "breakdownCats" }), className: "pill-link shrink-0" }, breakdownCats && breakdownCats.length ? `${tr("Категорії")} · ${breakdownCats.length}` : tr("Категорії"))),
                     periodBreakdown.length === 0 ? (React.createElement("p", { className: "text-sm py-8 text-center", style: { color: "var(--text-dim)" } }, tr("Немає витрат за цей період"))) : (React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
-                        React.createElement(DonutChart, { data: periodBreakdown, size: 118, thickness: 22 }),
+                        React.createElement("button", { type: "button", "data-smoke": "catdonut", className: "shrink-0", onClick: () => setCatReport(true) },
+                            React.createElement(DonutChart, { data: periodBreakdown, size: 118, thickness: 22 })),
+                        catReport && (React.createElement(CategoryReportModal, { onClose: () => setCatReport(false), breakdown: periodBreakdown, periodLabel: periodLabel, categories: categories, baseCurrency: baseCurrency, openCat: (cid) => { setCatReport(false); if (!cid)
+                                return; setHistoryPreset({ type: "expense", categoryId: cid, from: pStart, to: pEnd }); setView("history"); } })),
                         React.createElement("div", { className: "space-y-1.5 flex-1 min-w-0" }, periodBreakdown.slice(0, 5).map((c, i) => {
                             const cid = ((categories || []).find((cc) => cc.type === "expense" && cc.name === c.name) || {}).id;
                             return (React.createElement("button", { type: "button", key: i, className: "w-full min-w-0 flex items-center justify-between text-xs gap-2", onClick: () => { if (!cid)
@@ -6151,6 +6157,27 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full", onClick: submit }, tr("Зберегти"))));
     }
     // Which expense categories take part in the period comparison (donut + list)
+    function CategoryReportModal({ onClose, breakdown, periodLabel, categories, baseCurrency, openCat }) {
+        const total = breakdown.reduce((s, cc) => s + cc.value, 0);
+        return (React.createElement(Modal, { onClose: onClose, title: `${tr("Звіт за категоріями")} (${periodLabel})` },
+            React.createElement("div", { className: "text-center mb-4 pt-1" },
+                React.createElement("p", { className: "text-[11px] font-medium", style: { color: "var(--text-dim)" } }, tr("Разом витрат")),
+                React.createElement("p", { className: "font-display font-bold text-2xl tabular" }, fmtMoney(total, baseCurrency))),
+            React.createElement("div", { className: "space-y-1.5" }, breakdown.map((cItem, i) => {
+                const cat = (categories || []).find((cc) => cc.type === "expense" && cc.name === cItem.name) || {};
+                const pct = total > 0 ? Math.round((cItem.value / total) * 100) : 0;
+                return (React.createElement("button", { type: "button", key: i, className: "w-full min-w-0 flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" }, onClick: () => openCat(cat.id) },
+                    React.createElement("span", { className: "w-7 h-7 rounded-lg flex items-center justify-center shrink-0", style: { background: (cItem.color || "#8B93A3") + "22" } },
+                        React.createElement(Icon, { name: cat.icon || "MoreHorizontal", size: 14, style: { color: cItem.color } })),
+                    React.createElement("span", { className: "flex-1 min-w-0 text-left" },
+                        React.createElement("span", { className: "block text-sm font-medium truncate" }, tr(cItem.name)),
+                        React.createElement("span", { className: "block text-[10px]", style: { color: "var(--text-dim)" } },
+                            pct,
+                            "%")),
+                    React.createElement("span", { className: "tabular text-sm font-semibold shrink-0" }, fmtMoney(cItem.value, baseCurrency)),
+                    React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } })));
+            }))));
+    }
     function BreakdownCatsModal({ onClose, categories, breakdownCats, setBreakdownCats }) {
         const cats = categories.filter((x) => x.type === "expense" && !x.archived);
         const [sel, setSel] = useState(() => {
@@ -7403,5 +7430,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-21 12:46 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-21 13:30 UTC");</script></body>
 </html>
