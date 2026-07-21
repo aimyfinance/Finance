@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-21 09:47 UTC"/></head>
+<meta name="k3-build" content="2026-07-21 09:59 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -6699,6 +6699,23 @@ window.__K3_START = function () {
         const [note, setNote] = useState(editing?.note || P.presetNote || "");
         const [amount, setAmount] = useState(editing?.amount != null ? String(editing.amount) : (P.presetAmount != null ? String(P.presetAmount) : ""));
         const [pocketId, setPocketId] = useState(editing?.pocketId || presetPocketId || firstPocket?.id || "");
+        const activeTx = pockets.filter((pp) => !pp.archived);
+        const curListTx = Array.from(new Set(activeTx.map((pp) => pp.currency)));
+        const [txCur, setTxCur] = useState(() => (pockets.find((pp) => pp.id === (editing?.pocketId || presetPocketId || firstPocket?.id)) || activeTx[0] || {}).currency || "UAH");
+        const pickTxCur = (v) => {
+            setTxCur(v);
+            const cand = activeTx.find((pp) => pp.currency === v);
+            if (cand)
+                setPocketId(cand.id);
+        };
+        useEffect(() => {
+            const pk = pockets.find((pp) => pp.id === pocketId);
+            if (!pk || pk.currency !== txCur) {
+                const cand = activeTx.find((pp) => pp.currency === txCur);
+                if (cand)
+                    setPocketId(cand.id);
+            }
+        }, [txCur, pocketId]);
         const [categoryId, setCategoryId] = useState(editing?.categoryId || P.presetCategoryId || cats[0]?.id || "");
         const [catOpen, setCatOpen] = useState(false);
         const [newCatMode, setNewCatMode] = useState(false);
@@ -6797,8 +6814,11 @@ window.__K3_START = function () {
             onClose();
         };
         return (React.createElement(Modal, { title: editing ? tr("Редагувати операцію") : isIncome ? tr("Додати дохід") : tr("Додати витрату"), onClose: onClose },
-            React.createElement(Field, { label: `Сума (${currency})`, error: error },
-                React.createElement(Input, { type: "number", step: "0.01", value: amount, onChange: (e) => { setAmount(e.target.value); setError(""); }, placeholder: "0.00", autoFocus: !!P.focusAmount })),
+            React.createElement(Field, { label: tr("Сума"), error: error },
+                React.createElement("div", { className: "flex gap-2" },
+                    React.createElement("div", { className: "flex-1" },
+                        React.createElement(Input, { type: "number", step: "0.01", value: amount, onChange: (e) => { setAmount(e.target.value); setError(""); }, placeholder: "0.00", autoFocus: !!P.focusAmount })),
+                    React.createElement("select", { value: txCur, onChange: (e) => pickTxCur(e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListTx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc))))),
             React.createElement(Field, { label: tr("Опис / коментар") },
                 React.createElement(Input, { value: note, onChange: (e) => setNote(e.target.value), placeholder: isIncome ? tr("напр. Зарплата за липень") : tr("напр. Продукти в АТБ") }),
                 (() => {
@@ -6826,7 +6846,7 @@ window.__K3_START = function () {
                         } }, className: "px-2.5 py-1 rounded-full text-xs", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, s.note)))));
                 })()),
             React.createElement(Field, { label: tr("Рахунок") },
-                React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: pocketId, onChange: setPocketId, tint: isIncome ? "in" : "out", pocketBalance: pocketBalance })),
+                React.createElement(PocketSelect, { accounts: accounts, pockets: activeTx.filter((pp) => pp.currency === txCur), value: pocketId, onChange: setPocketId, tint: isIncome ? "in" : "out", pocketBalance: pocketBalance })),
             React.createElement("div", { className: "block mb-3" },
                 React.createElement("span", { className: "block text-xs font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Категорія")),
                 !catOpen ? (React.createElement("button", { type: "button", onClick: () => setCatOpen(true), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
@@ -7381,5 +7401,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-21 09:47 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-21 09:59 UTC");</script></body>
 </html>
