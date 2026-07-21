@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-21 13:30 UTC"/></head>
+<meta name="k3-build" content="2026-07-21 13:40 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -3243,7 +3243,6 @@ window.__K3_START = function () {
         const [period, setPeriod] = useState("month");
         const [customFrom, setCustomFrom] = useState("");
         const [customTo, setCustomTo] = useState("");
-        const [catReport, setCatReport] = useState(false);
         const nowD = new Date();
         const isoD = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
         let pStart = "", pEnd = "";
@@ -3444,10 +3443,8 @@ window.__K3_START = function () {
                             ")"),
                         React.createElement("button", { onClick: () => setModal({ type: "breakdownCats" }), className: "pill-link shrink-0" }, breakdownCats && breakdownCats.length ? `${tr("Категорії")} · ${breakdownCats.length}` : tr("Категорії"))),
                     periodBreakdown.length === 0 ? (React.createElement("p", { className: "text-sm py-8 text-center", style: { color: "var(--text-dim)" } }, tr("Немає витрат за цей період"))) : (React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
-                        React.createElement("button", { type: "button", "data-smoke": "catdonut", className: "shrink-0", onClick: () => setCatReport(true) },
+                        React.createElement("button", { type: "button", "data-smoke": "catdonut", className: "shrink-0", onClick: () => setModal({ type: "catReport", payload: { breakdown: periodBreakdown, label: periodLabel, from: pStart, to: pEnd } }) },
                             React.createElement(DonutChart, { data: periodBreakdown, size: 118, thickness: 22 })),
-                        catReport && (React.createElement(CategoryReportModal, { onClose: () => setCatReport(false), breakdown: periodBreakdown, periodLabel: periodLabel, categories: categories, baseCurrency: baseCurrency, openCat: (cid) => { setCatReport(false); if (!cid)
-                                return; setHistoryPreset({ type: "expense", categoryId: cid, from: pStart, to: pEnd }); setView("history"); } })),
                         React.createElement("div", { className: "space-y-1.5 flex-1 min-w-0" }, periodBreakdown.slice(0, 5).map((c, i) => {
                             const cid = ((categories || []).find((cc) => cc.type === "expense" && cc.name === c.name) || {}).id;
                             return (React.createElement("button", { type: "button", key: i, className: "w-full min-w-0 flex items-center justify-between text-xs gap-2", onClick: () => { if (!cid)
@@ -6241,6 +6238,9 @@ window.__K3_START = function () {
                 return React.createElement(CryptoTradeModal, { onClose: close, payload: modal.payload, accounts: accounts, pockets: pockets, crypto: crypto, cryptoPrices: cryptoPrices, rates: rates, tradeCrypto: tradeCrypto, pocketBalance: pocketBalance });
             if (modal.type === "catBudgets")
                 return React.createElement(CategoryBudgetsModal, { onClose: close, categories: categories, setCategoryBudgets: setCategoryBudgets, baseCurrency: baseCurrency });
+            if (modal.type === "catReport")
+                return React.createElement(CategoryReportModal, { onClose: close, breakdown: modal.payload.breakdown, periodLabel: modal.payload.label, categories: categories, baseCurrency: baseCurrency, openCat: (cid) => { close(); if (!cid)
+                        return; setHistoryPreset({ type: "expense", categoryId: cid, from: modal.payload.from, to: modal.payload.to }); setView("history"); } });
             if (modal.type === "breakdownCats")
                 return React.createElement(BreakdownCatsModal, { onClose: close, categories: categories, breakdownCats: breakdownCats, setBreakdownCats: setBreakdownCats });
             if (modal.type === "recurring")
@@ -7430,5 +7430,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-21 13:30 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-21 13:40 UTC");</script></body>
 </html>
