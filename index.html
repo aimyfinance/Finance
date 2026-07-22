@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-22 09:33 UTC"/></head>
+<meta name="k3-build" content="2026-07-22 10:33 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -3334,7 +3334,7 @@ window.__K3_START = function () {
                 React.createElement("div", { className: "flex items-center gap-2" },
                     React.createElement("p", { className: "text-sm mb-1", style: { color: "var(--text-dim)" } }, tr("Загальний капітал")),
                     React.createElement("button", { onClick: () => setShowTotalHint((v) => !v), "aria-label": tr("Як читати цю суму"), className: "w-5 h-5 rounded-full border flex items-center justify-center font-display font-bold text-[10px] shrink-0", style: { borderColor: showTotalHint ? "var(--accent)" : "var(--border)", color: showTotalHint ? "var(--accent)" : "var(--text-dim)", background: showTotalHint ? "rgba(201,163,98,0.10)" : "transparent" } }, "\u0456")),
-                React.createElement("h1", { onClick: toggleHide, className: "font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none", style: { color: "var(--text)", WebkitUserSelect: "none" }, title: tr("Тап — склад суми · подвійний тап — приховати") }, hideTotal ? React.createElement("span", { className: "font-normal text-3xl" }, "$$$$$$$") : fmtMoney(totalInBase + (cryptoTotalBase || 0) + (loansNetBase || 0), baseCurrency)),
+                React.createElement("h1", { onClick: toggleHide, className: "font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none", style: { color: "var(--text)", WebkitUserSelect: "none" }, title: tr("Тап — склад суми · подвійний тап — приховати") }, hideTotal ? React.createElement("span", { className: "font-normal text-2xl" }, "$$$$$$$$$$") : fmtMoney(totalInBase + (cryptoTotalBase || 0) + (loansNetBase || 0), baseCurrency)),
                 showBreak && React.createElement("div", { className: "flex flex-wrap gap-2 mt-3" },
                     Object.entries(byCurrencyTotals).map(([cur, val]) => React.createElement(Badge, { key: cur, color: "var(--accent2)" }, hideTotal ? "••••" : fmtMoney(val, cur))),
                     cryptoTotalBase > 0 && React.createElement(Badge, { color: "var(--accent)" }, hideTotal ? "••••" : `₿ ${fmtMoney(cryptoTotalBase, baseCurrency)}`),
@@ -7450,5 +7450,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-22 09:33 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-22 10:33 UTC");</script></body>
 </html>
