@@ -2350,7 +2350,26 @@ window.__K3_START = function () {
     function FinanceTracker() {
         const [state, setState] = useState(() => loadState() || buildDemoData());
         const [theme, setTheme] = useState(() => (loadState() && loadState().theme) || "light");
-        const [view, setView] = useState("dashboard");
+        const [view, setViewRaw] = useState("dashboard");
+        /* ---- Back-arrow navigation stack ----
+           Drill-in navigation (tapping into details from inside a screen) pushes the current
+           view; the back arrow pops it. Root navigation — the bottom bar / sidebar tabs and
+           anything that jumps home — clears the stack, so back from a tab always means "home".
+           This gives Loans -> details -> back-to-Loans, Settings -> Categories -> back-to-Settings
+           -> back-to-home, and the same for every screen reachable from several places. */
+        const navStackRef = React.useRef([]);
+        const setView = (v, opts) => {
+            if (v !== view) {
+                if (v === "dashboard" || (opts && opts.root))
+                    navStackRef.current = [];
+                else {
+                    navStackRef.current.push(view);
+                    if (navStackRef.current.length > 10)
+                        navStackRef.current.shift();
+                }
+            }
+            setViewRaw(v);
+        };
         const lastViewRef = React.useRef("dashboard");
         const prevViewRef = React.useRef("dashboard");
         useEffect(() => { if (lastViewRef.current !== view) {
@@ -2388,14 +2407,16 @@ window.__K3_START = function () {
         };
         useEffect(() => { if (view !== "history") historyOriginRef.current = null; }, [view]);
         const goBackView = () => {
+            // History opened from the Projects list: reopen the list on top of its parent view
             if (view === "history" && historyOriginRef.current === "projects") {
                 historyOriginRef.current = null;
-                const backTo = prevViewRef.current && prevViewRef.current !== "history" ? prevViewRef.current : "settings";
-                setView(backTo);
+                const prev = navStackRef.current.pop();
+                setViewRaw(prev && prev !== "history" ? prev : "settings");
                 setModal({ type: "projects" });
                 return;
             }
-            setView("dashboard");
+            const prev = navStackRef.current.pop();
+            setViewRaw(prev || "dashboard");
         };
         const [toast, setToast] = useState(null);
         const [session, setSession] = useState(null);
@@ -3263,7 +3284,7 @@ window.__K3_START = function () {
                         const Ic = item.icon;
                         const active = view === item.id;
                         const badge = item.id === "loans" ? (overdueLoans.length + overdueDebts.length) : 0;
-                        return (React.createElement("button", { key: item.id, onClick: () => setView(item.id), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all", style: { background: active ? "var(--surface2)" : "transparent", color: active ? "var(--accent)" : "var(--text-dim)" } },
+                        return (React.createElement("button", { key: item.id, onClick: () => setView(item.id, { root: true }), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all", style: { background: active ? "var(--surface2)" : "transparent", color: active ? "var(--accent)" : "var(--text-dim)" } },
                             React.createElement("span", { className: "relative flex items-center" },
                                 React.createElement(Ic, { size: 18 }),
                                 badge > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, badge))),
@@ -3321,13 +3342,13 @@ window.__K3_START = function () {
                     const Ic = item.icon;
                     const active = view === item.id;
                     const badge = item.id === "loans" ? (overdueLoans.length + overdueDebts.length) : 0;
-                    return (React.createElement("button", { key: item.id, onClick: () => setView(item.id), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium", style: { color: active ? "var(--accent)" : "var(--text-dim)" } },
+                    return (React.createElement("button", { key: item.id, onClick: () => setView(item.id, { root: true }), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium", style: { color: active ? "var(--accent)" : "var(--text-dim)" } },
                         React.createElement("span", { className: "relative flex items-center" },
                             React.createElement(Ic, { size: 20 }),
                             badge > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, badge))),
                         item.label));
                 }),
-                React.createElement("button", { onClick: () => setView("settings"), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium", style: { color: view === "settings" || view === "categories" || view === "goals" || view === "crypto" ? "var(--accent)" : "var(--text-dim)" } },
+                React.createElement("button", { onClick: () => setView("settings", { root: true }), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium", style: { color: view === "settings" || view === "categories" || view === "goals" || view === "crypto" ? "var(--accent)" : "var(--text-dim)" } },
                     React.createElement(SettingsIcon, { size: 20 }),
                     tr("Ще"))),
             toast && (React.createElement("div", { className: "fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-sm font-medium animate-in flex items-center gap-2", style: { background: "var(--surface2)", color: "var(--text)", border: "1px solid var(--border)", boxShadow: "var(--shadow)" } },
@@ -7784,5 +7805,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 reorder+backnav");</script></body>
+<script>console.log("K³ build: 2026-07-23 nav-stack");</script></body>
 </html>
