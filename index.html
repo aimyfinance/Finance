@@ -410,10 +410,21 @@ window.__K3_START = function () {
             el.style.transform = "translate(" + dx + "px, " + dy + "px) scale(1.05)";
         };
         const hitTest = (x, y) => {
-            const target = document.elementFromPoint(x, y);
-            const item = target && target.closest ? target.closest("[" + attr + "]") : null;
-            if (item)
-                markOver(item.getAttribute(attr));
+            let stack = document.elementsFromPoint ? document.elementsFromPoint(x, y) : null;
+            if (!stack || !stack.length) {
+                const single = document.elementFromPoint(x, y);
+                stack = single ? [single] : [];
+            }
+            for (let i = 0; i < stack.length; i++) {
+                const item = stack[i] && stack[i].closest ? stack[i].closest("[" + attr + "]") : null;
+                if (!item)
+                    continue;
+                const oid = item.getAttribute(attr);
+                if (oid === dragRef.current)
+                    continue; // that's the lifted card itself — look beneath it
+                markOver(oid);
+                return;
+            }
         };
         const arm = (id, x, y) => {
             pressRef.current = null;
@@ -435,7 +446,6 @@ window.__K3_START = function () {
                 el.style.transition = "none";
                 el.style.position = "relative";
                 el.style.zIndex = "30";
-                el.style.pointerEvents = "none"; // so elementFromPoint sees what is underneath
                 el.style.opacity = "0.92";
                 el.style.borderRadius = radius + "px";
                 el.style.boxShadow = "0 0 0 2px var(--accent), 0 16px 32px rgba(0,0,0,0.35)";
@@ -548,7 +558,6 @@ window.__K3_START = function () {
                 el.style.transition = "";
                 el.style.position = "";
                 el.style.zIndex = "";
-                el.style.pointerEvents = "";
                 el.style.opacity = "";
                 el.style.borderRadius = "";
                 el.style.boxShadow = "";
@@ -7939,5 +7948,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 drag-follow-finger");</script></body>
+<script>console.log("K³ build: 2026-07-23 fix-ios-touch");</script></body>
 </html>
