@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-23 12:51 UTC"/></head>
+<meta name="k3-build" content="2026-07-23 13:04 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -639,6 +639,14 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Борг від: ": "Debt from: ",
+        "Запис відновлено": "Record restored",
+        "Відновити запис": "Restore record",
+        "Немає рахунку в цій валюті — запис створиться без прив'язки, баланс не зміниться.": "No account in this currency — the record will be created unlinked, balance unchanged.",
+        "Все узгоджено — осиротілих записів немає.": "All consistent — no orphaned records.",
+        "У цих позик і боргів немає запису отримання в журналі. Віднови його — баланс обраного рахунку зміниться на суму запису, як при створенні.": "These loans and debts have no origin record in the journal. Restore it — the chosen account balance will change by the record amount, as at creation.",
+        "Записи без транзакції отримання": "Records missing origin transaction",
+        "Записи без транзакції": "Records without a transaction",
         "До позик": "Go to loans",
         "За цими зобов'язаннями немає операцій у журналі. Записи позик і боргів живуть окремо від транзакцій — операції могли бути видалені.": "No journal operations for these obligations. Loan and debt records live separately from transactions — the operations may have been deleted.",
         "Операції боргів": "Debt operations",
@@ -2637,9 +2645,18 @@ window.__K3_START = function () {
         const addLoan = (loan, sourcePocketId, amount, currency, note) => {
             const isDebt = loan.direction === "in";
             const newLoan = { id: uid("loan"), status: "active", returned: 0, direction: loan.direction || "out", ...loan };
-            const tx = { id: uid("tx"), type: isDebt ? "debt_take" : "loan_out", date: loan.dateGiven, amount, currency, pocketId: sourcePocketId, loanId: newLoan.id, note: note || ((isDebt ? tr("Позика (борг) від: ") : tr("Позика: ")) + loan.borrower) };
+            const tx = stampBV({ id: uid("tx"), createdAt: new Date().toISOString(), fx: (currency ? (rates[currency] || 1) : 1), type: isDebt ? "debt_take" : "loan_out", date: loan.dateGiven, amount, currency, pocketId: sourcePocketId, loanId: newLoan.id, note: note || ((isDebt ? tr("Позика (борг) від: ") : tr("Позика: ")) + loan.borrower) });
             update({ loans: [newLoan, ...loans], transactions: [tx, ...transactions] });
             notify(isDebt ? tr("Борг додано") : tr("Позику створено"));
+        };
+        const restoreLoanOrigin = (loanId, pocketId) => {
+            const l = loans.find((x) => x.id === loanId);
+            if (!l)
+                return;
+            const isDebt = l.direction === "in";
+            const tx = stampBV({ id: uid("tx"), createdAt: new Date().toISOString(), fx: (rates[l.currency || "UAH"] || 1), type: isDebt ? "debt_take" : "loan_out", date: l.dateGiven || new Date().toISOString().slice(0, 10), amount: l.amount, currency: l.currency || "UAH", pocketId: pocketId || null, loanId: l.id, note: (isDebt ? tr("Позика (борг) від: ") : tr("Позика: ")) + l.borrower });
+            update({ transactions: [tx, ...transactions] });
+            notify(tr("Запис відновлено"));
         };
         const registerLoanReturn = (loanId, debtAmount, returnPocketId, receivedAmount, receivedCurrency, date, note, coin) => {
             const loan = loans.find((l) => l.id === loanId);
@@ -3084,7 +3101,7 @@ window.__K3_START = function () {
                         view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { setView: setView, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
-                        view === "loans" && (React.createElement(LoansView, { rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
+                        view === "loans" && (React.createElement(LoansView, { transactions: transactions, rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
                         view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort, cryptoWallets: cryptoWallets, addCryptoWallet: addCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, transferCrypto: transferCrypto })),
@@ -3107,7 +3124,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -4509,7 +4526,7 @@ window.__K3_START = function () {
                     React.createElement(Button, { onClick: () => setView("loans") }, tr("До позик")))) : React.createElement("p", { className: "text-sm py-10 text-center", style: { color: "var(--text-dim)" } }, tr("Немає операцій за заданими фільтрами"))))));
     }
     /* ============================== LOANS VIEW ============================== */
-    function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archiveLoan, deleteLoan, rates, baseCurrency, setView, setHistoryPreset }) {
+    function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archiveLoan, deleteLoan, rates, baseCurrency, setView, setHistoryPreset, transactions }) {
         const [dir, setDir] = useState("out");
         const [showArchived, setShowArchived] = useState(false);
         const isIn = dir === "in";
@@ -4519,6 +4536,8 @@ window.__K3_START = function () {
         const sumRemainingBase = (isDebt) => loans.filter((l) => (isDebt ? l.direction === "in" : l.direction !== "in") && l.status !== "returned" && !l.archived).reduce((s, l) => s + convert(loanRemaining(l), l.currency || "UAH", baseCurrency, rates), 0);
         const owedToMeBase = sumRemainingBase(false);
         const iOweBase = sumRemainingBase(true);
+        const hasOriginTx = (l) => (transactions || []).some((t) => t.loanId === l.id && (t.type === "loan_out" || t.type === "debt_take"));
+        const orphanCount = loans.filter((l) => !l.archived && !hasOriginTx(l)).length;
         const overdueCount = active.filter((l) => new Date(l.dueDate) < new Date()).length;
         const list = showArchived ? done : active;
         const statusInfo = {
@@ -4555,6 +4574,12 @@ window.__K3_START = function () {
                 React.createElement("div", { className: "flex items-center justify-between pt-2 mt-1", style: { borderTop: "1px solid var(--border)" } },
                     React.createElement("span", { className: "text-xs font-medium" }, tr("Нетто")),
                     React.createElement("span", { className: "tabular text-sm font-bold", style: { color: (owedToMeBase - iOweBase) >= 0 ? "var(--accent)" : "var(--neg, #C05A4A)" } }, fmtMoney(owedToMeBase - iOweBase, baseCurrency)))),
+            orphanCount > 0 && (React.createElement("button", { type: "button", className: "w-full rounded-xl px-4 py-3 flex items-center justify-between", style: { background: "rgba(201,163,98,0.10)", border: "1px solid var(--accent)" }, onClick: () => setModal({ type: "loanOrphans" }) },
+                React.createElement("span", { className: "text-xs font-medium" },
+                    tr("Записи без транзакції отримання"),
+                    ": ",
+                    orphanCount),
+                React.createElement(ChevronRight, { size: 14, style: { color: "var(--accent)" } }))),
             React.createElement("div", { "data-tour": "loandir", className: "flex gap-1.5 p-1 rounded-xl", style: { background: "var(--surface2)" } },
                 React.createElement("button", { onClick: () => setDir("out"), className: "flex-1 px-3 py-2 rounded-lg text-sm font-medium transition", style: { background: !isIn ? "var(--surface)" : "transparent", color: !isIn ? "var(--text)" : "var(--text-dim)" } }, tr("Мені винні")),
                 React.createElement("button", { onClick: () => setDir("in"), className: "flex-1 px-3 py-2 rounded-lg text-sm font-medium transition", style: { background: isIn ? "var(--surface)" : "transparent", color: isIn ? "var(--text)" : "var(--text-dim)" } }, tr("Я винен"))),
@@ -6264,7 +6289,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings }) {
+    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings }) {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
@@ -6298,6 +6323,8 @@ window.__K3_START = function () {
             if (modal.type === "catReport")
                 return React.createElement(CategoryReportModal, { onClose: close, breakdown: modal.payload.breakdown, periodLabel: modal.payload.label, categories: categories, baseCurrency: baseCurrency, openCat: (cid) => { close(); if (!cid)
                         return; setHistoryPreset({ type: "expense", categoryId: cid, from: modal.payload.from, to: modal.payload.to }); setView("history"); } });
+            if (modal.type === "loanOrphans")
+                return React.createElement(LoanOrphansModal, { onClose: close, loans: loans, transactions: transactions, accounts: accounts, pockets: pockets, restoreLoanOrigin: restoreLoanOrigin, pocketBalance: pocketBalance });
             if (modal.type === "breakdownCats")
                 return React.createElement(BreakdownCatsModal, { onClose: close, categories: categories, breakdownCats: breakdownCats, setBreakdownCats: setBreakdownCats });
             if (modal.type === "recurring")
@@ -7289,6 +7316,27 @@ window.__K3_START = function () {
             })),
             React.createElement("p", { className: "text-[11px] mt-3", style: { color: "var(--text-dim)" } }, tr("Зміни й видалення одразу перераховують залишок і статус позики."))));
     }
+    function LoanOrphansModal({ onClose, loans, transactions, accounts, pockets, restoreLoanOrigin, pocketBalance }) {
+        const hasOrigin = (l) => (transactions || []).some((t) => t.loanId === l.id && (t.type === "loan_out" || t.type === "debt_take"));
+        const orphans = loans.filter((l) => !l.archived && !hasOrigin(l));
+        const [sel, setSel] = useState({});
+        return (React.createElement(Modal, { onClose: onClose, title: tr("Записи без транзакції") },
+            React.createElement("p", { className: "text-[11px] mb-3", style: { color: "var(--text-dim)" } }, tr("У цих позик і боргів немає запису отримання в журналі. Віднови його — баланс обраного рахунку зміниться на суму запису, як при створенні.")),
+            orphans.length === 0 && React.createElement("p", { className: "text-sm py-6 text-center", style: { color: "var(--text-dim)" } }, tr("Все узгоджено — осиротілих записів немає.")),
+            React.createElement("div", { className: "space-y-3" }, orphans.map((l) => {
+                const isDebt = l.direction === "in";
+                const list = pockets.filter((pp) => !pp.archived && pp.currency === (l.currency || "UAH"));
+                const chosen = sel[l.id] !== undefined ? sel[l.id] : (list[0] ? list[0].id : "");
+                return (React.createElement("div", { key: l.id, className: "rounded-xl p-3", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+                    React.createElement("div", { className: "flex items-center justify-between mb-2 gap-2" },
+                        React.createElement("span", { className: "text-sm font-medium truncate" },
+                            isDebt ? tr("Борг від: ") : tr("Позика: "),
+                            l.borrower),
+                        React.createElement("span", { className: "tabular text-sm font-semibold shrink-0" }, fmtMoney(l.amount, l.currency || "UAH"))),
+                    list.length > 0 ? (React.createElement(PocketSelect, { accounts: accounts, pockets: list, value: chosen, onChange: (v) => setSel({ ...sel, [l.id]: v }), tint: isDebt ? "in" : "out", pocketBalance: pocketBalance })) : (React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } }, tr("Немає рахунку в цій валюті — запис створиться без прив'язки, баланс не зміниться."))),
+                    React.createElement(Button, { className: "w-full mt-2", onClick: () => restoreLoanOrigin(l.id, list.length > 0 ? chosen : null) }, tr("Відновити запис"))));
+            }))));
+    }
     function LoanReturnModal({ onClose, loan, accounts, pockets, registerLoanReturn, loanRemaining, pocketBalance, crypto, addCrypto, cryptoWallets, setModal }) {
         const isDebt = loan.direction === "in";
         const active = pockets.filter((p) => !p.archived);
@@ -7498,5 +7546,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 12:51 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-23 13:04 UTC");</script></body>
 </html>
