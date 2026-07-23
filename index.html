@@ -377,10 +377,12 @@ window.__K3_START = function () {
             dragRef.current = id;
             lastOverRef.current = id;
             armPosRef.current = { x, y };
+            lastPosRef.current = { x, y };
             movedRef.current = false;
             clickBlockRef.current = true;
             setDragId(id);
             if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { } }
+            startAutoScroll();
         };
         const startPress = (id, x, y) => {
             if (pressRef.current && pressRef.current.timer)
@@ -397,31 +399,74 @@ window.__K3_START = function () {
             }
             return null;
         };
+        /* Continuous edge auto-scroll. touchmove stops firing once the finger rests at the
+           screen edge, so a one-shot scroll per move event stalls there — instead a rAF loop
+           runs for the whole drag: while the finger sits inside the edge zone it keeps
+           scrolling (speed grows the deeper into the zone) and re-runs the hit-test, so the
+           cards keep flowing under a perfectly still finger. */
+        const lastPosRef = React.useRef(null);
+        const rafRef = React.useRef(null);
+        const scrollStep = (pos, edgeStart, edgeEnd, maxStep) => {
+            const EDGE = 56;
+            if (pos < edgeStart + EDGE)
+                return -Math.ceil(maxStep * Math.min(1, (edgeStart + EDGE - pos) / EDGE));
+            if (pos > edgeEnd - EDGE)
+                return Math.ceil(maxStep * Math.min(1, (pos - (edgeEnd - EDGE)) / EDGE));
+            return 0;
+        };
         const autoScroll = (x, y) => {
-            const EDGE = 48, STEP = 14;
+            let scrolled = false;
             const sp = scrollParent();
             if (sp) {
                 const r = sp.getBoundingClientRect();
                 if (sp.scrollWidth > sp.clientWidth + 4) {
-                    if (x < r.left + EDGE) sp.scrollLeft -= STEP;
-                    else if (x > r.right - EDGE) sp.scrollLeft += STEP;
+                    const dx = scrollStep(x, r.left, r.right, 18);
+                    if (dx) { sp.scrollLeft += dx; scrolled = true; }
                 }
                 if (sp.scrollHeight > sp.clientHeight + 4) {
-                    if (y < r.top + EDGE) sp.scrollTop -= STEP;
-                    else if (y > r.bottom - EDGE) sp.scrollTop += STEP;
+                    const dy = scrollStep(y, r.top, r.bottom, 18);
+                    if (dy) { sp.scrollTop += dy; scrolled = true; }
                 }
             }
-            if (y < 90) window.scrollBy(0, -STEP);
-            else if (y > window.innerHeight - 90) window.scrollBy(0, STEP);
+            const wy = scrollStep(y, 70, window.innerHeight, 16);
+            if (wy) { window.scrollBy(0, wy); scrolled = true; }
+            return scrolled;
+        };
+        // window.rAF with a setTimeout fallback (defensive for older WebViews / test envs)
+        const raf = (fn) => (window.requestAnimationFrame ? window.requestAnimationFrame(fn) : setTimeout(fn, 16));
+        const caf = (h) => (window.cancelAnimationFrame ? window.cancelAnimationFrame(h) : clearTimeout(h));
+        const stopAutoScroll = () => {
+            if (rafRef.current != null) {
+                caf(rafRef.current);
+                rafRef.current = null;
+            }
+        };
+        const startAutoScroll = () => {
+            stopAutoScroll();
+            const loop = () => {
+                if (!dragRef.current) { rafRef.current = null; return; }
+                const p = lastPosRef.current;
+                if (p && movedRef.current) {
+                    if (autoScroll(p.x, p.y)) {
+                        // content moved under the still finger -> keep reordering
+                        const target = document.elementFromPoint(p.x, p.y);
+                        const item = target && target.closest ? target.closest("[" + attr + "]") : null;
+                        if (item)
+                            considerOver(item.getAttribute(attr));
+                    }
+                }
+                rafRef.current = raf(loop);
+            };
+            rafRef.current = raf(loop);
         };
         // Returns true when a drag is active (caller should preventDefault to stop page scroll)
         const handleMove = (x, y) => {
             if (dragRef.current) {
+                lastPosRef.current = { x, y };
                 const a = armPosRef.current;
                 if (a && (Math.abs(x - a.x) > 8 || Math.abs(y - a.y) > 8))
                     movedRef.current = true;
                 if (movedRef.current) {
-                    autoScroll(x, y);
                     const target = document.elementFromPoint(x, y);
                     const item = target && target.closest ? target.closest("[" + attr + "]") : null;
                     if (item)
@@ -444,6 +489,7 @@ window.__K3_START = function () {
             if (press && press.timer)
                 clearTimeout(press.timer);
             pressRef.current = null;
+            stopAutoScroll();
             if (!dragRef.current)
                 return;
             const heldId = dragRef.current;
@@ -451,6 +497,7 @@ window.__K3_START = function () {
             dragRef.current = null;
             lastOverRef.current = null;
             armPosRef.current = null;
+            lastPosRef.current = null;
             movedRef.current = false;
             setDragId(null);
             setTimeout(() => { clickBlockRef.current = false; }, 80);
@@ -484,6 +531,7 @@ window.__K3_START = function () {
                 window.removeEventListener("touchcancel", onEnd);
                 window.removeEventListener("mousemove", onMouseMove);
                 window.removeEventListener("mouseup", onEnd);
+                stopAutoScroll();
             };
         }, []);
         const itemProps = (id) => {
@@ -7805,5 +7853,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 nav-stack");</script></body>
+<script>console.log("K³ build: 2026-07-23 edge-autoscroll");</script></body>
 </html>
