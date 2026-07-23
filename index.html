@@ -344,6 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
+    const K3_BUILD = "2026-07-23.6"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1760,6 +1761,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "збірка": "build",
         "Вгору": "Up",
         "Вниз": "Down",
         "Як змінити порядок карток, категорій чи проєктів?": "How do I reorder cards, categories or projects?",
@@ -6420,7 +6422,8 @@ window.__K3_START = function () {
                     React.createElement("span", { className: "font-display font-semibold text-sm" }, tr("Угода користувача та конфіденційність")),
                     showTerms ? React.createElement(ChevronDown, { size: 18, style: { color: "var(--text-dim)" } }) : React.createElement(ChevronRight, { size: 18, style: { color: "var(--text-dim)" } })),
                 showTerms && (React.createElement("div", { className: "mt-3" },
-                    React.createElement(AgreementText, null))))));
+                    React.createElement(AgreementText, null)))),
+            React.createElement("p", { className: "text-center text-[11px] pt-1 pb-2", style: { color: "var(--text-dim)" } }, "K³ Finance · " + tr("збірка") + " " + K3_BUILD)));
     }
     /* ============================== MODAL ROUTER ============================== */
     // Quick editor for per-category monthly limits (opened from the budgets card)
@@ -7960,5 +7963,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 cards-menu-cleanup");</script></body>
+<script>console.log("K³ build: 2026-07-23.6");</script></body>
 </html>
