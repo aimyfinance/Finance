@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-23 11:51 UTC"/></head>
+<meta name="k3-build" content="2026-07-23 12:21 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -3080,7 +3080,7 @@ window.__K3_START = function () {
                         view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
-                        view === "loans" && (React.createElement(LoansView, { rates: rates, baseCurrency: baseCurrency, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
+                        view === "loans" && (React.createElement(LoansView, { rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
                         view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort, cryptoWallets: cryptoWallets, addCryptoWallet: addCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, transferCrypto: transferCrypto })),
@@ -4224,6 +4224,14 @@ window.__K3_START = function () {
                         if (t.type !== "crypto_buy" && t.type !== "crypto_sell")
                             return false;
                     }
+                    else if (filterType === "loan_ops") {
+                        if (t.type !== "loan_out" && t.type !== "loan_return")
+                            return false;
+                    }
+                    else if (filterType === "debt_ops") {
+                        if (t.type !== "debt_take" && t.type !== "debt_repay")
+                            return false;
+                    }
                     else if (t.type !== filterType)
                         return false;
                 }
@@ -4495,7 +4503,7 @@ window.__K3_START = function () {
                 filtered.length === 0 && React.createElement("p", { className: "text-sm py-10 text-center", style: { color: "var(--text-dim)" } }, tr("Немає операцій за заданими фільтрами")))));
     }
     /* ============================== LOANS VIEW ============================== */
-    function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archiveLoan, deleteLoan, rates, baseCurrency }) {
+    function LoansView({ loans, pockets, getPocket, setModal, loanRemaining, archiveLoan, deleteLoan, rates, baseCurrency, setView, setHistoryPreset }) {
         const [dir, setDir] = useState("out");
         const [showArchived, setShowArchived] = useState(false);
         const isIn = dir === "in";
@@ -4528,15 +4536,19 @@ window.__K3_START = function () {
                     " ",
                     isIn ? tr("Додати борг") : tr("Надати позику"))),
             React.createElement(Card, { className: "p-4" },
-                React.createElement("div", { className: "flex items-center justify-between py-1" },
-                    React.createElement("span", { className: "text-sm", style: { color: "var(--text-dim)" } }, tr("Мені винні")),
-                    React.createElement("span", { className: "tabular font-semibold" }, fmtMoney(owedToMeBase, baseCurrency))),
-                React.createElement("div", { className: "flex items-center justify-between py-1" },
-                    React.createElement("span", { className: "text-sm", style: { color: "var(--text-dim)" } }, tr("Я винен")),
-                    React.createElement("span", { className: "tabular font-semibold", style: { color: "var(--neg, #C05A4A)" } }, fmtMoney(iOweBase, baseCurrency))),
+                React.createElement("button", { type: "button", className: "w-full flex items-center justify-between py-1", onClick: () => { setHistoryPreset({ type: "loan_ops" }); setView("history"); } },
+                    React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Мені винні")),
+                    React.createElement("span", { className: "flex items-center gap-1" },
+                        React.createElement("span", { className: "tabular text-sm font-semibold" }, fmtMoney(owedToMeBase, baseCurrency)),
+                        React.createElement(ChevronRight, { size: 12, style: { color: "var(--text-dim)" } }))),
+                React.createElement("button", { type: "button", className: "w-full flex items-center justify-between py-1", onClick: () => { setHistoryPreset({ type: "debt_ops" }); setView("history"); } },
+                    React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Я винен")),
+                    React.createElement("span", { className: "flex items-center gap-1" },
+                        React.createElement("span", { className: "tabular text-sm font-semibold", style: { color: "var(--neg, #C05A4A)" } }, fmtMoney(iOweBase, baseCurrency)),
+                        React.createElement(ChevronRight, { size: 12, style: { color: "var(--text-dim)" } }))),
                 React.createElement("div", { className: "flex items-center justify-between pt-2 mt-1", style: { borderTop: "1px solid var(--border)" } },
-                    React.createElement("span", { className: "text-sm font-medium" }, tr("Нетто")),
-                    React.createElement("span", { className: "tabular font-bold", style: { color: (owedToMeBase - iOweBase) >= 0 ? "var(--accent)" : "var(--neg, #C05A4A)" } }, fmtMoney(owedToMeBase - iOweBase, baseCurrency)))),
+                    React.createElement("span", { className: "text-xs font-medium" }, tr("Нетто")),
+                    React.createElement("span", { className: "tabular text-sm font-bold", style: { color: (owedToMeBase - iOweBase) >= 0 ? "var(--accent)" : "var(--neg, #C05A4A)" } }, fmtMoney(owedToMeBase - iOweBase, baseCurrency)))),
             React.createElement("div", { "data-tour": "loandir", className: "flex gap-1.5 p-1 rounded-xl", style: { background: "var(--surface2)" } },
                 React.createElement("button", { onClick: () => setDir("out"), className: "flex-1 px-3 py-2 rounded-lg text-sm font-medium transition", style: { background: !isIn ? "var(--surface)" : "transparent", color: !isIn ? "var(--text)" : "var(--text-dim)" } }, tr("Мені винні")),
                 React.createElement("button", { onClick: () => setDir("in"), className: "flex-1 px-3 py-2 rounded-lg text-sm font-medium transition", style: { background: isIn ? "var(--surface)" : "transparent", color: isIn ? "var(--text)" : "var(--text-dim)" } }, tr("Я винен"))),
@@ -7480,5 +7492,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 11:51 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-23 12:21 UTC");</script></body>
 </html>
