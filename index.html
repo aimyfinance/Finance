@@ -357,7 +357,6 @@ window.__K3_START = function () {
         const dragRef = React.useRef(null);       // id being dragged (null = idle)
         const armPosRef = React.useRef(null);     // finger position at the moment the drag armed
         const movedRef = React.useRef(false);     // finger travelled beyond the jitter threshold
-        const lastOverRef = React.useRef(null);
         const pressRef = React.useRef(null);      // pending long-press: {id, x, y, timer}
         const clickBlockRef = React.useRef(false); // swallow the click that follows a hold/drag
         const containerRef = React.useRef(null);
@@ -365,21 +364,83 @@ window.__K3_START = function () {
         reorderRef.current = reorder;
         const onHoldTapRef = React.useRef(opts.onHoldTap || null);
         onHoldTapRef.current = opts.onHoldTap || null;
-        const considerOver = (overId) => {
+        /* The dragged element follows the finger (imperative transform, no re-render per move)
+           while the list itself stays untouched until release — moving DOM nodes mid-gesture
+           makes iOS Safari stop delivering touchmove for that touch, which froze the drag after
+           a single swap. The hovered target gets an accent ring: that's the drop indicator,
+           and the actual reorder is committed once, on release. */
+        const dragElRef = React.useRef(null);      // DOM node being dragged
+        const overElRef = React.useRef(null);      // DOM node currently marked as the drop target
+        const pendingOverRef = React.useRef(null); // id of the drop target to commit on release
+        const spRef = React.useRef(null);          // scrollable ancestor captured at drag start
+        const scrollBaseRef = React.useRef(null);  // scroll offsets at drag start (for compensation)
+        const radius = opts.radius || 16;
+        const markOver = (overId) => {
             const from = dragRef.current;
-            if (!from || !overId || overId === from || lastOverRef.current === overId)
+            if (!from || !overId || overId === from || pendingOverRef.current === overId)
                 return;
-            lastOverRef.current = overId;
-            reorderRef.current(from, overId);
+            pendingOverRef.current = overId;
+            if (overElRef.current) {
+                overElRef.current.style.boxShadow = "";
+                overElRef.current.style.borderRadius = "";
+            }
+            const el = containerRef.current ? containerRef.current.querySelector("[" + attr + '="' + overId + '"]') : null;
+            overElRef.current = el;
+            if (el) {
+                el.style.boxShadow = "0 0 0 2px var(--accent)";
+                el.style.borderRadius = radius + "px";
+            }
+        };
+        const applyDragTransform = () => {
+            const el = dragElRef.current;
+            const a = armPosRef.current;
+            const p = lastPosRef.current;
+            if (!el || !a || !p)
+                return;
+            let dx = p.x - a.x;
+            let dy = p.y - a.y;
+            const base = scrollBaseRef.current;
+            if (base) {
+                if (spRef.current) {
+                    dx += spRef.current.scrollLeft - base.sl;
+                    dy += spRef.current.scrollTop - base.st;
+                }
+                dy += (window.scrollY || 0) - base.wy;
+            }
+            el.style.transform = "translate(" + dx + "px, " + dy + "px) scale(1.05)";
+        };
+        const hitTest = (x, y) => {
+            const target = document.elementFromPoint(x, y);
+            const item = target && target.closest ? target.closest("[" + attr + "]") : null;
+            if (item)
+                markOver(item.getAttribute(attr));
         };
         const arm = (id, x, y) => {
             pressRef.current = null;
             dragRef.current = id;
-            lastOverRef.current = id;
+            pendingOverRef.current = null;
             armPosRef.current = { x, y };
             lastPosRef.current = { x, y };
             movedRef.current = false;
             clickBlockRef.current = true;
+            const el = containerRef.current ? containerRef.current.querySelector("[" + attr + '="' + id + '"]') : null;
+            dragElRef.current = el;
+            spRef.current = scrollParent();
+            scrollBaseRef.current = {
+                sl: spRef.current ? spRef.current.scrollLeft : 0,
+                st: spRef.current ? spRef.current.scrollTop : 0,
+                wy: window.scrollY || 0,
+            };
+            if (el) {
+                el.style.transition = "none";
+                el.style.position = "relative";
+                el.style.zIndex = "30";
+                el.style.pointerEvents = "none"; // so elementFromPoint sees what is underneath
+                el.style.opacity = "0.92";
+                el.style.borderRadius = radius + "px";
+                el.style.boxShadow = "0 0 0 2px var(--accent), 0 16px 32px rgba(0,0,0,0.35)";
+                el.style.transform = "translate(0px, 0px) scale(1.05)";
+            }
             setDragId(id);
             if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { } }
             startAutoScroll();
@@ -416,7 +477,7 @@ window.__K3_START = function () {
         };
         const autoScroll = (x, y) => {
             let scrolled = false;
-            const sp = scrollParent();
+            const sp = spRef.current;
             if (sp) {
                 const r = sp.getBoundingClientRect();
                 if (sp.scrollWidth > sp.clientWidth + 4) {
@@ -448,11 +509,10 @@ window.__K3_START = function () {
                 const p = lastPosRef.current;
                 if (p && movedRef.current) {
                     if (autoScroll(p.x, p.y)) {
-                        // content moved under the still finger -> keep reordering
-                        const target = document.elementFromPoint(p.x, p.y);
-                        const item = target && target.closest ? target.closest("[" + attr + "]") : null;
-                        if (item)
-                            considerOver(item.getAttribute(attr));
+                        // content moved under the still finger: keep the card glued to the
+                        // finger and keep updating the drop target
+                        applyDragTransform();
+                        hitTest(p.x, p.y);
                     }
                 }
                 rafRef.current = raf(loop);
@@ -467,10 +527,8 @@ window.__K3_START = function () {
                 if (a && (Math.abs(x - a.x) > 8 || Math.abs(y - a.y) > 8))
                     movedRef.current = true;
                 if (movedRef.current) {
-                    const target = document.elementFromPoint(x, y);
-                    const item = target && target.closest ? target.closest("[" + attr + "]") : null;
-                    if (item)
-                        considerOver(item.getAttribute(attr));
+                    applyDragTransform();
+                    hitTest(x, y);
                 }
                 return true;
             }
@@ -484,6 +542,25 @@ window.__K3_START = function () {
             }
             return false;
         };
+        const clearDragStyles = () => {
+            const el = dragElRef.current;
+            if (el) {
+                el.style.transition = "";
+                el.style.position = "";
+                el.style.zIndex = "";
+                el.style.pointerEvents = "";
+                el.style.opacity = "";
+                el.style.borderRadius = "";
+                el.style.boxShadow = "";
+                el.style.transform = "";
+            }
+            if (overElRef.current) {
+                overElRef.current.style.boxShadow = "";
+                overElRef.current.style.borderRadius = "";
+            }
+            dragElRef.current = null;
+            overElRef.current = null;
+        };
         const finish = () => {
             const press = pressRef.current;
             if (press && press.timer)
@@ -494,15 +571,24 @@ window.__K3_START = function () {
                 return;
             const heldId = dragRef.current;
             const tapped = !movedRef.current;
+            const target = pendingOverRef.current;
             dragRef.current = null;
-            lastOverRef.current = null;
+            pendingOverRef.current = null;
             armPosRef.current = null;
             lastPosRef.current = null;
             movedRef.current = false;
+            clearDragStyles();
+            spRef.current = null;
+            scrollBaseRef.current = null;
             setDragId(null);
             setTimeout(() => { clickBlockRef.current = false; }, 80);
-            if (tapped && onHoldTapRef.current)
-                onHoldTapRef.current(heldId);
+            if (tapped) {
+                if (onHoldTapRef.current)
+                    onHoldTapRef.current(heldId);
+                return;
+            }
+            if (target && target !== heldId)
+                reorderRef.current(heldId, target);
         };
         React.useEffect(() => {
             const el = containerRef.current;
@@ -545,11 +631,11 @@ window.__K3_START = function () {
         };
         return { containerRef, dragId, itemProps };
     }
-    // Lift + accent ring for the item being dragged; the ring marks the exact landing slot.
+    // Base style for reorderable wrappers. The active "lifted" look (follow-the-finger
+    // transform, ring, shadow) is applied imperatively by useHoldReorder so React re-renders
+    // during a drag never fight with it; the args are kept for call-site readability.
     function holdDragStyle(active, radius) {
-        return active
-            ? { transform: "scale(1.03)", position: "relative", zIndex: 6, borderRadius: radius || 16, boxShadow: "0 0 0 2px var(--accent), 0 12px 28px rgba(0,0,0,0.30)", transition: "transform .15s ease, box-shadow .15s ease", touchAction: "none", WebkitUserSelect: "none", userSelect: "none" }
-            : { transition: "transform .15s ease, box-shadow .15s ease", WebkitUserSelect: "none", userSelect: "none" };
+        return { WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" };
     }
     const ICONS = {
         ShoppingCart, Utensils, Bus, Plane, Fuel, Car, HeartPulse, Dumbbell, Shirt,
@@ -3585,7 +3671,7 @@ window.__K3_START = function () {
             update({ carouselOrder: arr });
         };
         // Hold ~0.4s: the card lifts. Release in place -> the usual card menu. Move -> reorder.
-        const cardHold = useHoldReorder(reorderCards, "data-poc", { onHoldTap: (id) => setModal({ type: "cardMenu", payload: id }) });
+        const cardHold = useHoldReorder(reorderCards, "data-poc", { radius: 20, onHoldTap: (id) => setModal({ type: "cardMenu", payload: id }) });
         /* ---- period selector for the income/expense/net widget ---- */
         const [period, setPeriod] = useState("month");
         const [customFrom, setCustomFrom] = useState("");
@@ -4956,7 +5042,7 @@ window.__K3_START = function () {
     function CategoriesView({ categories, setModal, archiveCategory, reorderCategories }) {
         const [tab, setTab] = useState("expense");
         const list = categories.filter((c) => c.type === tab);
-        const catHold = useHoldReorder(reorderCategories, "data-cat");
+        const catHold = useHoldReorder(reorderCategories, "data-cat", { radius: 16 });
         return (React.createElement("div", { className: "space-y-5 animate-in" },
             React.createElement("div", { className: "flex items-center justify-between" },
                 React.createElement("h1", { className: "font-display font-bold text-2xl" }, tr("Категорії")),
@@ -6353,7 +6439,7 @@ window.__K3_START = function () {
         const [confirmDel, setConfirmDel] = useState(null);
         const list = (projects || []).filter((x) => !x.archived);
         const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects" } });
-        const prjHold = useHoldReorder(reorderProjects, "data-prj");
+        const prjHold = useHoldReorder(reorderProjects, "data-prj", { radius: 12 });
         const txCount = (id) => transactions.filter((t) => t.projectId === id).length;
         const prjNet = useMemo(() => {
             const m = {};
@@ -7853,5 +7939,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 edge-autoscroll");</script></body>
+<script>console.log("K³ build: 2026-07-23 drag-follow-finger");</script></body>
 </html>
