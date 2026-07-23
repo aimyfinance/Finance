@@ -21,7 +21,7 @@
   input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { -webkit-appearance: none; appearance: none; min-width: 0; }
   @supports (padding: max(0px)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 </style>
-<meta name="k3-build" content="2026-07-22 10:33 UTC"/></head>
+<meta name="k3-build" content="2026-07-23 07:59 UTC"/></head>
 <body>
 <div id="boot">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
@@ -639,6 +639,7 @@ window.__K3_START = function () {
     }
     catch (e) { } }
     const EN_DICT = {
+        "Весь період": "All time",
         "Разом витрат": "Total spent",
         "Звіт за категоріями": "Category report",
         "Оберіть два різні рахунки": "Select two different accounts",
@@ -4205,6 +4206,8 @@ window.__K3_START = function () {
             setFilterType(historyPreset.type || "all");
             setFilterCategory(historyPreset.categoryId || "all");
             setFilterProject(historyPreset.projectId || "all");
+            setFilterPocket(historyPreset.pocketId || "all");
+            setSelMode(!!historyPreset.select);
             setDateFrom(historyPreset.from || "");
             setDateTo(historyPreset.to || "");
             if (clearHistoryPreset)
@@ -4301,6 +4304,7 @@ window.__K3_START = function () {
                         filterCurrency !== "all" ? filterCurrency : null,
                     ].filter(Boolean).join(" · ")),
                     React.createElement("span", { className: "pill-link shrink-0" }, tr("Налаштувати звіт"))),
+                (dateFrom || dateTo) && filterProject !== "all" && (React.createElement("button", { onClick: () => { setDateFrom(""); setDateTo(""); }, className: "pill-link shrink-0 text-xs", style: { color: "var(--accent)" } }, tr("Весь період"))),
                 React.createElement("button", { onClick: () => { setFilterType("all"); setFilterPocket("all"); setFilterCategory("all"); setFilterCurrency("all"); setFilterProject("all"); setDateFrom(""); setDateTo(""); }, "aria-label": tr("Скинути фільтри"), className: "p-1 shrink-0", style: { color: "var(--text-dim)" } },
                     React.createElement(X, { size: 14 })))),
             showFilters && (React.createElement(Card, { className: "p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3" },
@@ -6272,7 +6276,7 @@ window.__K3_START = function () {
             if (modal.type === "loanEdit")
                 return React.createElement(LoanEditModal, { onClose: close, loan: modal.payload, editLoan: editLoan });
             if (modal.type === "pocketDetail")
-                return React.createElement(PocketDetailModal, { pocketId: modal.payload, onClose: close, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, categories: categories, pockets: pockets, accounts: accounts, setModal: setModal, editTransaction: editTransaction, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, archivePocket: archivePocket, graceInfo: graceInfo });
+                return React.createElement(PocketDetailModal, { setView: setView, setHistoryPreset: setHistoryPreset, pocketId: modal.payload, onClose: close, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, categories: categories, pockets: pockets, accounts: accounts, setModal: setModal, editTransaction: editTransaction, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, archivePocket: archivePocket, graceInfo: graceInfo });
             if (modal.type === "reminders")
                 return React.createElement(RemindersModal, { onClose: close, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, currencies: currencies, creditWarnings: creditWarnings, graceWarnings: graceWarnings });
             if (modal.type === "goal")
@@ -6291,7 +6295,7 @@ window.__K3_START = function () {
         })();
         // A modal opened from an open card keeps that card visible underneath (true sheet-over-card look)
         const bg = modal.type !== "pocketDetail" && modal.returnTo && modal.returnTo.type === "pocketDetail"
-            ? React.createElement(PocketDetailModal, { key: "bg-" + modal.returnTo.payload, pocketId: modal.returnTo.payload, onClose: () => setModal(null), getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, categories: categories, pockets: pockets, accounts: accounts, setModal: setModal, editTransaction: editTransaction, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, archivePocket: archivePocket })
+            ? React.createElement(PocketDetailModal, { setView: setView, setHistoryPreset: setHistoryPreset, key: "bg-" + modal.returnTo.payload, pocketId: modal.returnTo.payload, onClose: () => setModal(null), getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, categories: categories, pockets: pockets, accounts: accounts, setModal: setModal, editTransaction: editTransaction, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, archivePocket: archivePocket })
             : null;
         if (!bg)
             return body;
@@ -6416,7 +6420,7 @@ window.__K3_START = function () {
                 React.createElement(Ic, { size: 18, color: "#fff" })),
             React.createElement("span", { className: "text-[11px] font-medium text-center leading-tight", style: { color: "var(--text-dim)" } }, label)));
     }
-    function PocketDetailModal({ pocketId, onClose, getPocket, pocketBalance, pocketLabel, transactions, categories, pockets, accounts, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket, graceInfo }) {
+    function PocketDetailModal({ pocketId, onClose, setView, setHistoryPreset, getPocket, pocketBalance, pocketLabel, transactions, categories, pockets, accounts, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket, graceInfo }) {
         useBodyScrollLock();
         const [pid, setPid] = useState(pocketId);
         const [confirmArc, setConfirmArc] = useState(false);
@@ -6524,7 +6528,12 @@ window.__K3_START = function () {
                     React.createElement(RoundAction, { icon: RefreshCw, label: tr("Обмін"), onClick: () => setModal({ type: "exchange", payload: { presetPocketId: pid }, returnTo: { type: "pocketDetail", payload: pid } }) })),
                 React.createElement(Card, { className: "divide-y mb-4", style: { borderColor: "var(--border)" } },
                     React.createElement("div", { className: "flex items-center justify-between px-4 py-3" },
-                        React.createElement("h3", { className: "font-display font-semibold text-sm" }, tr("Операції по цьому рахунку"))),
+                        React.createElement("h3", { className: "font-display font-semibold text-sm" }, tr("Операції по цьому рахунку")),
+                        React.createElement("div", { className: "flex items-center gap-2" },
+                            React.createElement("button", { onClick: () => { onClose(); setHistoryPreset({ pocketId, select: true }); setView("history"); }, "aria-label": tr("Вибрати"), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)", background: "transparent" } },
+                                React.createElement(Check, { size: 16 })),
+                            React.createElement("button", { onClick: () => { onClose(); setHistoryPreset({ pocketId }); setView("history"); }, "aria-label": tr("Налаштувати звіт"), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)", background: "transparent" } },
+                                React.createElement(Filter, { size: 16 })))),
                     history.map((tx) => (React.createElement(SwipeRow, { key: tx.id, actions: [
                             ...((tx.type === "income" || tx.type === "expense") ? [{ icon: Edit3, label: tr("Ред."), bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx }, returnTo: { type: "pocketDetail", payload: pid } }) }] : []),
                             { icon: Plus, label: tr("Копія"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => duplicateTransaction(tx) },
@@ -7450,5 +7459,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-22 10:33 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-23 07:59 UTC");</script></body>
 </html>
