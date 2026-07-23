@@ -343,6 +343,166 @@ window.__K3_START = function () {
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
+    /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
+       Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
+       (haptic tick + the item lifts and gets an accent ring), then moving the finger live-reorders
+       the list via elementFromPoint hit-testing — the highlighted item always sits exactly where
+       it will land, which doubles as the drop indicator. Releasing keeps the new order.
+       opts.onHoldTap(id) fires when the press was held long enough but released without movement
+       (used by the home cards to keep their long-press context menu). */
+    function useHoldReorder(reorder, attr, opts) {
+        opts = opts || {};
+        const holdMs = opts.holdMs || 400;
+        const [dragId, setDragId] = useState(null);
+        const dragRef = React.useRef(null);       // id being dragged (null = idle)
+        const armPosRef = React.useRef(null);     // finger position at the moment the drag armed
+        const movedRef = React.useRef(false);     // finger travelled beyond the jitter threshold
+        const lastOverRef = React.useRef(null);
+        const pressRef = React.useRef(null);      // pending long-press: {id, x, y, timer}
+        const clickBlockRef = React.useRef(false); // swallow the click that follows a hold/drag
+        const containerRef = React.useRef(null);
+        const reorderRef = React.useRef(reorder);
+        reorderRef.current = reorder;
+        const onHoldTapRef = React.useRef(opts.onHoldTap || null);
+        onHoldTapRef.current = opts.onHoldTap || null;
+        const considerOver = (overId) => {
+            const from = dragRef.current;
+            if (!from || !overId || overId === from || lastOverRef.current === overId)
+                return;
+            lastOverRef.current = overId;
+            reorderRef.current(from, overId);
+        };
+        const arm = (id, x, y) => {
+            pressRef.current = null;
+            dragRef.current = id;
+            lastOverRef.current = id;
+            armPosRef.current = { x, y };
+            movedRef.current = false;
+            clickBlockRef.current = true;
+            setDragId(id);
+            if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { } }
+        };
+        const startPress = (id, x, y) => {
+            if (pressRef.current && pressRef.current.timer)
+                clearTimeout(pressRef.current.timer);
+            pressRef.current = { id, x, y, timer: setTimeout(() => arm(id, x, y), holdMs) };
+        };
+        const scrollParent = () => {
+            let el = containerRef.current;
+            while (el && el !== document.body) {
+                const s = window.getComputedStyle(el);
+                if (/(auto|scroll)/.test(s.overflowX + s.overflowY))
+                    return el;
+                el = el.parentElement;
+            }
+            return null;
+        };
+        const autoScroll = (x, y) => {
+            const EDGE = 48, STEP = 14;
+            const sp = scrollParent();
+            if (sp) {
+                const r = sp.getBoundingClientRect();
+                if (sp.scrollWidth > sp.clientWidth + 4) {
+                    if (x < r.left + EDGE) sp.scrollLeft -= STEP;
+                    else if (x > r.right - EDGE) sp.scrollLeft += STEP;
+                }
+                if (sp.scrollHeight > sp.clientHeight + 4) {
+                    if (y < r.top + EDGE) sp.scrollTop -= STEP;
+                    else if (y > r.bottom - EDGE) sp.scrollTop += STEP;
+                }
+            }
+            if (y < 90) window.scrollBy(0, -STEP);
+            else if (y > window.innerHeight - 90) window.scrollBy(0, STEP);
+        };
+        // Returns true when a drag is active (caller should preventDefault to stop page scroll)
+        const handleMove = (x, y) => {
+            if (dragRef.current) {
+                const a = armPosRef.current;
+                if (a && (Math.abs(x - a.x) > 8 || Math.abs(y - a.y) > 8))
+                    movedRef.current = true;
+                if (movedRef.current) {
+                    autoScroll(x, y);
+                    const target = document.elementFromPoint(x, y);
+                    const item = target && target.closest ? target.closest("[" + attr + "]") : null;
+                    if (item)
+                        considerOver(item.getAttribute(attr));
+                }
+                return true;
+            }
+            const press = pressRef.current;
+            if (press && press.timer) {
+                // finger moved before the long-press fired -> the user is scrolling, not dragging
+                if (Math.abs(x - press.x) > 10 || Math.abs(y - press.y) > 10) {
+                    clearTimeout(press.timer);
+                    pressRef.current = null;
+                }
+            }
+            return false;
+        };
+        const finish = () => {
+            const press = pressRef.current;
+            if (press && press.timer)
+                clearTimeout(press.timer);
+            pressRef.current = null;
+            if (!dragRef.current)
+                return;
+            const heldId = dragRef.current;
+            const tapped = !movedRef.current;
+            dragRef.current = null;
+            lastOverRef.current = null;
+            armPosRef.current = null;
+            movedRef.current = false;
+            setDragId(null);
+            setTimeout(() => { clickBlockRef.current = false; }, 80);
+            if (tapped && onHoldTapRef.current)
+                onHoldTapRef.current(heldId);
+        };
+        React.useEffect(() => {
+            const el = containerRef.current;
+            if (!el)
+                return;
+            const onTouchMove = (e) => {
+                const t = e.touches ? e.touches[0] : e;
+                if (handleMove(t.clientX, t.clientY))
+                    e.preventDefault();
+            };
+            const onMouseMove = (e) => {
+                if (!dragRef.current && !pressRef.current)
+                    return;
+                if (handleMove(e.clientX, e.clientY))
+                    e.preventDefault();
+            };
+            const onEnd = () => finish();
+            el.addEventListener("touchmove", onTouchMove, { passive: false });
+            window.addEventListener("touchend", onEnd);
+            window.addEventListener("touchcancel", onEnd);
+            window.addEventListener("mousemove", onMouseMove);
+            window.addEventListener("mouseup", onEnd);
+            return () => {
+                el.removeEventListener("touchmove", onTouchMove);
+                window.removeEventListener("touchend", onEnd);
+                window.removeEventListener("touchcancel", onEnd);
+                window.removeEventListener("mousemove", onMouseMove);
+                window.removeEventListener("mouseup", onEnd);
+            };
+        }, []);
+        const itemProps = (id) => {
+            const p = {
+                onTouchStart: (e) => { const t = e.touches[0]; startPress(id, t.clientX, t.clientY); },
+                onMouseDown: (e) => { if (e.button === 0) startPress(id, e.clientX, e.clientY); },
+                onClickCapture: (e) => { if (clickBlockRef.current) { e.preventDefault(); e.stopPropagation(); } },
+            };
+            p[attr] = id;
+            return p;
+        };
+        return { containerRef, dragId, itemProps };
+    }
+    // Lift + accent ring for the item being dragged; the ring marks the exact landing slot.
+    function holdDragStyle(active, radius) {
+        return active
+            ? { transform: "scale(1.03)", position: "relative", zIndex: 6, borderRadius: radius || 16, boxShadow: "0 0 0 2px var(--accent), 0 12px 28px rgba(0,0,0,0.30)", transition: "transform .15s ease, box-shadow .15s ease", touchAction: "none", WebkitUserSelect: "none", userSelect: "none" }
+            : { transition: "transform .15s ease, box-shadow .15s ease", WebkitUserSelect: "none", userSelect: "none" };
+    }
     const ICONS = {
         ShoppingCart, Utensils, Bus, Plane, Fuel, Car, HeartPulse, Dumbbell, Shirt,
         GraduationCap, PartyPopper, Gift, Home, Zap, MoreHorizontal, Briefcase, Building2,
@@ -1455,6 +1615,8 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Як змінити порядок карток, категорій чи проєктів?": "How do I reorder cards, categories or projects?",
+        "Затисніть картку рахунку на головному екрані (або категорію чи проєкт у налаштуваннях) приблизно на пів секунди — вона підніметься й підсвітиться. Не відпускаючи, перетягніть її: підсвічений елемент завжди стоїть саме там, куди він стане. Відпустіть — новий порядок збережеться. Коротке утримання картки без руху, як і раніше, відкриє її меню.": "Press and hold an account card on the home screen (or a category / project in settings) for about half a second — it lifts and gets a highlight. Without letting go, drag it: the highlighted item always sits exactly where it will land. Release to keep the new order. Holding a card without moving still opens its menu, as before.",
         "Чер": "Jun",
         "Через 1 хв": "After 1 min",
         "Чи можна повернути видалене?": "Can deleted items be restored?",
@@ -2048,6 +2210,7 @@ window.__K3_START = function () {
             { q: tr("Резервні копії та експорт"), a: tr("Зберігайте копію даних у файл (JSON) або експортуйте операції в CSV для Excel. Дані зберігаються на вашому пристрої.") },
         ];
         const faq = [
+            { q: tr("Як змінити порядок карток, категорій чи проєктів?"), a: tr("Затисніть картку рахунку на головному екрані (або категорію чи проєкт у налаштуваннях) приблизно на пів секунди — вона підніметься й підсвітиться. Не відпускаючи, перетягніть її: підсвічений елемент завжди стоїть саме там, куди він стане. Відпустіть — новий порядок збережеться. Коротке утримання картки без руху, як і раніше, відкриє її меню.") },
             { q: tr("Як додати свою категорію?"), a: tr("Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт.") },
             { q: tr("Як налаштувати PIN-код?"), a: tr("Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати.") },
             { q: tr("Як оновити курси валют?"), a: tr("Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними.") },
@@ -2212,9 +2375,28 @@ window.__K3_START = function () {
             document.addEventListener("visibilitychange", onVis);
             return () => document.removeEventListener("visibilitychange", onVis);
         }, []);
-        const goBackView = () => setView("dashboard");
         const [modal, setModal] = useState(null);
-        const [historyPreset, setHistoryPreset] = useState(null); // filters handed to History by tappable dashboard numbers
+        const [historyPreset, setHistoryPresetRaw] = useState(null); // filters handed to History by tappable dashboard numbers
+        // Where the current History screen was opened from. The preset itself is cleared by
+        // HistoryView right after it applies the filters, so the origin must survive separately —
+        // it lets the back arrow return to the Projects list instead of jumping to the dashboard.
+        const historyOriginRef = React.useRef(null);
+        const setHistoryPreset = (p) => {
+            if (p)
+                historyOriginRef.current = p.origin || null;
+            setHistoryPresetRaw(p);
+        };
+        useEffect(() => { if (view !== "history") historyOriginRef.current = null; }, [view]);
+        const goBackView = () => {
+            if (view === "history" && historyOriginRef.current === "projects") {
+                historyOriginRef.current = null;
+                const backTo = prevViewRef.current && prevViewRef.current !== "history" ? prevViewRef.current : "settings";
+                setView(backTo);
+                setModal({ type: "projects" });
+                return;
+            }
+            setView("dashboard");
+        };
         const [toast, setToast] = useState(null);
         const [session, setSession] = useState(null);
         const [pin, setPinState] = useState(() => loadPin());
@@ -2529,6 +2711,21 @@ window.__K3_START = function () {
         const setBreakdownCats = (ids) => update({ breakdownCats: ids && ids.length ? ids : null });
         const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
         const archiveCategory = (id) => update({ categories: categories.map((c) => (c.id === id ? { ...c, archived: !c.archived } : c)) });
+        // Move category "fromId" to the position of "toId"; the relative order of the other
+        // transaction type is preserved because only a single element is spliced.
+        const reorderCategories = (fromId, toId) => {
+            if (fromId === toId)
+                return;
+            const arr = [...categories];
+            const from = arr.findIndex((c) => c.id === fromId);
+            const to = arr.findIndex((c) => c.id === toId);
+            if (from < 0 || to < 0)
+                return;
+            const moved = arr.splice(from, 1)[0];
+            arr.splice(to, 0, moved);
+            update({ categories: arr });
+        };
+
         // Фіксуємо вартість операції в базовій валюті на момент створення.
         // Курси оновлюються при відкритті, але застосовуються лише до МАЙБУТНІХ
         // операцій — архівні тримають свій bv назавжди (бухгалтерське правило).
@@ -2857,6 +3054,19 @@ window.__K3_START = function () {
             return prj;
         };
         const editProject = (id, patch) => update({ projects: projects.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
+        // Move project "fromId" to the position of "toId" in the projects array
+        const reorderProjects = (fromId, toId) => {
+            if (fromId === toId)
+                return;
+            const arr = [...projects];
+            const from = arr.findIndex((x) => x.id === fromId);
+            const to = arr.findIndex((x) => x.id === toId);
+            if (from < 0 || to < 0)
+                return;
+            const moved = arr.splice(from, 1)[0];
+            arr.splice(to, 0, moved);
+            update({ projects: arr });
+        };
         const deleteProject = (id) => {
             update({
                 projects: projects.filter((x) => x.id !== id),
@@ -3098,11 +3308,11 @@ window.__K3_START = function () {
                                 React.createElement("div", { className: "flex gap-2 mt-2" },
                                     React.createElement(Button, { variant: "secondary", onClick: exportBackup }, tr("Зберегти копію")),
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[11px] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
-                        view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, update: update })),
+                        view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { setView: setView, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
                         view === "loans" && (React.createElement(LoansView, { transactions: transactions, rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
-                        view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory })),
+                        view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory, reorderCategories: reorderCategories })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
                         view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort, cryptoWallets: cryptoWallets, addCryptoWallet: addCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, transferCrypto: transferCrypto })),
                         view === "settings" && (React.createElement(SettingsView, { baseCurrency: baseCurrency, rates: rates, rateMode: state.rateMode || {}, includeLoansInTotal: includeLoansInTotal, update: update, session: session, setToast: setToast, pin: pin, applyPin: applyPin, pinDelay: pinDelay, applyPinDelay: applyPinDelay, exportBackup: exportBackup, importBackup: importBackup, exportCSV: exportCSV, setView: setView, setModal: setModal, autoRefresh: state.autoRefresh || "open" }))))),
@@ -3124,7 +3334,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -3276,13 +3486,37 @@ window.__K3_START = function () {
             React.createElement(Button, { variant: "secondary", onClick: save }, "OK")));
     }
     /* ============================== DASHBOARD ============================== */
-    function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, update }) {
+    function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, carouselOrder, update }) {
         const net = monthIncome - monthExpense;
         const recent = [...transactions].sort(byRecent).slice(0, 6);
         const activeAccounts = accounts.filter((a) => !a.archived);
         const allPocketCards = activeAccounts.flatMap((acc) => pockets.filter((p) => p.accountId === acc.id && !p.archived).map((p) => ({ ...p, account: acc })));
         const favPocketCards = allPocketCards.filter((p) => p.fav);
-        const carouselPockets = favPocketCards.length > 0 ? favPocketCards : allPocketCards;
+        /* ---- user-defined card order (hold-to-drag on the carousel) ---- */
+        const savedCardOrder = carouselOrder || [];
+        const allCardIds = allPocketCards.map((p) => p.id);
+        const orderedCardIds = savedCardOrder.filter((id) => allCardIds.indexOf(id) !== -1).concat(allCardIds.filter((id) => savedCardOrder.indexOf(id) === -1));
+        const cardPos = {};
+        orderedCardIds.forEach((id, i) => { cardPos[id] = i; });
+        const orderCards = (arr) => [...arr].sort((a, b) => (cardPos[a.id] || 0) - (cardPos[b.id] || 0));
+        const carouselPockets = orderCards(favPocketCards.length > 0 ? favPocketCards : allPocketCards);
+        const liveCardOrderRef = React.useRef(orderedCardIds);
+        liveCardOrderRef.current = orderedCardIds; // re-synced every render; mutated between renders during a drag
+        const reorderCards = (fromId, toId) => {
+            if (fromId === toId)
+                return;
+            const arr = [...liveCardOrderRef.current];
+            const fi = arr.indexOf(fromId);
+            const ti = arr.indexOf(toId);
+            if (fi < 0 || ti < 0)
+                return;
+            const m = arr.splice(fi, 1)[0];
+            arr.splice(ti, 0, m);
+            liveCardOrderRef.current = arr;
+            update({ carouselOrder: arr });
+        };
+        // Hold ~0.4s: the card lifts. Release in place -> the usual card menu. Move -> reorder.
+        const cardHold = useHoldReorder(reorderCards, "data-poc", { onHoldTap: (id) => setModal({ type: "cardMenu", payload: id }) });
         /* ---- period selector for the income/expense/net widget ---- */
         const [period, setPeriod] = useState("month");
         const [customFrom, setCustomFrom] = useState("");
@@ -3409,8 +3643,9 @@ window.__K3_START = function () {
                         tr("Усі рахунки"),
                         " ",
                         React.createElement(ChevronRight, { size: 13 }))),
-                React.createElement("div", { "data-tour": "accounts", className: "flex gap-3 overflow-x-auto snap-x pt-1 pb-5 -mx-2 px-2" },
-                    carouselPockets.map((p) => (React.createElement(PocketCard, { key: p.id, pocket: p, balance: pocketBalance(p.id), grace: graceInfo(p.id), onClick: () => setModal({ type: "pocketDetail", payload: p.id }), onLongPress: () => setModal({ type: "cardMenu", payload: p.id }), className: "w-72 shrink-0 snap-card" }))),
+                React.createElement("div", { "data-tour": "accounts", ref: cardHold.containerRef, className: "flex gap-3 overflow-x-auto snap-x pt-1 pb-5 -mx-2 px-2" },
+                    carouselPockets.map((p) => (React.createElement("div", Object.assign({ key: p.id, className: "w-72 shrink-0 snap-card", style: Object.assign(holdDragStyle(cardHold.dragId === p.id, 20), cardHold.dragId && cardHold.dragId !== p.id ? { opacity: 0.75 } : null), onContextMenu: (e) => { e.preventDefault(); setModal({ type: "cardMenu", payload: p.id }); } }, cardHold.itemProps(p.id)),
+                        React.createElement(PocketCard, { pocket: p, balance: pocketBalance(p.id), grace: graceInfo(p.id), onClick: () => setModal({ type: "pocketDetail", payload: p.id }) })))),
                     cryptoFav && (React.createElement("button", { onClick: () => setView("crypto"), className: "bank-card w-72 shrink-0 snap-card text-left cursor-pointer active:scale-[0.98] transition-transform", style: { "--card-accent": "#C9A362" } },
                         React.createElement("div", { className: "bank-card-glow" }),
                         React.createElement("div", { className: "flex items-center justify-between gap-2 mb-8" },
@@ -4649,9 +4884,10 @@ window.__K3_START = function () {
                 list.length === 0 && React.createElement("p", { className: "text-sm col-span-full text-center py-10", style: { color: "var(--text-dim)" } }, isIn ? tr("Немає боргів у цій категорії") : tr("Немає позик у цій категорії")))));
     }
     /* ============================== CATEGORIES VIEW ============================== */
-    function CategoriesView({ categories, setModal, archiveCategory }) {
+    function CategoriesView({ categories, setModal, archiveCategory, reorderCategories }) {
         const [tab, setTab] = useState("expense");
         const list = categories.filter((c) => c.type === tab);
+        const catHold = useHoldReorder(reorderCategories, "data-cat");
         return (React.createElement("div", { className: "space-y-5 animate-in" },
             React.createElement("div", { className: "flex items-center justify-between" },
                 React.createElement("h1", { className: "font-display font-bold text-2xl" }, tr("Категорії")),
@@ -4662,14 +4898,15 @@ window.__K3_START = function () {
             React.createElement("div", { className: "flex gap-2 text-sm" },
                 React.createElement("button", { onClick: () => setTab("expense"), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: tab === "expense" ? "var(--surface2)" : "transparent", color: tab === "expense" ? "var(--text)" : "var(--text-dim)" } }, tr("Витрати")),
                 React.createElement("button", { onClick: () => setTab("income"), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: tab === "income" ? "var(--surface2)" : "transparent", color: tab === "income" ? "var(--text)" : "var(--text-dim)" } }, tr("Доходи"))),
-            React.createElement("div", { className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-3" }, list.map((c) => (React.createElement(Card, { key: c.id, className: `p-4 flex items-center gap-3 ${c.archived ? "opacity-50" : ""}` },
-                React.createElement("div", { className: "w-9 h-9 rounded-xl flex items-center justify-center shrink-0", style: { background: `${c.color}22` } },
-                    React.createElement(Icon, { name: c.icon, size: 16, style: { color: c.color } })),
-                React.createElement("p", { className: "text-sm font-medium flex-1 truncate" }, tr(c.name)),
-                React.createElement("button", { onClick: () => setModal({ type: "category", payload: c }), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
-                    React.createElement(Edit3, { size: 14 })),
-                React.createElement("button", { onClick: () => archiveCategory(c.id), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
-                    React.createElement(Archive, { size: 14 }))))))));
+            React.createElement("div", { ref: catHold.containerRef, className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-3" }, list.map((c) => (React.createElement("div", Object.assign({ key: c.id, style: holdDragStyle(catHold.dragId === c.id, 16) }, catHold.itemProps(c.id)),
+                React.createElement(Card, { className: `p-4 flex items-center gap-3 ${c.archived ? "opacity-50" : ""}` },
+                    React.createElement("div", { className: "w-9 h-9 rounded-xl flex items-center justify-center shrink-0", style: { background: `${c.color}22` } },
+                        React.createElement(Icon, { name: c.icon, size: 16, style: { color: c.color } })),
+                    React.createElement("p", { className: "text-sm font-medium flex-1 truncate" }, tr(c.name)),
+                    React.createElement("button", { onClick: () => setModal({ type: "category", payload: c }), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
+                        React.createElement(Edit3, { size: 14 })),
+                    React.createElement("button", { onClick: () => archiveCategory(c.id), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
+                        React.createElement(Archive, { size: 14 })))))))));
     }
     /* ============================== GOALS ============================== */
     function GoalsView({ goals, setModal, baseCurrency, rates }) {
@@ -6043,10 +6280,11 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
     // ---------- Projects: manager + editor ----------
-    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, setView, setHistoryPreset, rates, baseCurrency }) {
+    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, reorderProjects, setView, setHistoryPreset, rates, baseCurrency }) {
         const [confirmDel, setConfirmDel] = useState(null);
         const list = (projects || []).filter((x) => !x.archived);
         const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects" } });
+        const prjHold = useHoldReorder(reorderProjects, "data-prj");
         const txCount = (id) => transactions.filter((t) => t.projectId === id).length;
         const prjNet = useMemo(() => {
             const m = {};
@@ -6064,9 +6302,9 @@ window.__K3_START = function () {
         return (React.createElement(Modal, { title: tr("Проєкти"), onClose: onClose, onBack: onClose },
             list.length === 0 && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Проєктів ще немає. Створіть перший — «Квартира», «Авто» чи «Ремонт» — і привʼязуйте до нього витрати з форми, імпорту та регулярних платежів.")),
             list.length > 0 && React.createElement("p", { className: "text-[11px] mb-2", style: { color: "var(--text-dim)" } }, tr("Зірочка — показувати проєкт на головному.")),
-            React.createElement("div", { className: "space-y-2.5 mb-3" }, list.map((x) => (React.createElement("div", { key: x.id, className: "flex items-center gap-2.5 rounded-xl p-3", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+            React.createElement("div", { ref: prjHold.containerRef, className: "space-y-2.5 mb-3" }, list.map((x) => (React.createElement("div", Object.assign({ key: x.id, className: "flex items-center gap-2.5 rounded-xl p-3", style: Object.assign({ background: "var(--surface2)", border: "1px solid var(--border)" }, holdDragStyle(prjHold.dragId === x.id, 12)) }, prjHold.itemProps(x.id)),
                 React.createElement("button", { type: "button", className: "flex items-center gap-2.5 flex-1 min-w-0 text-left", onClick: () => { if (setHistoryPreset && setView) {
-                        setHistoryPreset({ type: "all", projectId: x.id });
+                        setHistoryPreset({ type: "all", projectId: x.id, origin: "projects" });
                         setView("history");
                         onClose();
                     } } },
@@ -6289,7 +6527,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings }) {
+    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings }) {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
@@ -6332,7 +6570,7 @@ window.__K3_START = function () {
             if (modal.type === "recurringEdit")
                 return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
             if (modal.type === "projects")
-                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency });
+                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "projectEdit")
                 return React.createElement(ProjectEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, addProject: addProject, editProject: editProject });
             if (modal.type === "loanEdit")
@@ -7546,5 +7784,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 13:04 UTC");</script></body>
+<script>console.log("K³ build: 2026-07-23 reorder+backnav");</script></body>
 </html>
