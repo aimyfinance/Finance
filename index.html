@@ -1760,12 +1760,10 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
-        "Пересунути ліворуч": "Move left",
-        "Пересунути праворуч": "Move right",
         "Вгору": "Up",
         "Вниз": "Down",
         "Як змінити порядок карток, категорій чи проєктів?": "How do I reorder cards, categories or projects?",
-        "Найпростіший спосіб: у списку категорій чи проєктів натисніть стрілки вгору/вниз у рядку, а для картки рахунку — затисніть її без руху, щоб відкрити меню, і скористайтесь пунктами «Пересунути ліворуч/праворуч». Також можна затиснути елемент (~пів секунди) і перетягнути його пальцем — ціль підсвічується рамкою; ця функція експериментальна.": "The simplest way: use the up/down arrows in a category or project row; for an account card, hold it still to open its menu and use \"Move left/right\". You can also press-and-hold (~half a second) and drag with your finger — the target gets a highlighted ring; this gesture is experimental.",
+        "У списку категорій чи проєктів скористайтесь стрілками вгору/вниз у рядку — порядок змінюється миттєво. Картки рахунків на головній можна спробувати перетягнути: затисніть картку (~пів секунди) і, не відпускаючи, тягніть — ціль підсвічується рамкою; ця функція поки експериментальна.": "Use the up/down arrows in a category or project row — the order changes instantly. Account cards on the home screen can be dragged: press and hold a card (~half a second), then drag without letting go — the target gets a highlighted ring; this gesture is still experimental.",
         "Чер": "Jun",
         "Через 1 хв": "After 1 min",
         "Чи можна повернути видалене?": "Can deleted items be restored?",
@@ -2359,7 +2357,7 @@ window.__K3_START = function () {
             { q: tr("Резервні копії та експорт"), a: tr("Зберігайте копію даних у файл (JSON) або експортуйте операції в CSV для Excel. Дані зберігаються на вашому пристрої.") },
         ];
         const faq = [
-            { q: tr("Як змінити порядок карток, категорій чи проєктів?"), a: tr("Найпростіший спосіб: у списку категорій чи проєктів натисніть стрілки вгору/вниз у рядку, а для картки рахунку — затисніть її без руху, щоб відкрити меню, і скористайтесь пунктами «Пересунути ліворуч/праворуч». Також можна затиснути елемент (~пів секунди) і перетягнути його пальцем — ціль підсвічується рамкою; ця функція експериментальна.") },
+            { q: tr("Як змінити порядок карток, категорій чи проєктів?"), a: tr("У списку категорій чи проєктів скористайтесь стрілками вгору/вниз у рядку — порядок змінюється миттєво. Картки рахунків на головній можна спробувати перетягнути: затисніть картку (~пів секунди) і, не відпускаючи, тягніть — ціль підсвічується рамкою; ця функція поки експериментальна.") },
             { q: tr("Як додати свою категорію?"), a: tr("Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт.") },
             { q: tr("Як налаштувати PIN-код?"), a: tr("Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати.") },
             { q: tr("Як оновити курси валют?"), a: tr("Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними.") },
@@ -2881,39 +2879,6 @@ window.__K3_START = function () {
         const setBreakdownCats = (ids) => update({ breakdownCats: ids && ids.length ? ids : null });
         const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
         const archiveCategory = (id) => update({ categories: categories.map((c) => (c.id === id ? { ...c, archived: !c.archived } : c)) });
-        /* ---- Carousel card order (shared by the drag gesture and the card-menu buttons) ---- */
-        const carouselOrderInfo = () => {
-            const activeAccounts = accounts.filter((a) => !a.archived);
-            const allIds = activeAccounts.flatMap((acc) => pockets.filter((p) => p.accountId === acc.id && !p.archived).map((p) => p.id));
-            const saved = state.carouselOrder || [];
-            const ordered = saved.filter((x) => allIds.indexOf(x) !== -1).concat(allIds.filter((x) => saved.indexOf(x) === -1));
-            const favIds = pockets.filter((p) => p.fav && !p.archived).map((p) => p.id).filter((x) => allIds.indexOf(x) !== -1);
-            const visible = favIds.length ? ordered.filter((x) => favIds.indexOf(x) !== -1) : ordered;
-            return { ordered, visible };
-        };
-        // Which directions the card-menu "move" buttons should offer for this card
-        const carouselCanMove = (id) => {
-            const v = carouselOrderInfo().visible;
-            const i = v.indexOf(id);
-            return { left: i > 0, right: i >= 0 && i < v.length - 1 };
-        };
-        // Guaranteed no-gesture reordering: swap the card with its visible neighbour
-        const moveCarouselCard = (id, dir) => {
-            const info = carouselOrderInfo();
-            const vi = info.visible.indexOf(id);
-            const ni = vi + dir;
-            if (vi < 0 || ni < 0 || ni >= info.visible.length)
-                return;
-            const neighbor = info.visible[ni];
-            const arr = [...info.ordered];
-            const fi = arr.indexOf(id);
-            const ti = arr.indexOf(neighbor);
-            if (fi < 0 || ti < 0)
-                return;
-            const m = arr.splice(fi, 1)[0];
-            arr.splice(ti, 0, m);
-            update({ carouselOrder: arr });
-        };
         // Move category "fromId" to the position of "toId"; the relative order of the other
         // transaction type is preserved because only a single element is spliced.
         const reorderCategories = (fromId, toId) => {
@@ -3537,7 +3502,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, moveCarouselCard: moveCarouselCard, carouselCanMove: carouselCanMove, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -6738,7 +6703,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, moveCarouselCard, carouselCanMove, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings }) {
+    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings }) {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
@@ -6746,7 +6711,7 @@ window.__K3_START = function () {
             if (modal.type === "pocket")
                 return React.createElement(PocketModal, { onClose: close, onBack: modal.returnTo ? close : undefined, accountId: modal.payload.accountId, existing: modal.payload.existing, accounts: accounts, pockets: pockets, addPocket: addPocket, editPocket: editPocket, currencies: currencies });
             if (modal.type === "cardMenu")
-                return React.createElement(CardMenuModal, { onClose: close, onBack: modal.returnTo ? close : undefined, pocketId: modal.payload, returnTo: modal.returnTo, pockets: pockets, getPocket: getPocket, setModal: setModal, archivePocket: archivePocket, deletePocket: deletePocket, movePocket: movePocket, moveCarouselCard: moveCarouselCard, carouselCanMove: carouselCanMove });
+                return React.createElement(CardMenuModal, { onClose: close, onBack: modal.returnTo ? close : undefined, pocketId: modal.payload, returnTo: modal.returnTo, pockets: pockets, getPocket: getPocket, setModal: setModal, archivePocket: archivePocket, deletePocket: deletePocket, movePocket: movePocket });
             if (modal.type === "category")
                 return React.createElement(CategoryModal, { onClose: close, existing: modal.payload, addCategory: addCategory, editCategory: editCategory });
             if (modal.type === "transaction")
@@ -7074,7 +7039,7 @@ window.__K3_START = function () {
                     confirmArc ? tr("Підтвердити архівацію?") : tr("Архівувати субрахунок")))));
     }
     /* ---------- Card long-press menu ---------- */
-    function CardMenuModal({ onClose, onBack, pocketId, returnTo, pockets, getPocket, setModal, archivePocket, deletePocket, movePocket, moveCarouselCard, carouselCanMove }) {
+    function CardMenuModal({ onClose, onBack, pocketId, returnTo, pockets, getPocket, setModal, archivePocket, deletePocket, movePocket }) {
         const pk = getPocket(pocketId);
         const [confirmDel, setConfirmDel] = useState(false);
         const [confirmArc, setConfirmArc] = useState(false);
@@ -7091,9 +7056,6 @@ window.__K3_START = function () {
         return (React.createElement(Modal, { title: `${tr(acc.name)} · ${pk.currency}`, onClose: onClose, onBack: onBack },
             React.createElement("div", { className: "space-y-0.5" },
                 React.createElement(Row, { icon: ChevronRight, label: tr("Відкрити рахунок"), onClick: () => setModal({ type: "pocketDetail", payload: pocketId }) }),
-                moveCarouselCard && carouselCanMove && (() => { const cm = carouselCanMove(pocketId); return (React.createElement(React.Fragment, null,
-                    React.createElement(Row, { icon: ChevronLeft, label: tr("Пересунути ліворуч"), disabled: !cm.left, onClick: () => moveCarouselCard(pocketId, -1) }),
-                    React.createElement(Row, { icon: ChevronRight, label: tr("Пересунути праворуч"), disabled: !cm.right, onClick: () => moveCarouselCard(pocketId, 1) }))); })(),
                 React.createElement(Row, { icon: Edit3, label: tr("Редагувати рахунок (назва, колір, тип)"), onClick: () => setModal({ type: "account", payload: acc, returnTo }) }),
                 React.createElement(Row, { icon: ArrowDownRight, label: tr("Імпорт виписки на цей рахунок"), onClick: () => setModal({ type: "statementImport", payload: { presetPocketId: pk.id }, returnTo }) }),
                 React.createElement(Row, { icon: Coins, label: tr("Змінити валюту / баланс"), onClick: () => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk }, returnTo }) }),
@@ -7998,5 +7960,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23 reorder-buttons");</script></body>
+<script>console.log("K³ build: 2026-07-23 cards-menu-cleanup");</script></body>
 </html>
