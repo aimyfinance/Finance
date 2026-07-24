@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-24.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-24.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -6456,10 +6456,10 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
     // ---------- Projects: manager + editor ----------
-    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, reorderProjects, showArrows, setView, setHistoryPreset, rates, baseCurrency }) {
+    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, reorderProjects, origin, showArrows, setView, setHistoryPreset, rates, baseCurrency }) {
         const [confirmDel, setConfirmDel] = useState(null);
         const list = (projects || []).filter((x) => !x.archived);
-        const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects" } });
+        const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects", origin: origin } });
         const prjHold = useHoldReorder(reorderProjects, "data-prj", { radius: 12 });
         const txCount = (id) => transactions.filter((t) => t.projectId === id).length;
         const prjNet = useMemo(() => {
@@ -6750,7 +6750,7 @@ window.__K3_START = function () {
             if (modal.type === "recurringEdit")
                 return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
             if (modal.type === "projects")
-                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, showArrows: modal.origin !== "dashboard", setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency });
+                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, origin: modal.origin, showArrows: modal.origin !== "dashboard", setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "projectEdit")
                 return React.createElement(ProjectEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, addProject: addProject, editProject: editProject });
             if (modal.type === "loanEdit")
@@ -7964,5 +7964,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-24.1");</script></body>
+<script>console.log("K³ build: 2026-07-24.2");</script></body>
 </html>
