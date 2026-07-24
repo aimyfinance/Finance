@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-23.7"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-24.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2560,8 +2560,9 @@ window.__K3_START = function () {
             if (view === "history" && historyOriginRef.current === "projects") {
                 historyOriginRef.current = null;
                 const prev = navStackRef.current.pop();
-                setViewRaw(prev && prev !== "history" ? prev : "settings");
-                setModal({ type: "projects" });
+                const backTo = prev && prev !== "history" ? prev : "settings";
+                setViewRaw(backTo);
+                setModal({ type: "projects", origin: backTo === "dashboard" ? "dashboard" : "settings" });
                 return;
             }
             const prev = navStackRef.current.pop();
@@ -3929,7 +3930,7 @@ window.__K3_START = function () {
                             net > 0.004 ? "+" : "",
                             fmtMoney(net, baseCurrency)),
                         React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } }))))),
-                    React.createElement("button", { type: "button", className: "w-full flex items-center justify-center gap-1 mt-2 text-xs font-medium", style: { color: "var(--accent)" }, onClick: () => setModal({ type: "projects" }) },
+                    React.createElement("button", { type: "button", className: "w-full flex items-center justify-center gap-1 mt-2 text-xs font-medium", style: { color: "var(--accent)" }, onClick: () => setModal({ type: "projects", origin: "dashboard" }) },
                         tr("Всі проєкти"),
                         " ",
                         React.createElement(ChevronRight, { size: 12 }))))),
@@ -6259,7 +6260,7 @@ window.__K3_START = function () {
                     tr("Керувати категоріями"))),
             React.createElement(SettingsSection, { icon: Home, title: React.createElement(React.Fragment, null, tr("Проєкти")), open: openSec === "sec9", onToggle: () => setOpenSec(openSec === "sec9" ? "" : "sec9") },
                 React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Обʼєднуйте витрати за обʼєктами: квартира, будинок, авто, ремонт. Аналітика на головному покаже, скільки коштує кожен.")),
-                React.createElement(Button, { variant: "secondary", onClick: () => setModal && setModal({ type: "projects" }) },
+                React.createElement(Button, { variant: "secondary", onClick: () => setModal && setModal({ type: "projects", origin: "settings" }) },
                     React.createElement(Home, { size: 15 }),
                     " ",
                     tr("Керувати проєктами"))),
@@ -6455,7 +6456,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
     // ---------- Projects: manager + editor ----------
-    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, reorderProjects, setView, setHistoryPreset, rates, baseCurrency }) {
+    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, reorderProjects, showArrows, setView, setHistoryPreset, rates, baseCurrency }) {
         const [confirmDel, setConfirmDel] = useState(null);
         const list = (projects || []).filter((x) => !x.archived);
         const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects" } });
@@ -6496,9 +6497,9 @@ window.__K3_START = function () {
                     (() => { const n = prjNet[x.id] || 0; return React.createElement("span", { className: "ml-auto tabular text-xs font-semibold shrink-0", style: { color: n >= 0 ? "var(--accent)" : "var(--danger)" } },
                         n >= 0 ? "+" : "−",
                         fmtMoney(Math.abs(n), baseCurrency)); })()),
-                React.createElement("button", { onClick: () => reorderProjects(x.id, list[xi - 1].id), disabled: xi === 0, "aria-label": tr("Вгору"), className: "p-1.5 rounded-md shrink-0 disabled:opacity-25", style: { color: "var(--text-dim)" } },
+                showArrows !== false && React.createElement("button", { onClick: () => reorderProjects(x.id, list[xi - 1].id), disabled: xi === 0, "aria-label": tr("Вгору"), className: "p-1.5 rounded-md shrink-0 disabled:opacity-25", style: { color: "var(--text-dim)" } },
                     React.createElement(ChevronUp, { size: 14 })),
-                React.createElement("button", { onClick: () => reorderProjects(x.id, list[xi + 1].id), disabled: xi === list.length - 1, "aria-label": tr("Вниз"), className: "p-1.5 rounded-md shrink-0 disabled:opacity-25", style: { color: "var(--text-dim)" } },
+                showArrows !== false && React.createElement("button", { onClick: () => reorderProjects(x.id, list[xi + 1].id), disabled: xi === list.length - 1, "aria-label": tr("Вниз"), className: "p-1.5 rounded-md shrink-0 disabled:opacity-25", style: { color: "var(--text-dim)" } },
                     React.createElement(ChevronDown, { size: 14 })),
                 React.createElement("button", { onClick: () => editProject(x.id, { fav: !x.fav }), className: "p-1.5 rounded-md shrink-0", "aria-label": tr("Обраний") },
                     React.createElement(Star, { size: 14, fill: x.fav ? "var(--accent)" : "none", style: { color: x.fav ? "var(--accent)" : "var(--text-dim)" } })),
@@ -6749,7 +6750,7 @@ window.__K3_START = function () {
             if (modal.type === "recurringEdit")
                 return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
             if (modal.type === "projects")
-                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency });
+                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, showArrows: modal.origin !== "dashboard", setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "projectEdit")
                 return React.createElement(ProjectEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, addProject: addProject, editProject: editProject });
             if (modal.type === "loanEdit")
@@ -7963,5 +7964,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23.7");</script></body>
+<script>console.log("K³ build: 2026-07-24.1");</script></body>
 </html>
