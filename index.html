@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-23.6"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-23.7"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1747,7 +1747,7 @@ window.__K3_START = function () {
         "Усі цілі": "All goals",
         "Файл не схожий на резервну копію": "This file doesn't look like a backup",
         "Фото чеку (необов'язково)": "Receipt photo (optional)",
-        "Хмарну синхронізацію не налаштовано. Додайте ключі Supabase у код застосунку, щоб увімкнути вхід і збереження в хмару.": "Cloud sync isn't configured. Add your Supabase keys to the app code to enable sign-in and cloud saving.",
+        "У цій версії застосунку синхронізація між пристроями тимчасово недоступна. Скоро з'явиться — ваші дані надійно зберігаються на цьому пристрої.": "Sync across devices is temporarily unavailable in this version. Coming soon — your data is safely stored on this device.",
         "Ця кнопка завжди тут: гайд по функціях, часті запитання та цей огляд.": "This button is always here: the feature guide, FAQ and this tour.",
         "Ціль видалено": "Goal deleted",
         "Ціль досягнута 🎉": "Goal reached 🎉",
@@ -6275,7 +6275,7 @@ window.__K3_START = function () {
                     React.createElement(Coins, { size: 15 }),
                     " ",
                     tr("Відкрити портфель"))),
-            React.createElement(SettingsSection, { icon: RefreshCw, title: React.createElement(React.Fragment, null, tr("Синхронізація між пристроями")), open: openSec === "sec3", onToggle: () => setOpenSec(openSec === "sec3" ? "" : "sec3") }, !SB ? (React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Хмарну синхронізацію не налаштовано. Додайте ключі Supabase у код застосунку, щоб увімкнути вхід і збереження в хмару."))) : session ? (React.createElement("div", null,
+            React.createElement(SettingsSection, { icon: RefreshCw, title: React.createElement(React.Fragment, null, tr("Синхронізація між пристроями")), open: openSec === "sec3", onToggle: () => setOpenSec(openSec === "sec3" ? "" : "sec3") }, !SB ? (React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("У цій версії застосунку синхронізація між пристроями тимчасово недоступна. Скоро з'явиться — ваші дані надійно зберігаються на цьому пристрої."))) : session ? (React.createElement("div", null,
                 React.createElement("p", { className: "text-sm mb-3", style: { color: "var(--text-dim)" } },
                     tr("Ви увійшли як"),
                     " ",
@@ -7963,5 +7963,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-23.6");</script></body>
+<script>console.log("K³ build: 2026-07-23.7");</script></body>
 </html>
