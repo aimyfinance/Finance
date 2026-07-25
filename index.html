@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-24.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-24.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -6488,13 +6488,13 @@ window.__K3_START = function () {
                         React.createElement(Icon, { name: x.icon || "Home", size: 15, style: { color: x.color || "var(--text-dim)" } })),
                     React.createElement("div", { className: "min-w-0" },
                         React.createElement("p", { className: "text-sm font-medium truncate" }, tr(x.name)),
-                        React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                        showArrows === false && React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
                             txCount(x.id),
                             " ",
                             tr("операцій"),
                             " ",
                             React.createElement(ChevronRight, { size: 11, style: { display: "inline", verticalAlign: "-1px" } }))),
-                    (() => { const n = prjNet[x.id] || 0; return React.createElement("span", { className: "ml-auto tabular text-xs font-semibold shrink-0", style: { color: n >= 0 ? "var(--accent)" : "var(--danger)" } },
+                    showArrows === false && (() => { const n = prjNet[x.id] || 0; return React.createElement("span", { className: "ml-auto tabular text-xs font-semibold shrink-0", style: { color: n >= 0 ? "var(--accent)" : "var(--danger)" } },
                         n >= 0 ? "+" : "−",
                         fmtMoney(Math.abs(n), baseCurrency)); })()),
                 showArrows !== false && React.createElement("button", { onClick: () => reorderProjects(x.id, list[xi - 1].id), disabled: xi === 0, "aria-label": tr("Вгору"), className: "p-1.5 rounded-md shrink-0 disabled:opacity-25", style: { color: "var(--text-dim)" } },
@@ -7964,5 +7964,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-24.2");</script></body>
+<script>console.log("K³ build: 2026-07-24.3");</script></body>
 </html>
