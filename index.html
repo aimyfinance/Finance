@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-24.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-24.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1761,6 +1761,9 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Фото чека": "Receipt photo",
+        "Торкніться, щоб збільшити": "Tap to enlarge",
+        "Торкніться, щоб згорнути": "Tap to collapse",
         "Увага: сховище пристрою переповнене — останні зміни не збереглися. Видаліть кілька фото чеків або зробіть експорт даних.": "Warning: device storage is full — recent changes were not saved. Delete a few receipt photos or export your data.",
         "Місце звільнено — дані знову зберігаються.": "Space freed — your data is being saved again.",
         "Фото чеків оптимізовано — звільнено місце у сховищі.": "Receipt photos optimized — storage space freed.",
@@ -4266,7 +4269,9 @@ window.__K3_START = function () {
             React.createElement("div", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0", style: { background: "var(--surface2)" } },
                 React.createElement(TypeIcon, { size: 16, style: { color: "var(--text-dim)" } })),
             React.createElement("div", { className: "min-w-0 flex-1" },
-                React.createElement("p", { className: "text-sm font-medium truncate" }, label),
+                React.createElement("p", { className: "text-sm font-medium truncate" },
+                    label,
+                    tx.receipt ? React.createElement(Camera, { size: 12, "aria-label": tr("чек"), style: { display: "inline", verticalAlign: "-1px", marginLeft: 5, color: "var(--text-dim)" } }) : null),
                 React.createElement("p", { className: "text-xs truncate", style: { color: "var(--text-dim)" } }, sub)),
             React.createElement("div", { className: "text-right shrink-0" },
                 React.createElement("p", { className: "text-sm font-semibold tabular", style: { color: amountColor } }, amountStr),
@@ -4276,6 +4281,7 @@ window.__K3_START = function () {
     function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring, projects, rates, baseCurrency, updateRepayAmount }) {
         const [confirmDel, setConfirmDel] = useState(false);
         const [repayEdit, setRepayEdit] = useState(false);
+        const [receiptOpen, setReceiptOpen] = useState(false);
         const [repayAmt, setRepayAmt] = useState("");
         const cat = categories.find((x) => x.id === tx.categoryId);
         const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу", crypto_buy: "Купівля крипто", crypto_sell: "Продаж крипто" };
@@ -4301,7 +4307,11 @@ window.__K3_START = function () {
                 dual && React.createElement(Row, { k: tr("З рахунку"), v: pocketLabel(tx.fromPocketId) }),
                 dual && React.createElement(Row, { k: tr("На рахунок"), v: pocketLabel(tx.toPocketId) }),
                 (tx.type === "income" || tx.type === "expense") && tx.fx != null && tx.currency !== "UAH" ? React.createElement(Row, { k: tr("Зафіксований курс"), v: `1 ${tx.currency} = ${tx.fx} UAH` }) : null,
-                React.createElement(Row, { k: tr("Нотатка"), v: tr(tx.note) })),
+                React.createElement(Row, { k: tr("Нотатка"), v: tr(tx.note) }),
+                tx.receipt ? React.createElement("div", { className: "py-2.5", style: { borderBottom: "1px solid var(--border)" } },
+                    React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Фото чека")),
+                    React.createElement("img", { src: tx.receipt, alt: tr("чек"), onClick: () => setReceiptOpen((v) => !v), className: "w-full rounded-xl cursor-pointer", style: { objectFit: "contain", maxHeight: receiptOpen ? "none" : 240, background: "var(--surface2)", border: "1px solid var(--border)" } }),
+                    React.createElement("p", { className: "text-[11px] mt-1 text-center", style: { color: "var(--text-dim)" } }, receiptOpen ? tr("Торкніться, щоб згорнути") : tr("Торкніться, щоб збільшити"))) : null),
             React.createElement("div", { className: "flex gap-2" },
                 (() => {
                     const rr = (recurring || []).find((x) => x.id === tx.recurringId);
@@ -8043,5 +8053,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-24.4");</script></body>
+<script>console.log("K³ build: 2026-07-24.5");</script></body>
 </html>
