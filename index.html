@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-24.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-24.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1761,6 +1761,9 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Увага: сховище пристрою переповнене — останні зміни не збереглися. Видаліть кілька фото чеків або зробіть експорт даних.": "Warning: device storage is full — recent changes were not saved. Delete a few receipt photos or export your data.",
+        "Місце звільнено — дані знову зберігаються.": "Space freed — your data is being saved again.",
+        "Фото чеків оптимізовано — звільнено місце у сховищі.": "Receipt photos optimized — storage space freed.",
         "збірка": "build",
         "Вгору": "Up",
         "Вниз": "Down",
@@ -1885,12 +1888,57 @@ window.__K3_START = function () {
         }
         return s;
     }
+    /* Downscale + re-encode an image dataURL/file so a receipt photo weighs ~100-300KB
+       instead of the multi-megabyte camera original. localStorage on iOS holds ~5MB total,
+       so a single uncompressed photo could blow the quota and silently kill saves. */
+    function compressImage(src, maxSide, quality) {
+        return new Promise((resolve) => {
+            try {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const w = img.naturalWidth || img.width;
+                        const h = img.naturalHeight || img.height;
+                        if (!w || !h)
+                            return resolve(typeof src === "string" ? src : null);
+                        const scale = Math.min(1, (maxSide || 1280) / Math.max(w, h));
+                        const cw = Math.max(1, Math.round(w * scale));
+                        const ch = Math.max(1, Math.round(h * scale));
+                        const canvas = document.createElement("canvas");
+                        canvas.width = cw;
+                        canvas.height = ch;
+                        const ctx = canvas.getContext("2d");
+                        if (!ctx)
+                            return resolve(typeof src === "string" ? src : null);
+                        ctx.drawImage(img, 0, 0, cw, ch);
+                        const out = canvas.toDataURL("image/jpeg", quality || 0.72);
+                        // keep the original if compression somehow made it bigger
+                        resolve(typeof src === "string" && out.length >= src.length ? src : out);
+                    }
+                    catch (e) {
+                        resolve(typeof src === "string" ? src : null);
+                    }
+                };
+                img.onerror = () => resolve(typeof src === "string" ? src : null);
+                img.src = typeof src === "string" ? src : URL.createObjectURL(src);
+            }
+            catch (e) {
+                resolve(typeof src === "string" ? src : null);
+            }
+        });
+    }
     function saveState(state) {
+        let ok = true;
         try {
             if (window.localStorage)
                 window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         }
-        catch (e) { /* ignore */ }
+        catch (e) {
+            // Storage full (QuotaExceededError) or unavailable: the in-memory state is fine,
+            // but nothing was written to disk — the caller MUST surface this to the user,
+            // otherwise changes silently vanish on the next launch.
+            ok = false;
+        }
         // Daily on-device auto-backup: keeps the last two day-snapshots in localStorage.
         // iOS PWAs can't silently write files, so this guards against accidental data loss
         // on the device itself; for off-device copies use "Save to file" or cloud sync.
@@ -1905,7 +1953,8 @@ window.__K3_START = function () {
                 window.localStorage.setItem("ft_auto_backup_date", today);
             }
         }
-        catch (e) { /* ignore */ }
+        catch (e) { /* auto-backup is best-effort */ }
+        return ok;
     }
     /* PIN is stored on the device only (not synced) */
     const PIN_KEY = "ft_pin";
@@ -2630,9 +2679,18 @@ window.__K3_START = function () {
         const stateRef = React.useRef(state);
         useEffect(() => { stateRef.current = { ...state, theme }; }, [state, theme]);
         // save locally + push to cloud (when signed in)
+        const saveFailedRef = React.useRef(false);
         useEffect(() => {
             const full = { ...state, theme };
-            saveState(full);
+            const ok = saveState(full);
+            if (!ok && !saveFailedRef.current) {
+                saveFailedRef.current = true;
+                setToast(tr("Увага: сховище пристрою переповнене — останні зміни не збереглися. Видаліть кілька фото чеків або зробіть експорт даних."));
+            }
+            if (ok && saveFailedRef.current) {
+                saveFailedRef.current = false;
+                setToast(tr("Місце звільнено — дані знову зберігаються."));
+            }
             if (session)
                 cloudPush(session.user.id, full);
         }, [state, theme, session]);
@@ -3286,6 +3344,29 @@ window.__K3_START = function () {
             update({ transactions: [...txs, ...transactions], recurring: upd });
             return txs.length;
         };
+        // One-time rescue: users who already attached full-size photos may be sitting right
+        // at the storage quota. Recompress any receipt heavier than ~400KB in the background.
+        const receiptsMigratedRef = React.useRef(false);
+        useEffect(() => {
+            if (receiptsMigratedRef.current)
+                return;
+            receiptsMigratedRef.current = true;
+            const heavy = transactions.filter((t) => typeof t.receipt === "string" && t.receipt.length > 400000);
+            if (!heavy.length)
+                return;
+            (async () => {
+                const compressed = {};
+                for (const t of heavy) {
+                    const out = await compressImage(t.receipt, 1280, 0.72);
+                    if (out && out.length < t.receipt.length)
+                        compressed[t.id] = out;
+                }
+                if (Object.keys(compressed).length) {
+                    setState((s) => ({ ...s, transactions: s.transactions.map((t) => (compressed[t.id] ? { ...t, receipt: compressed[t.id] } : t)) }));
+                    setToast(tr("Фото чеків оптимізовано — звільнено місце у сховищі."));
+                }
+            })();
+        }, []);
         const bvMigratedRef = React.useRef(false);
         useEffect(() => {
             if (bvMigratedRef.current)
@@ -7302,9 +7383,7 @@ window.__K3_START = function () {
             const file = e.target.files?.[0];
             if (!file)
                 return;
-            const reader = new FileReader();
-            reader.onload = () => setReceipt(reader.result);
-            reader.readAsDataURL(file);
+            compressImage(file, 1280, 0.72).then((dataUrl) => { if (dataUrl) setReceipt(dataUrl); });
         };
         const CAT_COLORS = ["#6FA98C", "#6683B4", "#D8A24A", "#C77F6E", "#5FA8B8", "#9B87C4", "#C77FA0", "#818CF8"];
         const createCat = () => {
@@ -7964,5 +8043,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-24.3");</script></body>
+<script>console.log("K³ build: 2026-07-24.4");</script></body>
 </html>
