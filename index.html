@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-25.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-25.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1761,6 +1761,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "⚠️ Зміни не зберігаються — сховище переповнене. Видаліть кілька фото чеків або старих транзакцій.": "⚠️ Changes are not being saved — storage is full. Delete a few receipt photos or old transactions.",
         "Все в архіві зберігається безстроково, доки ви самі його не відновите або не видалите.": "Everything in the archive is kept indefinitely until you restore or delete it yourself.",
         "в архіві з": "archived since",
         "Перемістити картку в архів? Її можна буде відновити будь-коли в розділі Рахунки → Архів.": "Move this card to the archive? You can restore it anytime in Accounts → Archive.",
@@ -1935,15 +1936,30 @@ window.__K3_START = function () {
     }
     function saveState(state) {
         let ok = true;
+        const json = JSON.stringify(state);
         try {
             if (window.localStorage)
-                window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                window.localStorage.setItem(STORAGE_KEY, json);
         }
         catch (e) {
-            // Storage full (QuotaExceededError) or unavailable: the in-memory state is fine,
-            // but nothing was written to disk — the caller MUST surface this to the user,
-            // otherwise changes silently vanish on the next launch.
+            // Storage full: current data outranks backup copies. Free the expendable
+            // auto-backups one by one and retry — this alone rescues most quota incidents.
             ok = false;
+            try {
+                window.localStorage.removeItem("ft_auto_backup_prev");
+                window.localStorage.setItem(STORAGE_KEY, json);
+                ok = true;
+            }
+            catch (e2) {
+                try {
+                    window.localStorage.removeItem("ft_auto_backup");
+                    window.localStorage.setItem(STORAGE_KEY, json);
+                    ok = true;
+                }
+                catch (e3) {
+                    ok = false;
+                }
+            }
         }
         // Daily on-device auto-backup: keeps the last two day-snapshots in localStorage.
         // iOS PWAs can't silently write files, so this guards against accidental data loss
@@ -1951,11 +1967,14 @@ window.__K3_START = function () {
         try {
             const d = new Date();
             const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-            if (window.localStorage.getItem("ft_auto_backup_date") !== today) {
+            if (ok && window.localStorage.getItem("ft_auto_backup_date") !== today) {
                 const prev = window.localStorage.getItem("ft_auto_backup");
                 if (prev)
                     window.localStorage.setItem("ft_auto_backup_prev", prev);
-                window.localStorage.setItem("ft_auto_backup", JSON.stringify({ date: today, state }));
+                // Receipts are stripped from backups: with photos, three copies of the state
+                // tripled storage usage and pushed devices over the quota.
+                const lite = { ...state, transactions: (state.transactions || []).map((t) => (t.receipt ? { ...t, receipt: null } : t)) };
+                window.localStorage.setItem("ft_auto_backup", JSON.stringify({ date: today, state: lite }));
                 window.localStorage.setItem("ft_auto_backup_date", today);
             }
         }
@@ -2685,16 +2704,16 @@ window.__K3_START = function () {
         const stateRef = React.useRef(state);
         useEffect(() => { stateRef.current = { ...state, theme }; }, [state, theme]);
         // save locally + push to cloud (when signed in)
-        const saveFailedRef = React.useRef(false);
+        const [saveFailed, setSaveFailed] = useState(false);
         useEffect(() => {
             const full = { ...state, theme };
             const ok = saveState(full);
-            if (!ok && !saveFailedRef.current) {
-                saveFailedRef.current = true;
+            if (!ok && !saveFailed) {
+                setSaveFailed(true);
                 setToast(tr("Увага: сховище пристрою переповнене — останні зміни не збереглися. Видаліть кілька фото чеків або зробіть експорт даних."));
             }
-            if (ok && saveFailedRef.current) {
-                saveFailedRef.current = false;
+            if (ok && saveFailed) {
+                setSaveFailed(false);
                 setToast(tr("Місце звільнено — дані знову зберігаються."));
             }
             if (session)
@@ -3588,6 +3607,8 @@ window.__K3_START = function () {
                 React.createElement("button", { onClick: () => setView("settings", { root: true }), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium", style: { color: view === "settings" || view === "categories" || view === "goals" || view === "crypto" ? "var(--accent)" : "var(--text-dim)" } },
                     React.createElement(SettingsIcon, { size: 20 }),
                     tr("Ще"))),
+            saveFailed && (React.createElement("div", { className: "fixed top-0 left-0 right-0 z-[60] px-4 py-2.5 text-center text-xs font-semibold", style: { background: "var(--danger)", color: "#fff" } },
+                tr("⚠️ Зміни не зберігаються — сховище переповнене. Видаліть кілька фото чеків або старих транзакцій."))),
             toast && (React.createElement("div", { className: "fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-sm font-medium animate-in flex items-center gap-2", style: { background: "var(--surface2)", color: "var(--text)", border: "1px solid var(--border)", boxShadow: "var(--shadow)" } },
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
@@ -8072,5 +8093,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-25.3");</script></body>
+<script>console.log("K³ build: 2026-07-25.4");</script></body>
 </html>
