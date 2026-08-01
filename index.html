@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-25.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-25.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4565,8 +4565,8 @@ window.__K3_START = function () {
                             React.createElement("div", { className: "flex items-center gap-2 min-w-0" },
                                 React.createElement(Badge, { color: acc.color }, p.currency),
                                 p.name && React.createElement("span", { className: "text-xs font-medium truncate", style: { color: "var(--text)" } }, tr(p.name)),
-                                showArchived && (p.archivedAt || acc.archivedAt) && React.createElement("span", { className: "text-[10px] shrink-0", style: { color: "var(--text-dim)" } }, tr("в архіві з") + " " + fmtDate(p.archivedAt || acc.archivedAt))),
-                            p.creditLimit > 0 ? (() => {
+                                showArchived && (p.archivedAt || acc.archivedAt) && React.createElement("span", { className: "text-[10px] truncate", style: { color: "var(--text-dim)" } }, tr("в архіві з") + " " + fmtDate(p.archivedAt || acc.archivedAt))),
+                            !showArchived && (p.creditLimit > 0 ? (() => {
                                 const bal2 = pocketBalance(p.id);
                                 const avail2 = p.creditLimit + bal2;
                                 const pct2 = (avail2 / p.creditLimit) * 100;
@@ -4576,7 +4576,7 @@ window.__K3_START = function () {
                                         tr("ліміт"),
                                         " ",
                                         fmtMoney(p.creditLimit, p.currency))));
-                            })() : React.createElement("p", { className: "font-semibold text-sm tabular shrink-0" }, fmtMoney(pocketBalance(p.id), p.currency)),
+                            })() : React.createElement("p", { className: "font-semibold text-sm tabular shrink-0" }, fmtMoney(pocketBalance(p.id), p.currency))),
                             React.createElement("div", { className: "flex gap-2 shrink-0" }, showArchived ? (React.createElement("button", { onClick: (e) => { e.stopPropagation();
                                 // Restore whatever is actually archived: the whole account, the
                                 // sub-account, or both. Blindly toggling the pocket would archive it
@@ -8072,5 +8072,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-25.2");</script></body>
+<script>console.log("K³ build: 2026-07-25.3");</script></body>
 </html>
