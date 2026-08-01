@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-24.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-07-25.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1761,6 +1761,9 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Все в архіві зберігається безстроково, доки ви самі його не відновите або не видалите.": "Everything in the archive is kept indefinitely until you restore or delete it yourself.",
+        "в архіві з": "archived since",
+        "Перемістити картку в архів? Її можна буде відновити будь-коли в розділі Рахунки → Архів.": "Move this card to the archive? You can restore it anytime in Accounts → Archive.",
         "Фото чека": "Receipt photo",
         "Торкніться, щоб збільшити": "Tap to enlarge",
         "Торкніться, щоб згорнути": "Tap to collapse",
@@ -2871,7 +2874,7 @@ window.__K3_START = function () {
         };
         const editAccount = (id, patch) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)) });
         const renameBank = (oldName, newName) => { update({ accounts: accounts.map((a) => (a.bank === oldName ? { ...a, bank: newName } : a)) }); notify(tr("Банк перейменовано")); };
-        const archiveAccount = (id) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, archived: !a.archived } : a)) });
+        const archiveAccount = (id) => update({ accounts: accounts.map((a) => (a.id === id ? { ...a, archived: !a.archived, archivedAt: !a.archived ? new Date().toISOString() : null } : a)) });
         // Delete account + its pockets, but KEEP transactions (they remain in history, labelled tr("Видалений рахунок"))
         const deleteAccount = (id) => {
             update({ accounts: accounts.filter((a) => a.id !== id), pockets: pockets.filter((p) => p.accountId !== id) });
@@ -2915,7 +2918,7 @@ window.__K3_START = function () {
         };
         const editPocket = (id, patch) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
         const toggleFavPocket = (id) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, fav: !p.fav } : p)) });
-        const archivePocket = (id) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, archived: !p.archived } : p)) });
+        const archivePocket = (id) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, archived: !p.archived, archivedAt: !p.archived ? new Date().toISOString() : null } : p)) });
         // Delete a single currency card, keeping its transactions in history
         const deletePocket = (id) => { update({ pockets: pockets.filter((p) => p.id !== id) }); notify(tr("Картку видалено (операції збережено)")); };
         // Reorder cards: swap a pocket with its nearest active neighbour in the given direction (-1 left, +1 right)
@@ -4363,6 +4366,7 @@ window.__K3_START = function () {
         const reorderRef = React.useRef(reorderAccounts);
         reorderRef.current = reorderAccounts;
         const [typeFilter, setTypeFilter] = useState("all");
+        const [confirmArcAcc, setConfirmArcAcc] = useState(null);
         const list = accounts.filter((a) => {
             if (typeFilter !== "all" && a.type !== typeFilter)
                 return false;
@@ -4541,8 +4545,14 @@ window.__K3_START = function () {
                     React.createElement("div", { className: "flex items-center gap-1 mb-3" },
                         React.createElement("button", { onClick: () => setModal({ type: "account", payload: acc }), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
                             React.createElement(Edit3, { size: 14 })),
-                        React.createElement("button", { onClick: () => archiveAccount(acc.id), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
-                            React.createElement(Archive, { size: 14 })),
+                        React.createElement("button", { onClick: () => { if (acc.archived) { archiveAccount(acc.id); return; } if (confirmArcAcc === acc.id) {
+                                archiveAccount(acc.id);
+                                setConfirmArcAcc(null);
+                            }
+                            else {
+                                setConfirmArcAcc(acc.id);
+                                setTimeout(() => setConfirmArcAcc((v) => (v === acc.id ? null : v)), 2800);
+                            } }, className: "p-1.5 rounded-lg", style: { color: confirmArcAcc === acc.id ? "var(--danger)" : "var(--text-dim)" } }, confirmArcAcc === acc.id ? React.createElement("span", { className: "text-[10px] font-bold whitespace-nowrap px-0.5" }, tr("Точно?")) : React.createElement(Archive, { size: 14 })),
                         React.createElement("button", { onClick: () => setConfirmDel(confirmDel === acc.id ? null : acc.id), className: "p-1.5 rounded-lg", style: { color: "var(--danger)" } },
                             React.createElement(Trash2, { size: 14 })),
                         confirmDel === acc.id && (React.createElement("div", { className: "flex items-center gap-2 ml-1" },
@@ -4554,7 +4564,8 @@ window.__K3_START = function () {
                         pks.map((p) => (React.createElement("div", { key: p.id, onClick: () => setModal({ type: "pocketDetail", payload: p.id }), className: `flex items-center justify-between gap-2 py-2 px-3 rounded-xl cursor-pointer hover:opacity-90 ${p.archived ? "opacity-50" : ""}`, style: { background: "var(--surface2)" } },
                             React.createElement("div", { className: "flex items-center gap-2 min-w-0" },
                                 React.createElement(Badge, { color: acc.color }, p.currency),
-                                p.name && React.createElement("span", { className: "text-xs font-medium truncate", style: { color: "var(--text)" } }, tr(p.name))),
+                                p.name && React.createElement("span", { className: "text-xs font-medium truncate", style: { color: "var(--text)" } }, tr(p.name)),
+                                showArchived && p.archivedAt && React.createElement("span", { className: "text-[10px] shrink-0", style: { color: "var(--text-dim)" } }, tr("в архіві з") + " " + fmtDate(p.archivedAt))),
                             p.creditLimit > 0 ? (() => {
                                 const bal2 = pocketBalance(p.id);
                                 const avail2 = p.creditLimit + bal2;
@@ -4597,6 +4608,7 @@ window.__K3_START = function () {
             React.createElement("div", { className: "flex gap-2 text-sm" },
                 React.createElement("button", { onClick: () => setShowArchived(false), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: !showArchived ? "var(--surface2)" : "transparent", color: !showArchived ? "var(--text)" : "var(--text-dim)" } }, tr("Активні")),
                 React.createElement("button", { onClick: () => setShowArchived(true), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" } }, tr("Архів"))),
+            showArchived && React.createElement("p", { className: "text-xs -mt-2", style: { color: "var(--text-dim)" } }, tr("Все в архіві зберігається безстроково, доки ви самі його не відновите або не видалите.")),
             !showArchived && (React.createElement("div", { ref: chipsRowRef, className: "flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5" }, chips.map(([id, label]) => (React.createElement("button", { key: id, "data-chip": id, draggable: id !== "all" && !TOUCH_DEVICE, onDragStart: (e) => { if (id === "all")
                     return; chipDragRef.current = id; chipLastOverRef.current = id; setChipDragId(id); try {
                     e.dataTransfer.setData("text/plain", id);
@@ -7155,7 +7167,7 @@ window.__K3_START = function () {
                 React.createElement(Row, { icon: ArrowDownRight, label: tr("Імпорт виписки на цей рахунок"), onClick: () => setModal({ type: "statementImport", payload: { presetPocketId: pk.id }, returnTo }) }),
                 React.createElement(Row, { icon: Coins, label: tr("Змінити валюту / баланс"), onClick: () => setModal({ type: "pocket", payload: { accountId: acc.id, existing: pk }, returnTo }) }),
                 !confirmArc ? (React.createElement(Row, { icon: Archive, label: tr("Архівувати картку"), onClick: () => setConfirmArc(true) })) : (React.createElement("div", { className: "px-1 py-2" },
-                    React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Архівувати цю картку?")),
+                    React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Перемістити картку в архів? Її можна буде відновити будь-коли в розділі Рахунки → Архів.")),
                     React.createElement("div", { className: "flex gap-2" },
                         React.createElement("button", { onClick: () => { archivePocket(pocketId); setModal(null); }, className: "px-3 py-1.5 rounded-lg text-xs font-medium", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Так")),
                         React.createElement("button", { onClick: () => setConfirmArc(false), className: "px-3 py-1.5 rounded-lg text-xs font-medium", style: { background: "var(--surface2)", color: "var(--text)" } }, tr("Ні"))))),
@@ -8053,5 +8065,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-24.5");</script></body>
+<script>console.log("K³ build: 2026-07-25.1");</script></body>
 </html>
