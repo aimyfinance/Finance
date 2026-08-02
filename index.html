@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-02.6"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-02.7"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -3753,7 +3753,7 @@ window.__K3_START = function () {
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory, reorderCategories: reorderCategories })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
                         view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort, cryptoWallets: cryptoWallets, addCryptoWallet: addCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, transferCrypto: transferCrypto })),
-                        view === "settings" && (React.createElement(SettingsView, { baseCurrency: baseCurrency, rates: rates, rateMode: state.rateMode || {}, includeLoansInTotal: includeLoansInTotal, update: update, session: session, setToast: setToast, pin: pin, applyPin: applyPin, pinDelay: pinDelay, applyPinDelay: applyPinDelay, exportBackup: exportBackup, importBackup: importBackup, exportCSV: exportCSV, setView: setView, setModal: setModal, autoRefresh: state.autoRefresh || "open" }))))),
+                        view === "settings" && (React.createElement(SettingsView, { baseCurrency: baseCurrency, rates: rates, rateMode: state.rateMode || {}, includeLoansInTotal: includeLoansInTotal, uiScale: state.uiScale || "m", update: update, session: session, setToast: setToast, pin: pin, applyPin: applyPin, pinDelay: pinDelay, applyPinDelay: applyPinDelay, exportBackup: exportBackup, importBackup: importBackup, exportCSV: exportCSV, setView: setView, setModal: setModal, autoRefresh: state.autoRefresh || "open" }))))),
             React.createElement("div", { "data-tour": "nav", className: "md:hidden fixed bottom-0 left-0 right-0 z-30 border-t flex items-stretch", style: { background: "var(--surface)", borderColor: "var(--border)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 MOBILE_NAV.map((item) => {
                     const Ic = item.icon;
@@ -8330,5 +8330,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-02.6");</script></body>
+<script>console.log("K³ build: 2026-08-02.7");</script></body>
 </html>
