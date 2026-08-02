@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-03.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-03.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1765,6 +1765,8 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Торкніться фото, щоб відкрити на весь екран і збільшити": "Tap a photo to open it fullscreen and zoom",
+        "Щіпка — масштаб · подвійний тап — збільшити/скинути": "Pinch to zoom · double-tap to zoom in / reset",
         "Фото чеку (необов'язково, до 4)": "Receipt photos (optional, up to 4)",
         "Можна додати до 4 фото на одну операцію.": "You can attach up to 4 photos per transaction.",
         "Видалити фото": "Remove photo",
@@ -4538,8 +4540,9 @@ window.__K3_START = function () {
                 React.createElement(Row, { k: tr("Нотатка"), v: tr(tx.note) }),
                 (() => { const rcs = txReceipts(tx); return rcs.length ? React.createElement("div", { className: "py-2.5", style: { borderBottom: "1px solid var(--border)" } },
                     React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Фото чека") + (rcs.length > 1 ? ` (${rcs.length})` : "")),
-                    React.createElement("div", { className: "space-y-2" }, rcs.map((r, i) => (React.createElement("img", { key: i, src: r, alt: tr("чек"), onClick: () => setReceiptOpen((v) => (v === i ? null : i)), className: "w-full rounded-xl cursor-pointer", style: { objectFit: "contain", maxHeight: receiptOpen === i ? "none" : 200, background: "var(--surface2)", border: "1px solid var(--border)" } })))),
-                    React.createElement("p", { className: "text-[11px] mt-1 text-center", style: { color: "var(--text-dim)" } }, tr("Торкніться фото, щоб збільшити або згорнути"))) : null; })()),
+                    React.createElement("div", { className: "space-y-2" }, rcs.map((r, i) => (React.createElement("img", { key: i, src: r, alt: tr("чек"), onClick: () => setReceiptOpen(i), className: "w-full rounded-xl cursor-pointer", style: { objectFit: "contain", maxHeight: 200, background: "var(--surface2)", border: "1px solid var(--border)" } })))),
+                    React.createElement("p", { className: "text-[11px] mt-1 text-center", style: { color: "var(--text-dim)" } }, tr("Торкніться фото, щоб відкрити на весь екран і збільшити")),
+                    receiptOpen != null && rcs[receiptOpen] && React.createElement(PhotoViewer, { src: rcs[receiptOpen], onClose: () => setReceiptOpen(null) })) : null; })()),
             React.createElement("div", { className: "flex gap-2" },
                 (() => {
                     const rr = (recurring || []).find((x) => x.id === tx.recurringId);
@@ -6819,6 +6822,91 @@ window.__K3_START = function () {
                 React.createElement("p", { style: { color: "var(--text-dim)" } }, "rev — номер ревізії (має збігатися в усіх шарах); arc — кількість заархівованих рахунків."),
                 React.createElement(Button, { onClick: gather, variant: "secondary" }, "Оновити"))));
     }
+    /* Fullscreen receipt viewer with its own gestures: the PWA viewport disables the
+       system pinch-zoom, so low-vision users could not enlarge photos. Pinch scales 1-6x
+       around the fingers' midpoint, one finger pans when zoomed, double-tap toggles 2.5x. */
+    function PhotoViewer({ src, onClose }) {
+        const wrapRef = React.useRef(null);
+        const imgRef = React.useRef(null);
+        const st = React.useRef({ scale: 1, tx: 0, ty: 0, start: null, lastTap: 0 });
+        const apply = () => {
+            const el = imgRef.current;
+            if (el)
+                el.style.transform = `translate(${st.current.tx}px, ${st.current.ty}px) scale(${st.current.scale})`;
+        };
+        React.useEffect(() => {
+            const el = wrapRef.current;
+            if (!el)
+                return;
+            const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+            const mid = (t) => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
+            const onStart = (e) => {
+                const t = e.touches;
+                if (t.length === 2) {
+                    st.current.start = { mode: "pinch", d: dist(t), m: mid(t), scale: st.current.scale, tx: st.current.tx, ty: st.current.ty };
+                }
+                else if (t.length === 1) {
+                    const now = Date.now();
+                    if (now - st.current.lastTap < 280) {
+                        // double-tap: toggle zoom around the tap point
+                        const z = st.current.scale > 1.05 ? 1 : 2.5;
+                        if (z === 1) { st.current.scale = 1; st.current.tx = 0; st.current.ty = 0; }
+                        else {
+                            const p = { x: t[0].clientX, y: t[0].clientY };
+                            const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+                            st.current.tx = (cx - p.x) * (z - 1);
+                            st.current.ty = (cy - p.y) * (z - 1);
+                            st.current.scale = z;
+                        }
+                        apply();
+                        st.current.lastTap = 0;
+                        st.current.start = null;
+                        return;
+                    }
+                    st.current.lastTap = now;
+                    st.current.start = { mode: "pan", x: t[0].clientX, y: t[0].clientY, tx: st.current.tx, ty: st.current.ty };
+                }
+            };
+            const onMove = (e) => {
+                const t = e.touches;
+                const s0 = st.current.start;
+                if (!s0)
+                    return;
+                e.preventDefault();
+                if (s0.mode === "pinch" && t.length === 2) {
+                    const k = Math.min(6, Math.max(1, s0.scale * (dist(t) / s0.d)));
+                    const m = mid(t);
+                    // keep the content point under the fingers anchored while scaling
+                    st.current.tx = m.x - ((s0.m.x - s0.tx) / s0.scale) * k;
+                    st.current.ty = m.y - ((s0.m.y - s0.ty) / s0.scale) * k;
+                    if (k <= 1.02) { st.current.tx = 0; st.current.ty = 0; }
+                    st.current.scale = k;
+                    apply();
+                }
+                else if (s0.mode === "pan" && t.length === 1 && st.current.scale > 1.02) {
+                    st.current.tx = s0.tx + (t[0].clientX - s0.x);
+                    st.current.ty = s0.ty + (t[0].clientY - s0.y);
+                    apply();
+                }
+            };
+            const onEnd = (e) => { if (!e.touches || e.touches.length === 0) st.current.start = null; };
+            el.addEventListener("touchstart", onStart, { passive: true });
+            el.addEventListener("touchmove", onMove, { passive: false });
+            el.addEventListener("touchend", onEnd);
+            el.addEventListener("touchcancel", onEnd);
+            return () => {
+                el.removeEventListener("touchstart", onStart);
+                el.removeEventListener("touchmove", onMove);
+                el.removeEventListener("touchend", onEnd);
+                el.removeEventListener("touchcancel", onEnd);
+            };
+        }, []);
+        return (React.createElement("div", { ref: wrapRef, className: "k3-photo-viewer fixed inset-0 z-[80] flex items-center justify-center", style: { background: "rgba(5,8,14,0.96)", touchAction: "none" } },
+            React.createElement("img", { ref: imgRef, src: src, alt: tr("чек"), style: { maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain", transformOrigin: "0 0", willChange: "transform" } }),
+            React.createElement("button", { onClick: onClose, "aria-label": tr("Закрити"), className: "absolute top-4 right-4 w-11 h-11 rounded-full flex items-center justify-center", style: { background: "rgba(255,255,255,0.14)", color: "#fff" } },
+                React.createElement(X, { size: 22 })),
+            React.createElement("p", { className: "absolute bottom-5 left-0 right-0 text-center text-[11px]", style: { color: "rgba(255,255,255,0.55)" } }, tr("Щіпка — масштаб · подвійний тап — збільшити/скинути"))));
+    }
     /* ============================== MODAL ROUTER ============================== */
     // Quick editor for per-category monthly limits (opened from the budgets card)
     function CategoryBudgetsModal({ onClose, categories, setCategoryBudgets, baseCurrency }) {
@@ -8405,5 +8493,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-03.1");</script></body>
+<script>console.log("K³ build: 2026-08-03.2");</script></body>
 </html>
