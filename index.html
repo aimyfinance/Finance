@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-02.7"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-02.8"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1765,6 +1765,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Підтримуються лише зображення. PDF поки не приймається — зробіть фото чека або збережіть його як зображення.": "Only images are supported. PDF is not accepted yet — take a photo of the receipt or save it as an image.",
         "Додати іконку": "Choose an icon",
         "Або оберіть емоджі": "Or pick an emoji",
         "Свій емоджі з клавіатури…": "Your own emoji from the keyboard…",
@@ -2793,15 +2794,22 @@ window.__K3_START = function () {
             const fresh = loadState(); // also syncs SAVE_REV to the disk revision
             if (!fresh)
                 return false;
-            setState(fresh);
-            if (fresh.theme)
-                setTheme(fresh.theme);
-            setToast(tr("Показано новіші дані з іншої сесії застосунку."));
+            const pending = pendingPatchesRef.current;
+            let merged = fresh;
+            for (const p of pending)
+                merged = { ...merged, ...p }; // rebase the user's unsaved actions on top
+            setState(merged);
+            if (merged.theme)
+                setTheme(merged.theme);
+            if (!pending.length)
+                setToast(tr("Показано новіші дані з іншої сесії застосунку."));
             return true;
         };
         useEffect(() => {
             const full = { ...state, theme };
             const ok = saveState(full);
+            if (ok === true)
+                pendingPatchesRef.current = [];
             if (ok === "stale") {
                 adoptNewerDiskState();
                 return;
@@ -2864,7 +2872,15 @@ window.__K3_START = function () {
         const toggleCryptoFav = () => update({ cryptoFav: !(state.cryptoFav !== false) });
         const cryptoSort = state.cryptoSort || "value";
         const setCryptoSort = (v) => update({ cryptoSort: v });
-        const update = (patch) => setState((s) => ({ ...s, ...patch }));
+        // Patches not yet confirmed saved; replayed on top of adopted newer disk state so a
+        // user's tap is never swallowed by the multi-session fence (rebase, not discard).
+        const pendingPatchesRef = React.useRef([]);
+        const update = (patch) => {
+            pendingPatchesRef.current.push(patch);
+            if (pendingPatchesRef.current.length > 40)
+                pendingPatchesRef.current.shift();
+            setState((s) => ({ ...s, ...patch }));
+        };
         const notify = (msg) => setToast(msg);
         /* ---------- pocket / account helpers ---------- */
         const getPocket = useCallback((pocketId) => {
@@ -4138,7 +4154,7 @@ window.__K3_START = function () {
                                 tr("Дохід"),
                                 " ",
                                 periodLabel),
-                            React.createElement("span", { className: "flex items-center gap-1 font-semibold tabular shrink-0", style: { color: "var(--accent)" } },
+                            React.createElement("span", { className: "flex items-center gap-1 font-semibold tabular shrink-0", style: { color: "var(--income, #2F8F5B)" } },
                                 fmtMoney(periodIncome, baseCurrency),
                                 React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)" } }))),
                         React.createElement("button", { onClick: () => { setHistoryPreset({ type: "expense", from: pStart, to: pEnd }); setView("history"); }, className: "w-full flex items-center justify-between text-xs gap-2" },
@@ -4151,7 +4167,7 @@ window.__K3_START = function () {
                                 React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)" } }))),
                         React.createElement("div", { className: "flex items-center justify-between text-xs gap-2 pt-2.5", style: { borderTop: "1px solid var(--border)" } },
                             React.createElement("span", { className: "font-medium", style: { color: "var(--text)" } }, tr("Чистий результат")),
-                            React.createElement("span", { className: "font-display font-bold text-sm tabular shrink-0", style: { color: periodNet >= 0 ? "var(--accent)" : "var(--danger)" } }, fmtMoney(periodNet, baseCurrency)))))),
+                            React.createElement("span", { className: "font-display font-bold text-sm tabular shrink-0", style: { color: periodNet >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } }, fmtMoney(periodNet, baseCurrency)))))),
             React.createElement("div", { className: "grid md:grid-cols-2 gap-4" },
                 React.createElement(Card, { className: "p-4 overflow-hidden" },
                     React.createElement("div", { className: "flex items-center justify-between mb-3 gap-2" },
@@ -4389,7 +4405,7 @@ window.__K3_START = function () {
             label = tr(tx.note) || tr(cat?.name) || tr("Дохід");
             sub = pocketLabel(tx.pocketId);
             amountStr = `+${fmtMoney(tx.amount, tx.currency)}`;
-            amountColor = "var(--income)";
+            amountColor = "var(--income, #2F8F5B)";
         }
         else if (tx.type === "expense") {
             label = tr(tx.note) || tr(cat?.name) || tr("Витрата");
@@ -4419,7 +4435,7 @@ window.__K3_START = function () {
             label = tr("Повернення позики");
             sub = tr(tx.note) || pocketLabel(tx.pocketId);
             amountStr = `+${fmtMoney(tx.amount, tx.currency)}`;
-            amountColor = "var(--income)";
+            amountColor = "var(--income, #2F8F5B)";
         }
         else if (tx.type === "debt_take") {
             label = tr("Отримання боргу");
@@ -4443,7 +4459,7 @@ window.__K3_START = function () {
             label = tr("Продаж крипто");
             sub = tr(tx.note) || `${tx.coinAmount || ""} ${tx.coinSymbol || ""}`;
             amountStr = `+${fmtMoney(tx.amount, tx.currency)}`;
-            amountColor = "var(--income)";
+            amountColor = "var(--income, #2F8F5B)";
         }
         const TypeIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
         if (tx.coinId && !tx.pocketId)
@@ -5114,7 +5130,7 @@ window.__K3_START = function () {
                         React.createElement("div", { className: "space-y-1.5" },
                             React.createElement("div", { className: "flex items-center justify-between text-xs" },
                                 React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Доходи")),
-                                React.createElement("span", { className: "tabular font-medium", style: { color: "var(--income)" } },
+                                React.createElement("span", { className: "tabular font-medium", style: { color: "var(--income, #2F8F5B)" } },
                                     "+",
                                     fmtMoney(inc, baseCurrency))),
                             React.createElement("div", { className: "flex items-center justify-between text-xs" },
@@ -6730,6 +6746,12 @@ window.__K3_START = function () {
         const gather = () => {
             const out = { build: K3_BUILD, time: new Date().toISOString().slice(0, 19).replace("T", " ") };
             try {
+                out.path = window.location.pathname || "/";
+                const rootEl = document.getElementById("root");
+                out.incomeVar = (rootEl && rootEl.firstChild && window.getComputedStyle(rootEl.firstChild).getPropertyValue("--income").trim()) || "(не задано)";
+            }
+            catch (e) { }
+            try {
                 const st = liveState || {};
                 out.mem = { rev: (typeof window.__K3_SAVE_REV === "number" ? window.__K3_SAVE_REV : st.__rev || 0), bootRev: st.__rev || 0, accs: (st.accounts || []).length, arc: (st.accounts || []).filter((a) => a.archived).length, tx: (st.transactions || []).length };
             }
@@ -6763,6 +6785,7 @@ window.__K3_START = function () {
         return (React.createElement(Modal, { title: "Діагностика сховища", onClose: onClose },
             React.createElement("div", { className: "space-y-3 text-xs", style: { fontFamily: "monospace", userSelect: "text", WebkitUserSelect: "text" } },
                 React.createElement("p", null, "build: " + (info ? info.build : "") + " · " + (info ? info.time : "")),
+                React.createElement("p", null, "path: " + (info && info.path || "") + " · --income: " + (info && info.incomeVar || "")),
                 React.createElement("p", null, "ПАМ'ЯТЬ  → " + fmt(info && info.mem)),
                 React.createElement("p", null, "LOCALSTORAGE → " + fmt(info && info.ls)),
                 React.createElement("p", null, "ДЗЕРКАЛО IDB → " + fmt(info && info.idb)),
@@ -7666,10 +7689,18 @@ window.__K3_START = function () {
             return Object.values(m);
         }, [transactions, kind]);
         const selCat = cats.find((c) => c.id === categoryId) || null;
+        const [receiptErr, setReceiptErr] = useState("");
         const handleReceipt = (e) => {
             const file = e.target.files?.[0];
             if (!file)
                 return;
+            if (!(file.type || "").startsWith("image/")) {
+                // PDFs and other documents can't be decoded by the canvas compressor
+                setReceiptErr(tr("Підтримуються лише зображення. PDF поки не приймається — зробіть фото чека або збережіть його як зображення."));
+                e.target.value = "";
+                return;
+            }
+            setReceiptErr("");
             compressImage(file, 1280, 0.72).then((dataUrl) => { if (dataUrl) setReceipt(dataUrl); });
         };
         const CAT_COLORS = ["#6FA98C", "#6683B4", "#D8A24A", "#C77F6E", "#5FA8B8", "#9B87C4", "#C77FA0", "#818CF8"];
@@ -7824,6 +7855,7 @@ window.__K3_START = function () {
                     React.createElement("p", { className: "text-[11px] mt-1.5", style: { color: "var(--text-dim)" } }, recMode === "fixed" ? tr("Щомісяця створюватиметься така сама операція.") : tr("Щомісяця K³ питатиме фактичну суму карткою на головному.")))))),
             React.createElement(Field, { label: tr("Фото чеку (необов'язково)") },
                 React.createElement("input", { type: "file", accept: "image/*", onChange: handleReceipt, className: "text-xs", style: { color: "var(--text-dim)" } }),
+                receiptErr && React.createElement("p", { className: "text-xs mt-1", style: { color: "var(--danger)" } }, receiptErr),
                 receipt && React.createElement("img", { src: receipt, alt: tr("чек"), className: "mt-2 h-24 rounded-lg object-cover" })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, editing ? tr("Зберегти зміни") : tr("Зберегти"))));
     }
@@ -8330,5 +8362,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-02.7");</script></body>
+<script>console.log("K³ build: 2026-08-02.8");</script></body>
 </html>
