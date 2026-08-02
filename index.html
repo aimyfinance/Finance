@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-02.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-02.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1761,6 +1761,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Показано новіші дані з іншої сесії застосунку.": "Showing newer data from another app session.",
         "Відновлено незбережені зміни з резервної копії пристрою.": "Unsaved changes were recovered from the device backup copy.",
         "⚠️ Зміни не зберігаються — сховище переповнене. Видаліть кілька фото чеків або старих транзакцій.": "⚠️ Changes are not being saved — storage is full. Delete a few receipt photos or old transactions.",
         "Все в архіві зберігається безстроково, доки ви самі його не відновите або не видалите.": "Everything in the archive is kept indefinitely until you restore or delete it yourself.",
@@ -1905,6 +1906,17 @@ window.__K3_START = function () {
        after a change can "successfully" write in JS yet lose the data on disk — with no error
        to catch. IndexedDB commits transactionally and survives the same kill. Every save is
        therefore mirrored with a monotonically growing revision; on boot the newer copy wins. */
+    // Cheap read of the revision stored on disk (no full JSON.parse)
+    function peekDiskRev() {
+        try {
+            const raw = window.localStorage ? window.localStorage.getItem(STORAGE_KEY) : null;
+            if (!raw)
+                return 0;
+            const m = raw.match(/"__rev":(\d+)/);
+            return m ? parseInt(m[1], 10) : 0;
+        }
+        catch (e) { return 0; }
+    }
     const IDB_NAME = "k3_state_mirror";
     let IDB_READY = false; // saves must not overwrite the mirror before boot reconciliation reads it
     function idbPut(json) {
@@ -1980,6 +1992,14 @@ window.__K3_START = function () {
     }
     let SAVE_REV = 0; // initialized from the loaded state at boot
     function saveState(state) {
+        /* Multi-session fence: iOS resumes frozen PWA instances hours later. Such a stale
+           instance carries an old in-memory state; letting it write would OVERWRITE newer
+           data another session already persisted (the root cause of the vanishing-accounts
+           incidents: memory rev 49 clobbering disk rev 60). If the disk is ahead of us,
+           refuse to write and let the caller adopt the newer state instead. */
+        const diskRev = peekDiskRev();
+        if (diskRev > SAVE_REV)
+            return "stale";
         let ok = true;
         SAVE_REV += 1;
         const json = JSON.stringify({ ...state, __rev: SAVE_REV });
@@ -2753,9 +2773,23 @@ window.__K3_START = function () {
         useEffect(() => { stateRef.current = { ...state, theme }; }, [state, theme]);
         // save locally + push to cloud (when signed in)
         const [saveFailed, setSaveFailed] = useState(false);
+        const adoptNewerDiskState = () => {
+            const fresh = loadState(); // also syncs SAVE_REV to the disk revision
+            if (!fresh)
+                return false;
+            setState(fresh);
+            if (fresh.theme)
+                setTheme(fresh.theme);
+            setToast(tr("Показано новіші дані з іншої сесії застосунку."));
+            return true;
+        };
         useEffect(() => {
             const full = { ...state, theme };
             const ok = saveState(full);
+            if (ok === "stale") {
+                adoptNewerDiskState();
+                return;
+            }
             if (!ok && !saveFailed) {
                 setSaveFailed(true);
                 setToast(tr("Увага: сховище пристрою переповнене — останні зміни не збереглися. Видаліть кілька фото чеків або зробіть експорт даних."));
@@ -3467,6 +3501,24 @@ window.__K3_START = function () {
                 catch (e) { /* corrupted mirror — ignore */ }
                 IDB_READY = true;
             });
+        }, []);
+        // Waking from background: if another session persisted newer data meanwhile,
+        // adopt it immediately instead of showing (and later saving) the stale picture.
+        useEffect(() => {
+            const revalidate = () => {
+                if (document.visibilityState && document.visibilityState !== "visible")
+                    return;
+                if (peekDiskRev() > SAVE_REV)
+                    adoptNewerDiskState();
+            };
+            document.addEventListener("visibilitychange", revalidate);
+            window.addEventListener("pageshow", revalidate);
+            window.addEventListener("focus", revalidate);
+            return () => {
+                document.removeEventListener("visibilitychange", revalidate);
+                window.removeEventListener("pageshow", revalidate);
+                window.removeEventListener("focus", revalidate);
+            };
         }, []);
         // Force one extra save the moment the app is backgrounded (narrows the loss window)
         useEffect(() => {
@@ -8229,5 +8281,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-02.2");</script></body>
+<script>console.log("K³ build: 2026-08-02.3");</script></body>
 </html>
