@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-02.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-02.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1761,6 +1761,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Архів порожній.": "The archive is empty.",
         "Показано новіші дані з іншої сесії застосунку.": "Showing newer data from another app session.",
         "Відновлено незбережені зміни з резервної копії пристрою.": "Unsaved changes were recovered from the device backup copy.",
         "⚠️ Зміни не зберігаються — сховище переповнене. Видаліть кілька фото чеків або старих транзакцій.": "⚠️ Changes are not being saved — storage is full. Delete a few receipt photos or old transactions.",
@@ -2002,6 +2003,7 @@ window.__K3_START = function () {
             return "stale";
         let ok = true;
         SAVE_REV += 1;
+        try { window.__K3_SAVE_REV = SAVE_REV; } catch (e) { }
         const json = JSON.stringify({ ...state, __rev: SAVE_REV });
         try {
             if (window.localStorage)
@@ -4850,9 +4852,9 @@ window.__K3_START = function () {
                                 React.createElement(Edit3, { size: 13 })),
                             React.createElement("button", { onClick: () => setModal({ type: "account", payload: { bank: g.bank } }), className: "w-7 h-7 rounded-lg flex items-center justify-center shrink-0", style: { background: "var(--surface2)", color: "var(--accent)", border: "1px solid var(--border)" }, "aria-label": tr("Додати рахунок") },
                                 React.createElement(Plus, { size: 14 })))) : (React.createElement("p", { className: "px-1 font-display font-semibold text-sm", style: { color: "var(--text-dim)" } }, tr("Інші рахунки")))),
-                        !collapsed && g.accs.map((acc) => renderAccount(acc))));
+                        (!showGroups || !collapsed) && g.accs.map((acc) => renderAccount(acc))));
                 }),
-                list.length === 0 && typeFilter !== "crypto" && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("Немає рахунків у цій категорії")))));
+                list.length === 0 && typeFilter !== "crypto" && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, showArchived ? tr("Архів порожній.") : tr("Немає рахунків у цій категорії")))));
     }
     /* ============================== HISTORY VIEW ============================== */
     function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, setView, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, rates, baseCurrency, projects, addProject, assignProjectBulk, deleteTransactionsBulk, moveTransactionsBulk }) {
@@ -6705,7 +6707,7 @@ window.__K3_START = function () {
             const out = { build: K3_BUILD, time: new Date().toISOString().slice(0, 19).replace("T", " ") };
             try {
                 const st = liveState || {};
-                out.mem = { rev: st.__rev || 0, accs: (st.accounts || []).length, arc: (st.accounts || []).filter((a) => a.archived).length, tx: (st.transactions || []).length };
+                out.mem = { rev: (typeof window.__K3_SAVE_REV === "number" ? window.__K3_SAVE_REV : st.__rev || 0), bootRev: st.__rev || 0, accs: (st.accounts || []).length, arc: (st.accounts || []).filter((a) => a.archived).length, tx: (st.transactions || []).length };
             }
             catch (e) { out.mem = { err: String(e) }; }
             try {
@@ -8281,5 +8283,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-02.3");</script></body>
+<script>console.log("K³ build: 2026-08-02.4");</script></body>
 </html>
