@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-02.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-02.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -843,8 +843,12 @@ window.__K3_START = function () {
         });
     }
     function Icon({ name, size = 18, className = "", style = {} }) {
-        const C = ICONS[name] || MoreHorizontal;
-        return React.createElement(C, { size: size, className: className, style: style });
+        const C = ICONS[name];
+        if (!C && name && name.length <= 10 && !/^[A-Za-z][A-Za-z0-9]*$/.test(name)) {
+            // custom emoji icon chosen by the user
+            return React.createElement("span", { className: className, "aria-hidden": true, style: { fontSize: Math.round(size * 1.05), lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", ...style } }, name);
+        }
+        return React.createElement(C || MoreHorizontal, { size: size, className: className, style: style });
     }
     /* ============================== DEMO DATA ============================== */
     /*
@@ -1761,6 +1765,16 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Додати іконку": "Choose an icon",
+        "Або оберіть емоджі": "Or pick an emoji",
+        "Свій емоджі з клавіатури…": "Your own emoji from the keyboard…",
+        "Обрати": "Use",
+        "Розмір тексту": "Text size",
+        "Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом.": "Scales the whole interface — text, icons and buttons grow together.",
+        "Малий": "Small",
+        "Стандарт": "Default",
+        "Великий": "Large",
+        "Дуже великий": "Extra large",
         "Архів порожній.": "The archive is empty.",
         "Показано новіші дані з іншої сесії застосунку.": "Showing newer data from another app session.",
         "Відновлено незбережені зміни з резервної копії пристрою.": "Unsaved changes were recovered from the device backup copy.",
@@ -2168,14 +2182,14 @@ window.__K3_START = function () {
             return {
                 "--bg": "#F4F0E8", "--surface": "#FFFFFF", "--surface2": "#FBF8F2", "--border": "#E8E2D5",
                 "--text": "#131B2B", "--text-dim": "#6B7385", "--accent": "#B4893C", "--accent-ink": "#131B2B", "--accent2": "#4C608A",
-                "--danger": "#C6473C", "--warn": "#B07A1E", "--shadow": "0 1px 2px rgba(20,27,43,.05), 0 8px 24px rgba(20,27,43,.08)", "--card-shadow": "0 4px 14px rgba(14,21,36,0.10)",
+                "--danger": "#C6473C", "--warn": "#B07A1E", "--income": "#2F8F5B", "--shadow": "0 1px 2px rgba(20,27,43,.05), 0 8px 24px rgba(20,27,43,.08)", "--card-shadow": "0 4px 14px rgba(14,21,36,0.10)",
             };
         }
         // K³ Midnight — deep navy surfaces, warm off-white text, champagne gold accent
         return {
             "--bg": "#0E1524", "--surface": "#161F31", "--surface2": "#202B44", "--border": "#2A3550",
             "--text": "#F3F0E8", "--text-dim": "#8E97AD", "--accent": "#C9A362", "--accent-ink": "#131B2B", "--accent2": "#6683B4",
-            "--danger": "#E06B5D", "--warn": "#E0A63F", "--shadow": "0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.35)", "--card-shadow": "0 10px 26px rgba(0,0,0,0.42)",
+            "--danger": "#E06B5D", "--warn": "#E0A63F", "--income": "#4CAF7D", "--shadow": "0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.35)", "--card-shadow": "0 10px 26px rgba(0,0,0,0.42)",
         };
     }
     /* ============================== SMALL UI PRIMITIVES ============================== */
@@ -3533,6 +3547,12 @@ window.__K3_START = function () {
                 document.removeEventListener("visibilitychange", onVis);
             };
         }, []);
+        // Accessibility: proportional zoom of the whole UI (text, icons, spacing scale
+        // together, so nothing can overlap — the page just gets closer to the eyes).
+        useEffect(() => {
+            const SCALES = { s: "0.9", m: "", l: "1.12", xl: "1.25" };
+            try { document.documentElement.style.zoom = SCALES[state.uiScale || "m"] || ""; } catch (e) { }
+        }, [state.uiScale]);
         const bvMigratedRef = React.useRef(false);
         useEffect(() => {
             if (bvMigratedRef.current)
@@ -4369,7 +4389,7 @@ window.__K3_START = function () {
             label = tr(tx.note) || tr(cat?.name) || tr("Дохід");
             sub = pocketLabel(tx.pocketId);
             amountStr = `+${fmtMoney(tx.amount, tx.currency)}`;
-            amountColor = "var(--accent)";
+            amountColor = "var(--income)";
         }
         else if (tx.type === "expense") {
             label = tr(tx.note) || tr(cat?.name) || tr("Витрата");
@@ -4399,7 +4419,7 @@ window.__K3_START = function () {
             label = tr("Повернення позики");
             sub = tr(tx.note) || pocketLabel(tx.pocketId);
             amountStr = `+${fmtMoney(tx.amount, tx.currency)}`;
-            amountColor = "var(--accent)";
+            amountColor = "var(--income)";
         }
         else if (tx.type === "debt_take") {
             label = tr("Отримання боргу");
@@ -4423,7 +4443,7 @@ window.__K3_START = function () {
             label = tr("Продаж крипто");
             sub = tr(tx.note) || `${tx.coinAmount || ""} ${tx.coinSymbol || ""}`;
             amountStr = `+${fmtMoney(tx.amount, tx.currency)}`;
-            amountColor = "var(--accent)";
+            amountColor = "var(--income)";
         }
         const TypeIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
         if (tx.coinId && !tx.pocketId)
@@ -5094,7 +5114,7 @@ window.__K3_START = function () {
                         React.createElement("div", { className: "space-y-1.5" },
                             React.createElement("div", { className: "flex items-center justify-between text-xs" },
                                 React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Доходи")),
-                                React.createElement("span", { className: "tabular font-medium", style: { color: "var(--accent)" } },
+                                React.createElement("span", { className: "tabular font-medium", style: { color: "var(--income)" } },
                                     "+",
                                     fmtMoney(inc, baseCurrency))),
                             React.createElement("div", { className: "flex items-center justify-between text-xs" },
@@ -5343,8 +5363,8 @@ window.__K3_START = function () {
                 React.createElement("button", { onClick: () => setTab("income"), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: tab === "income" ? "var(--surface2)" : "transparent", color: tab === "income" ? "var(--text)" : "var(--text-dim)" } }, tr("Доходи"))),
             React.createElement("div", { ref: catHold.containerRef, className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-3" }, list.map((c, ci) => (React.createElement("div", Object.assign({ key: c.id, style: holdDragStyle(catHold.dragId === c.id, 16) }, catHold.itemProps(c.id)),
                 React.createElement(Card, { className: `p-4 flex items-center gap-3 ${c.archived ? "opacity-50" : ""}` },
-                    React.createElement("div", { className: "w-9 h-9 rounded-xl flex items-center justify-center shrink-0", style: { background: `${c.color}22` } },
-                        React.createElement(Icon, { name: c.icon, size: 16, style: { color: c.color } })),
+                    React.createElement("div", { className: "w-12 h-12 rounded-xl flex items-center justify-center shrink-0", style: { background: `${c.color}22` } },
+                        React.createElement(Icon, { name: c.icon, size: 22, style: { color: c.color } })),
                     React.createElement("p", { className: "text-sm font-medium flex-1 truncate" }, tr(c.name)),
                     React.createElement("button", { onClick: () => reorderCategories(c.id, list[ci - 1].id), disabled: ci === 0, "aria-label": tr("Вгору"), className: "p-1.5 rounded-lg disabled:opacity-25", style: { color: "var(--text-dim)" } },
                         React.createElement(ChevronUp, { size: 14 })),
@@ -6379,7 +6399,7 @@ window.__K3_START = function () {
                 React.createElement(ChevronDown, { size: 16, style: { color: "var(--text-dim)", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease", flexShrink: 0 } })),
             open && React.createElement("div", { className: "px-5 pb-5 animate-in" }, children)));
     }
-    function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView, setModal, autoRefresh }) {
+    function SettingsView({ baseCurrency, rates, rateMode, includeLoansInTotal, uiScale, update, session, setToast, pin, applyPin, pinDelay, applyPinDelay, exportBackup, importBackup, exportCSV, setView, setModal, autoRefresh }) {
         const [openSec, setOpenSec] = useState("");
         const [localRates, setLocalRates] = useState(() => {
             const o = {};
@@ -6569,6 +6589,10 @@ window.__K3_START = function () {
                         React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Додає до загального капіталу гроші, які вам винні, і віднімає ваші борги — чесний net worth."))),
                     React.createElement("button", { onClick: () => update({ includeLoansInTotal: !includeLoansInTotal }), className: "shrink-0 w-12 h-7 rounded-full transition relative", style: { background: includeLoansInTotal ? "var(--accent)" : "var(--surface2)", border: "1px solid var(--border)" } },
                         React.createElement("span", { className: "absolute top-0.5 w-6 h-6 rounded-full transition-all", style: { left: includeLoansInTotal ? 22 : 2, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.25)" } })))),
+            React.createElement(Card, { className: "p-5" },
+                React.createElement("p", { className: "font-display font-semibold text-sm mb-1" }, tr("Розмір тексту")),
+                React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом.")),
+                React.createElement("div", { className: "grid grid-cols-4 gap-2" }, [["s", tr("Малий")], ["m", tr("Стандарт")], ["l", tr("Великий")], ["xl", tr("Дуже великий")]].map(([v, lbl]) => (React.createElement("button", { key: v, onClick: () => update({ uiScale: v }), className: "py-2 rounded-lg text-xs font-medium", style: { background: (uiScale || "m") === v ? "var(--accent)" : "var(--surface2)", color: (uiScale || "m") === v ? "var(--accent-ink)" : "var(--text)" } }, lbl))))),
             React.createElement(Card, { className: "p-5" },
                 React.createElement("h3", { "data-tour": "setpin", className: "font-display font-semibold text-sm mb-1" }, tr("PIN-код")),
                 pin && !pinMode ? (React.createElement("div", null,
@@ -7515,6 +7539,9 @@ window.__K3_START = function () {
         const [budget, setBudget] = useState(existing?.budget != null ? String(existing.budget) : "");
         const [error, setError] = useState("");
         const iconOptions = ICON_CHOICES;
+        const [pickerOpen, setPickerOpen] = useState(false);
+        const [customEmoji, setCustomEmoji] = useState("");
+        const EMOJI_CHOICES = ["🛒","🍽️","☕","🍕","🚗","🚌","✈️","⛽","🏠","🔑","💡","💊","🏥","🦷","💪","👕","👟","💄","🎁","🎉","🎮","🎬","📚","🎓","🧸","🐶","🐱","🌿","💻","📱","🔧","🧾","💼","🏦","💳","💰","🪙","📈","🐷","🎯","⚽","🎣","🚲","🏖️","🎄","👵","👶","❤️","🧹","🧺","🚿","🔌","📦"];
         const submit = () => {
             if (!name.trim())
                 return setError(tr("Введіть назву категорії"));
@@ -7541,8 +7568,20 @@ window.__K3_START = function () {
                     React.createElement("option", { value: "income" }, tr("Дохід")))),
             React.createElement("div", { className: "block mb-3" },
                 React.createElement("span", { className: "block text-xs font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Іконка")),
-                React.createElement("div", { className: "grid grid-cols-8 gap-2 max-h-32 overflow-y-auto" }, iconOptions.map((k) => (React.createElement("button", { type: "button", key: k, onClick: () => setIcon(k), className: "w-9 h-9 rounded-lg flex items-center justify-center", style: { background: icon === k ? "var(--accent)" : "var(--surface2)" } },
-                    React.createElement(Icon, { name: k, size: 15, style: { color: icon === k ? "#08110D" : "var(--text-dim)" } })))))),
+                React.createElement("div", { className: "flex items-center gap-3" },
+                    React.createElement("div", { className: "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0", style: { background: `${color}22`, border: "1px solid var(--border)" } },
+                        React.createElement(Icon, { name: icon, size: 28, style: { color: color } })),
+                    React.createElement("button", { type: "button", onClick: () => setPickerOpen((v) => !v), className: "flex-1 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+                        tr("Додати іконку"),
+                        React.createElement(ChevronDown, { size: 16, style: { color: "var(--text-dim)", transform: pickerOpen ? "rotate(180deg)" : "none", transition: "transform .15s" } }))),
+                pickerOpen && (React.createElement("div", { className: "mt-3 space-y-3" },
+                    React.createElement("div", { className: "grid grid-cols-6 gap-2 max-h-40 overflow-y-auto p-0.5" }, iconOptions.map((k) => (React.createElement("button", { type: "button", key: k, onClick: () => setIcon(k), className: "w-12 h-12 rounded-xl flex items-center justify-center", style: { background: icon === k ? "var(--accent)" : "var(--surface2)" } },
+                        React.createElement(Icon, { name: k, size: 22, style: { color: icon === k ? "#08110D" : "var(--text-dim)" } }))))),
+                    React.createElement("span", { className: "block text-xs font-medium", style: { color: "var(--text-dim)" } }, tr("Або оберіть емоджі")),
+                    React.createElement("div", { className: "grid grid-cols-6 gap-2 max-h-40 overflow-y-auto p-0.5" }, EMOJI_CHOICES.map((e) => (React.createElement("button", { type: "button", key: e, onClick: () => setIcon(e), className: "w-12 h-12 rounded-xl flex items-center justify-center text-2xl", style: { background: icon === e ? "var(--accent)" : "var(--surface2)" } }, e)))),
+                    React.createElement("div", { className: "flex gap-2 items-center" },
+                        React.createElement(Input, { value: customEmoji, onChange: (e) => setCustomEmoji(e.target.value), placeholder: tr("Свій емоджі з клавіатури…"), maxLength: 4 }),
+                        React.createElement(Button, { variant: "secondary", disabled: !customEmoji.trim(), onClick: () => { setIcon(customEmoji.trim()); setCustomEmoji(""); } }, tr("Обрати")))))),
             React.createElement(Field, { label: tr("Колір") },
                 React.createElement("div", { className: "flex gap-2 flex-wrap" }, ACCOUNT_COLORS.map((c) => React.createElement("button", { key: c, onClick: () => setColor(c), className: "w-8 h-8 rounded-full", style: { background: c, border: color === c ? "2px solid var(--text)" : "2px solid transparent" } })))),
             type === "expense" && (React.createElement(Field, { label: tr("Місячний ліміт (бюджет), необовʼязково") },
@@ -8283,5 +8322,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-02.4");</script></body>
+<script>console.log("K³ build: 2026-08-02.5");</script></body>
 </html>
