@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-02.8"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-03.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1765,6 +1765,10 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Фото чеку (необов'язково, до 4)": "Receipt photos (optional, up to 4)",
+        "Можна додати до 4 фото на одну операцію.": "You can attach up to 4 photos per transaction.",
+        "Видалити фото": "Remove photo",
+        "Торкніться фото, щоб збільшити або згорнути": "Tap a photo to enlarge or collapse it",
         "Підтримуються лише зображення. PDF поки не приймається — зробіть фото чека або збережіть його як зображення.": "Only images are supported. PDF is not accepted yet — take a photo of the receipt or save it as an image.",
         "Додати іконку": "Choose an icon",
         "Або оберіть емоджі": "Or pick an emoji",
@@ -1967,6 +1971,16 @@ window.__K3_START = function () {
         }
         catch (e) { cb(null); }
     }
+    // A transaction may carry several receipt photos (e.g. an invoice plus a return
+    // invoice when only the difference is paid). Legacy single tx.receipt is normalized.
+    function txReceipts(t) {
+        if (!t)
+            return [];
+        if (Array.isArray(t.receipts))
+            return t.receipts.filter(Boolean);
+        return t.receipt ? [t.receipt] : [];
+    }
+    const MAX_RECEIPTS = 4;
     /* Downscale + re-encode an image dataURL/file so a receipt photo weighs ~100-300KB
        instead of the multi-megabyte camera original. localStorage on iOS holds ~5MB total,
        so a single uncompressed photo could blow the quota and silently kill saves. */
@@ -2056,7 +2070,7 @@ window.__K3_START = function () {
                     window.localStorage.setItem("ft_auto_backup_prev", prev);
                 // Receipts are stripped from backups: with photos, three copies of the state
                 // tripled storage usage and pushed devices over the quota.
-                const lite = { ...state, transactions: (state.transactions || []).map((t) => (t.receipt ? { ...t, receipt: null } : t)) };
+                const lite = { ...state, transactions: (state.transactions || []).map((t) => (t.receipt || (t.receipts && t.receipts.length) ? { ...t, receipt: null, receipts: [] } : t)) };
                 window.localStorage.setItem("ft_auto_backup", JSON.stringify({ date: today, state: lite }));
                 window.localStorage.setItem("ft_auto_backup_date", today);
             }
@@ -3490,20 +3504,31 @@ window.__K3_START = function () {
             if (receiptsMigratedRef.current)
                 return;
             receiptsMigratedRef.current = true;
-            const heavy = transactions.filter((t) => typeof t.receipt === "string" && t.receipt.length > 400000);
-            if (!heavy.length)
+            const needsWork = transactions.filter((t) => (typeof t.receipt === "string" && t.receipt.length > 0) || (t.receipts || []).some((r) => typeof r === "string" && r.length > 400000));
+            if (!needsWork.length)
                 return;
             (async () => {
-                const compressed = {};
-                for (const t of heavy) {
-                    const out = await compressImage(t.receipt, 1280, 0.72);
-                    if (out && out.length < t.receipt.length)
-                        compressed[t.id] = out;
+                const updated = {};
+                let shrunk = false;
+                for (const t of needsWork) {
+                    const arr = txReceipts(t);
+                    const out = [];
+                    for (const r of arr) {
+                        if (typeof r === "string" && r.length > 400000) {
+                            const c = await compressImage(r, 1280, 0.72);
+                            if (c && c.length < r.length) {
+                                out.push(c);
+                                shrunk = true;
+                                continue;
+                            }
+                        }
+                        out.push(r);
+                    }
+                    updated[t.id] = out;
                 }
-                if (Object.keys(compressed).length) {
-                    setState((s) => ({ ...s, transactions: s.transactions.map((t) => (compressed[t.id] ? { ...t, receipt: compressed[t.id] } : t)) }));
+                setState((s) => ({ ...s, transactions: s.transactions.map((t) => (updated[t.id] ? { ...t, receipts: updated[t.id], receipt: null } : t)) }));
+                if (shrunk)
                     setToast(tr("Фото чеків оптимізовано — звільнено місце у сховищі."));
-                }
             })();
         }, []);
         // Recover the tail of changes iOS may have dropped from localStorage on force-quit:
@@ -4472,7 +4497,9 @@ window.__K3_START = function () {
             React.createElement("div", { className: "min-w-0 flex-1" },
                 React.createElement("p", { className: "text-sm font-medium truncate" },
                     label,
-                    tx.receipt ? React.createElement(Camera, { size: 12, "aria-label": tr("чек"), style: { display: "inline", verticalAlign: "-1px", marginLeft: 5, color: "var(--text-dim)" } }) : null),
+                    (() => { const rc = txReceipts(tx).length; return rc ? React.createElement("span", { style: { whiteSpace: "nowrap" } },
+                        React.createElement(Camera, { size: 12, "aria-label": tr("чек"), style: { display: "inline", verticalAlign: "-1px", marginLeft: 5, color: "var(--text-dim)" } }),
+                        rc > 1 ? React.createElement("span", { className: "text-[10px]", style: { color: "var(--text-dim)" } }, rc) : null) : null; })()),
                 React.createElement("p", { className: "text-xs truncate", style: { color: "var(--text-dim)" } }, sub)),
             React.createElement("div", { className: "text-right shrink-0" },
                 React.createElement("p", { className: "text-sm font-semibold tabular", style: { color: amountColor } }, amountStr),
@@ -4482,7 +4509,7 @@ window.__K3_START = function () {
     function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring, projects, rates, baseCurrency, updateRepayAmount }) {
         const [confirmDel, setConfirmDel] = useState(false);
         const [repayEdit, setRepayEdit] = useState(false);
-        const [receiptOpen, setReceiptOpen] = useState(false);
+        const [receiptOpen, setReceiptOpen] = useState(null); // index of the expanded photo
         const [repayAmt, setRepayAmt] = useState("");
         const cat = categories.find((x) => x.id === tx.categoryId);
         const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу", crypto_buy: "Купівля крипто", crypto_sell: "Продаж крипто" };
@@ -4509,10 +4536,10 @@ window.__K3_START = function () {
                 dual && React.createElement(Row, { k: tr("На рахунок"), v: pocketLabel(tx.toPocketId) }),
                 (tx.type === "income" || tx.type === "expense") && tx.fx != null && tx.currency !== "UAH" ? React.createElement(Row, { k: tr("Зафіксований курс"), v: `1 ${tx.currency} = ${tx.fx} UAH` }) : null,
                 React.createElement(Row, { k: tr("Нотатка"), v: tr(tx.note) }),
-                tx.receipt ? React.createElement("div", { className: "py-2.5", style: { borderBottom: "1px solid var(--border)" } },
-                    React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Фото чека")),
-                    React.createElement("img", { src: tx.receipt, alt: tr("чек"), onClick: () => setReceiptOpen((v) => !v), className: "w-full rounded-xl cursor-pointer", style: { objectFit: "contain", maxHeight: receiptOpen ? "none" : 240, background: "var(--surface2)", border: "1px solid var(--border)" } }),
-                    React.createElement("p", { className: "text-[11px] mt-1 text-center", style: { color: "var(--text-dim)" } }, receiptOpen ? tr("Торкніться, щоб згорнути") : tr("Торкніться, щоб збільшити"))) : null),
+                (() => { const rcs = txReceipts(tx); return rcs.length ? React.createElement("div", { className: "py-2.5", style: { borderBottom: "1px solid var(--border)" } },
+                    React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Фото чека") + (rcs.length > 1 ? ` (${rcs.length})` : "")),
+                    React.createElement("div", { className: "space-y-2" }, rcs.map((r, i) => (React.createElement("img", { key: i, src: r, alt: tr("чек"), onClick: () => setReceiptOpen((v) => (v === i ? null : i)), className: "w-full rounded-xl cursor-pointer", style: { objectFit: "contain", maxHeight: receiptOpen === i ? "none" : 200, background: "var(--surface2)", border: "1px solid var(--border)" } })))),
+                    React.createElement("p", { className: "text-[11px] mt-1 text-center", style: { color: "var(--text-dim)" } }, tr("Торкніться фото, щоб збільшити або згорнути"))) : null; })()),
             React.createElement("div", { className: "flex gap-2" },
                 (() => {
                     const rr = (recurring || []).find((x) => x.id === tx.recurringId);
@@ -7651,7 +7678,7 @@ window.__K3_START = function () {
         const [newCatName, setNewCatName] = useState("");
         const [newCatIcon, setNewCatIcon] = useState("MoreHorizontal");
         const [date, setDate] = useState(editing?.date || P.presetDate || new Date().toISOString().slice(0, 10));
-        const [receipt, setReceipt] = useState(editing?.receipt || null);
+        const [receipts, setReceipts] = useState(() => txReceipts(editing));
         const [recOn, setRecOn] = useState(false);
         const [recMode, setRecMode] = useState("fixed");
         const [recDay, setRecDay] = useState(null);
@@ -7691,18 +7718,31 @@ window.__K3_START = function () {
         const selCat = cats.find((c) => c.id === categoryId) || null;
         const [receiptErr, setReceiptErr] = useState("");
         const handleReceipt = (e) => {
-            const file = e.target.files?.[0];
-            if (!file)
+            const files = [...(e.target.files || [])];
+            e.target.value = "";
+            if (!files.length)
                 return;
-            if (!(file.type || "").startsWith("image/")) {
+            const nonImage = files.find((f) => !(f.type || "").startsWith("image/"));
+            if (nonImage) {
                 // PDFs and other documents can't be decoded by the canvas compressor
                 setReceiptErr(tr("Підтримуються лише зображення. PDF поки не приймається — зробіть фото чека або збережіть його як зображення."));
-                e.target.value = "";
                 return;
             }
             setReceiptErr("");
-            compressImage(file, 1280, 0.72).then((dataUrl) => { if (dataUrl) setReceipt(dataUrl); });
+            const room = MAX_RECEIPTS - receipts.length;
+            if (files.length > room) {
+                setReceiptErr(tr("Можна додати до 4 фото на одну операцію."));
+                if (room <= 0)
+                    return;
+            }
+            files.slice(0, Math.max(0, room)).forEach((f) => {
+                compressImage(f, 1280, 0.72).then((dataUrl) => {
+                    if (dataUrl)
+                        setReceipts((prev) => (prev.length >= MAX_RECEIPTS ? prev : [...prev, dataUrl]));
+                });
+            });
         };
+        const removeReceipt = (idx) => setReceipts((prev) => prev.filter((_, i) => i !== idx));
         const CAT_COLORS = ["#6FA98C", "#6683B4", "#D8A24A", "#C77F6E", "#5FA8B8", "#9B87C4", "#C77FA0", "#818CF8"];
         const createCat = () => {
             const name = newCatName.trim();
@@ -7725,7 +7765,7 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть рахунок"));
             if (!categoryId)
                 return setError(tr("Оберіть категорію"));
-            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, receipt };
+            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, receipts, receipt: null };
             if (baseCurrency && currency !== baseCurrency && rates) {
                 const rBase = rates[baseCurrency] || 1;
                 const rCur = rates[currency] != null ? rates[currency] : (editing && editing.fx != null ? editing.fx : 1);
@@ -7853,10 +7893,13 @@ window.__K3_START = function () {
                         React.createElement("span", { className: "w-20" },
                             React.createElement(Select, { value: String(recDay != null ? recDay : (+date.slice(8, 10) || 1)), onChange: (e) => setRecDay(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1))))),
                     React.createElement("p", { className: "text-[11px] mt-1.5", style: { color: "var(--text-dim)" } }, recMode === "fixed" ? tr("Щомісяця створюватиметься така сама операція.") : tr("Щомісяця K³ питатиме фактичну суму карткою на головному.")))))),
-            React.createElement(Field, { label: tr("Фото чеку (необов'язково)") },
-                React.createElement("input", { type: "file", accept: "image/*", onChange: handleReceipt, className: "text-xs", style: { color: "var(--text-dim)" } }),
+            React.createElement(Field, { label: tr("Фото чеку (необов'язково, до 4)") },
+                receipts.length < MAX_RECEIPTS && React.createElement("input", { type: "file", accept: "image/*", multiple: true, onChange: handleReceipt, className: "text-xs", style: { color: "var(--text-dim)" } }),
                 receiptErr && React.createElement("p", { className: "text-xs mt-1", style: { color: "var(--danger)" } }, receiptErr),
-                receipt && React.createElement("img", { src: receipt, alt: tr("чек"), className: "mt-2 h-24 rounded-lg object-cover" })),
+                receipts.length > 0 && React.createElement("div", { className: "mt-2 flex gap-2 flex-wrap" }, receipts.map((r, i) => (React.createElement("div", { key: i, className: "relative" },
+                    React.createElement("img", { src: r, alt: tr("чек"), className: "h-24 w-24 rounded-lg object-cover", style: { border: "1px solid var(--border)" } }),
+                    React.createElement("button", { type: "button", "aria-label": tr("Видалити фото"), onClick: () => removeReceipt(i), className: "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center", style: { background: "var(--danger)", color: "#fff" } },
+                        React.createElement(X, { size: 12 }))))))),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, editing ? tr("Зберегти зміни") : tr("Зберегти"))));
     }
     /* ---------- Transfer / Exchange Modal ---------- */
@@ -8362,5 +8405,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-02.8");</script></body>
+<script>console.log("K³ build: 2026-08-03.1");</script></body>
 </html>
