@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-07-25.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-02.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1761,6 +1761,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Відновлено незбережені зміни з резервної копії пристрою.": "Unsaved changes were recovered from the device backup copy.",
         "⚠️ Зміни не зберігаються — сховище переповнене. Видаліть кілька фото чеків або старих транзакцій.": "⚠️ Changes are not being saved — storage is full. Delete a few receipt photos or old transactions.",
         "Все в архіві зберігається безстроково, доки ви самі його не відновите або не видалите.": "Everything in the archive is kept indefinitely until you restore or delete it yourself.",
         "в архіві з": "archived since",
@@ -1868,8 +1869,12 @@ window.__K3_START = function () {
     function loadState() {
         try {
             const raw = window.localStorage ? window.localStorage.getItem(STORAGE_KEY) : null;
-            if (raw)
-                return migrateState(JSON.parse(raw));
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (typeof parsed.__rev === "number" && parsed.__rev > SAVE_REV)
+                    SAVE_REV = parsed.__rev;
+                return migrateState(parsed);
+            }
         }
         catch (e) { /* ignore */ }
         return null;
@@ -1894,6 +1899,45 @@ window.__K3_START = function () {
             s.loans = s.loans.map(function (l) { return l.direction ? l : Object.assign({}, l, { direction: "out" }); });
         }
         return s;
+    }
+    /* ---- IndexedDB mirror of the app state ----
+       iOS WebKit flushes localStorage to disk asynchronously: force-quitting the PWA right
+       after a change can "successfully" write in JS yet lose the data on disk — with no error
+       to catch. IndexedDB commits transactionally and survives the same kill. Every save is
+       therefore mirrored with a monotonically growing revision; on boot the newer copy wins. */
+    const IDB_NAME = "k3_state_mirror";
+    let IDB_READY = false; // saves must not overwrite the mirror before boot reconciliation reads it
+    function idbPut(json) {
+        try {
+            const req = indexedDB.open(IDB_NAME, 1);
+            req.onupgradeneeded = () => { req.result.createObjectStore("kv"); };
+            req.onsuccess = () => {
+                try {
+                    const tx = req.result.transaction("kv", "readwrite");
+                    tx.objectStore("kv").put(json, "state");
+                    tx.oncomplete = () => req.result.close();
+                }
+                catch (e) { try { req.result.close(); } catch (e2) { } }
+            };
+        }
+        catch (e) { /* IndexedDB unavailable — mirror is best-effort */ }
+    }
+    function idbGet(cb) {
+        try {
+            const req = indexedDB.open(IDB_NAME, 1);
+            req.onupgradeneeded = () => { req.result.createObjectStore("kv"); };
+            req.onsuccess = () => {
+                try {
+                    const tx = req.result.transaction("kv", "readonly");
+                    const g = tx.objectStore("kv").get("state");
+                    g.onsuccess = () => { const v = g.result || null; try { req.result.close(); } catch (e) { } cb(v); };
+                    g.onerror = () => { try { req.result.close(); } catch (e) { } cb(null); };
+                }
+                catch (e) { cb(null); }
+            };
+            req.onerror = () => cb(null);
+        }
+        catch (e) { cb(null); }
     }
     /* Downscale + re-encode an image dataURL/file so a receipt photo weighs ~100-300KB
        instead of the multi-megabyte camera original. localStorage on iOS holds ~5MB total,
@@ -1934,9 +1978,11 @@ window.__K3_START = function () {
             }
         });
     }
+    let SAVE_REV = 0; // initialized from the loaded state at boot
     function saveState(state) {
         let ok = true;
-        const json = JSON.stringify(state);
+        SAVE_REV += 1;
+        const json = JSON.stringify({ ...state, __rev: SAVE_REV });
         try {
             if (window.localStorage)
                 window.localStorage.setItem(STORAGE_KEY, json);
@@ -1979,6 +2025,8 @@ window.__K3_START = function () {
             }
         }
         catch (e) { /* auto-backup is best-effort */ }
+        if (IDB_READY)
+            idbPut(json); // durable mirror — survives iOS force-quit even when localStorage does not
         return ok;
     }
     /* PIN is stored on the device only (not synced) */
@@ -3391,6 +3439,45 @@ window.__K3_START = function () {
                     setToast(tr("Фото чеків оптимізовано — звільнено місце у сховищі."));
                 }
             })();
+        }, []);
+        // Recover the tail of changes iOS may have dropped from localStorage on force-quit:
+        // if the IndexedDB mirror holds a newer revision, adopt it and re-save.
+        const idbCheckedRef = React.useRef(false);
+        useEffect(() => {
+            if (idbCheckedRef.current)
+                return;
+            idbCheckedRef.current = true;
+            idbGet((raw) => {
+                if (!raw) {
+                    IDB_READY = true;
+                    return;
+                }
+                try {
+                    const mirror = JSON.parse(raw);
+                    const localRev = (stateRef.current && stateRef.current.__rev) || SAVE_REV || 0;
+                    if (typeof mirror.__rev === "number" && mirror.__rev > localRev) {
+                        SAVE_REV = mirror.__rev;
+                        const { theme: mTheme, __rev, ...rest } = mirror;
+                        setState((s) => ({ ...s, ...migrateState(rest) }));
+                        if (mTheme)
+                            setTheme(mTheme);
+                        setToast(tr("Відновлено незбережені зміни з резервної копії пристрою."));
+                    }
+                }
+                catch (e) { /* corrupted mirror — ignore */ }
+                IDB_READY = true;
+            });
+        }, []);
+        // Force one extra save the moment the app is backgrounded (narrows the loss window)
+        useEffect(() => {
+            const flush = () => { try { saveState({ ...stateRef.current }); } catch (e) { } };
+            const onVis = () => { if (document.visibilityState === "hidden") flush(); };
+            window.addEventListener("pagehide", flush);
+            document.addEventListener("visibilitychange", onVis);
+            return () => {
+                window.removeEventListener("pagehide", flush);
+                document.removeEventListener("visibilitychange", onVis);
+            };
         }, []);
         const bvMigratedRef = React.useRef(false);
         useEffect(() => {
@@ -8093,5 +8180,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-07-25.4");</script></body>
+<script>console.log("K³ build: 2026-08-02.1");</script></body>
 </html>
