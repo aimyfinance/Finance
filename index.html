@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-03.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-03.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2425,7 +2425,7 @@ window.__K3_START = function () {
         return (React.createElement("div", { className: `relative overflow-hidden ${rounded ? "rounded-2xl" : ""}`, onTouchStart: onTouchStart, onTouchMove: onTouchMove, onTouchEnd: onTouchEnd },
             React.createElement("div", { className: "absolute inset-y-0 right-0 flex", style: { background: "var(--surface2)" } }, actions.map((a, i) => {
                 const Ic = a.icon;
-                return (React.createElement("button", { key: i, onClick: () => { a.onClick(); setOpen(false); }, className: "flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium", style: { width: 66, background: a.bg, color: a.fg || "#fff" } },
+                return (React.createElement("button", { key: i, onClick: () => { a.onClick(); setOpen(false); }, className: "flex flex-col items-center justify-center gap-0.5 text-[0.625rem] font-medium", style: { width: 66, background: a.bg, color: a.fg || "#fff" } },
                     React.createElement(Ic, { size: 16 }),
                     a.label));
             })),
@@ -2514,7 +2514,7 @@ window.__K3_START = function () {
                 React.createElement(AgreementText, null)),
             React.createElement("div", { className: "px-6 pb-6 pt-3 w-full max-w-lg mx-auto", style: { borderTop: "1px solid var(--border)" } },
                 React.createElement(Button, { className: "w-full", onClick: onAccept }, tr("Погоджуюсь і продовжити")),
-                React.createElement("p", { className: "text-[11px] text-center mt-2", style: { color: "var(--text-dim)" } }, tr("Натискаючи кнопку, ви приймаєте умови застосунку.")))));
+                React.createElement("p", { className: "text-[0.6875rem] text-center mt-2", style: { color: "var(--text-dim)" } }, tr("Натискаючи кнопку, ви приймаєте умови застосунку.")))));
     }
     /* ============================== HELP & GUIDED TOUR ============================== */
     function HelpModal({ onClose, startTour }) {
@@ -2553,7 +2553,7 @@ window.__K3_START = function () {
                     React.createElement(HelpCircle, { size: 18, color: "#131B2B" })),
                 React.createElement("div", { className: "text-left" },
                     React.createElement("p", { className: "text-sm font-semibold", style: { color: "#F3F0E8" } }, tr("Інтерактивний огляд")),
-                    React.createElement("p", { className: "text-[11px]", style: { color: "#A7B0C4" } }, tr("Екскурсія по всіх розділах застосунку")))),
+                    React.createElement("p", { className: "text-[0.6875rem]", style: { color: "#A7B0C4" } }, tr("Екскурсія по всіх розділах застосунку")))),
             React.createElement("div", { className: "flex gap-1.5 mb-3 p-1 rounded-xl", style: { background: "var(--surface2)" } },
                 React.createElement("button", { onClick: () => { setTab("guide"); setOpen(0); }, className: "flex-1 py-2 rounded-lg text-sm font-medium transition", style: tabStyle(tab === "guide") }, tr("Гайд")),
                 React.createElement("button", { onClick: () => { setTab("faq"); setOpen(0); }, className: "flex-1 py-2 rounded-lg text-sm font-medium transition", style: tabStyle(tab === "faq") }, tr("Часті запитання"))),
@@ -2625,7 +2625,7 @@ window.__K3_START = function () {
             React.createElement("div", { className: "fixed px-4", style: { left: 0, right: 0, ...vpos } },
                 React.createElement("div", { className: "rounded-2xl p-4 mx-auto", style: { background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow)", maxWidth: 460 } },
                     React.createElement("div", { className: "flex items-center justify-between mb-1.5" },
-                        React.createElement("span", { className: "text-[11px] font-semibold", style: { color: "var(--accent)" } },
+                        React.createElement("span", { className: "text-[0.6875rem] font-semibold", style: { color: "var(--accent)" } },
                             tr("Крок"),
                             " ",
                             step + 1,
@@ -2633,7 +2633,7 @@ window.__K3_START = function () {
                             tr("з"),
                             " ",
                             TOUR_STEPS.length),
-                        React.createElement("button", { onClick: onClose, className: "text-[11px] font-medium", style: { color: "var(--text-dim)" } }, tr("Пропустити"))),
+                        React.createElement("button", { onClick: onClose, className: "text-[0.6875rem] font-medium", style: { color: "var(--text-dim)" } }, tr("Пропустити"))),
                     React.createElement("h3", { className: "font-display font-bold text-base mb-1" }, tr(cur.title)),
                     React.createElement("p", { className: "text-sm mb-3", style: { color: "var(--text-dim)" } }, tr(cur.text)),
                     React.createElement("div", { className: "flex gap-2 justify-end" },
@@ -3590,11 +3590,16 @@ window.__K3_START = function () {
                 document.removeEventListener("visibilitychange", onVis);
             };
         }, []);
-        // Accessibility: proportional zoom of the whole UI (text, icons, spacing scale
-        // together, so nothing can overlap — the page just gets closer to the eyes).
+        // Accessibility scaling via the root font-size: the whole Tailwind layout is
+        // rem-based, so text, paddings and cards grow together and reflow naturally.
+        // (CSS zoom was tried first and shifts/clips the page on iOS WebKit.)
         useEffect(() => {
-            const SCALES = { s: "0.9", m: "", l: "1.12", xl: "1.25" };
-            try { document.documentElement.style.zoom = SCALES[state.uiScale || "m"] || ""; } catch (e) { }
+            const SIZES = { s: "14.5px", m: "", l: "18px", xl: "20px" };
+            try {
+                document.documentElement.style.zoom = "";
+                document.documentElement.style.fontSize = SIZES[state.uiScale || "m"] || "";
+            }
+            catch (e) { }
         }, [state.uiScale]);
         const bvMigratedRef = React.useRef(false);
         useEffect(() => {
@@ -3747,20 +3752,20 @@ window.__K3_START = function () {
                         return (React.createElement("button", { key: item.id, onClick: () => setView(item.id, { root: true }), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all", style: { background: active ? "var(--surface2)" : "transparent", color: active ? "var(--accent)" : "var(--text-dim)" } },
                             React.createElement("span", { className: "relative flex items-center" },
                                 React.createElement(Ic, { size: 18 }),
-                                badge > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, badge))),
+                                badge > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[0.625rem] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, badge))),
                             item.label));
                     })),
                     React.createElement("button", { onClick: () => setModal({ type: "reminders" }), className: "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium", style: { color: "var(--text-dim)" } },
                         React.createElement("span", { className: "relative flex items-center" },
                             React.createElement(Bell, { size: 18 }),
-                            bellCount > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, bellCount))),
+                            bellCount > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[0.625rem] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, bellCount))),
                         "\u041D\u0430\u0433\u0430\u0434\u0443\u0432\u0430\u043D\u043D\u044F"),
                     React.createElement("button", { onClick: () => setModal({ type: "help" }), className: "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium", style: { color: "var(--text-dim)" } },
                         React.createElement(HelpCircle, { size: 18 }),
                         " ",
                         tr("Довідка та навчання")),
                     React.createElement("button", { onClick: () => applyLang(lang === "uk" ? "en" : "uk"), className: "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium", style: { color: "var(--text-dim)" } },
-                        React.createElement("span", { className: "w-[18px] text-center text-[11px] font-bold", style: { color: "var(--accent)" } }, lang === "uk" ? "EN" : "UA"),
+                        React.createElement("span", { className: "w-[18px] text-center text-[0.6875rem] font-bold", style: { color: "var(--accent)" } }, lang === "uk" ? "EN" : "UA"),
                         lang === "uk" ? "English" : "Українська"),
                     React.createElement("button", { onClick: () => setTheme(theme === "dark" ? "light" : "dark"), className: "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium", style: { color: "var(--text-dim)" } },
                         theme === "dark" ? React.createElement(Sun, { size: 18 }) : React.createElement(Moon, { size: 18 }),
@@ -3772,12 +3777,12 @@ window.__K3_START = function () {
                                 React.createElement(ChevronRight, { size: 20, style: { transform: "rotate(180deg)" } }))),
                             React.createElement(Wordmark, { size: 20 })),
                         React.createElement("div", { className: "flex items-center gap-1" },
-                            React.createElement("button", { onClick: () => applyLang(lang === "uk" ? "en" : "uk"), className: "px-2 py-1.5 rounded-lg text-[11px] font-bold tracking-wide", style: { color: "var(--accent)", background: "var(--surface2)", border: "1px solid var(--border)" } }, lang === "uk" ? "EN" : "UA"),
+                            React.createElement("button", { onClick: () => applyLang(lang === "uk" ? "en" : "uk"), className: "px-2 py-1.5 rounded-lg text-[0.6875rem] font-bold tracking-wide", style: { color: "var(--accent)", background: "var(--surface2)", border: "1px solid var(--border)" } }, lang === "uk" ? "EN" : "UA"),
                             React.createElement("button", { "data-tour": "help", onClick: () => setModal({ type: "help" }), className: "p-2 rounded-lg", style: { color: "var(--text-dim)" } },
                                 React.createElement(HelpCircle, { size: 18 })),
                             React.createElement("button", { onClick: () => setModal({ type: "reminders" }), className: "p-2 rounded-lg relative", style: { color: "var(--text-dim)" } },
                                 React.createElement(Bell, { size: 18 }),
-                                bellCount > 0 && (React.createElement("span", { className: "absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center text-[9px] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, bellCount))),
+                                bellCount > 0 && (React.createElement("span", { className: "absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center text-[0.5625rem] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, bellCount))),
                             React.createElement("button", { onClick: () => setTheme(theme === "dark" ? "light" : "dark"), className: "p-2 rounded-lg", style: { color: "var(--text-dim)" } }, theme === "dark" ? React.createElement(Sun, { size: 18 }) : React.createElement(Moon, { size: 18 })))),
                     React.createElement("div", { className: "px-4 md:px-8 py-6 max-w-6xl mx-auto" },
                         backupDue && transactions.length >= 10 && view === "dashboard" && (React.createElement("div", { className: "mb-4 flex items-start gap-3 rounded-2xl p-3.5", style: { background: "var(--surface)", border: "1px solid var(--border)" } },
@@ -3785,10 +3790,10 @@ window.__K3_START = function () {
                                 React.createElement(ArrowDownRight, { size: 15, style: { color: "var(--accent)" } })),
                             React.createElement("div", { className: "min-w-0 flex-1" },
                                 React.createElement("p", { className: "text-xs font-semibold" }, tr("Давно не було резервної копії")),
-                                React.createElement("p", { className: "text-[11px] mt-0.5", style: { color: "var(--text-dim)" } }, tr("Збережіть копію даних, щоб нічого не втратити.")),
+                                React.createElement("p", { className: "text-[0.6875rem] mt-0.5", style: { color: "var(--text-dim)" } }, tr("Збережіть копію даних, щоб нічого не втратити.")),
                                 React.createElement("div", { className: "flex gap-2 mt-2" },
                                     React.createElement(Button, { variant: "secondary", onClick: exportBackup }, tr("Зберегти копію")),
-                                    React.createElement("button", { onClick: dismissBackup, className: "text-[11px] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
+                                    React.createElement("button", { onClick: dismissBackup, className: "text-[0.6875rem] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
                         view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { setView: setView, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
@@ -3802,13 +3807,13 @@ window.__K3_START = function () {
                     const Ic = item.icon;
                     const active = view === item.id;
                     const badge = item.id === "loans" ? (overdueLoans.length + overdueDebts.length) : 0;
-                    return (React.createElement("button", { key: item.id, onClick: () => setView(item.id, { root: true }), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium", style: { color: active ? "var(--accent)" : "var(--text-dim)" } },
+                    return (React.createElement("button", { key: item.id, onClick: () => setView(item.id, { root: true }), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[0.6875rem] font-medium", style: { color: active ? "var(--accent)" : "var(--text-dim)" } },
                         React.createElement("span", { className: "relative flex items-center" },
                             React.createElement(Ic, { size: 20 }),
-                            badge > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, badge))),
+                            badge > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[0.625rem] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, badge))),
                         item.label));
                 }),
-                React.createElement("button", { onClick: () => setView("settings", { root: true }), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium", style: { color: view === "settings" || view === "categories" || view === "goals" || view === "crypto" ? "var(--accent)" : "var(--text-dim)" } },
+                React.createElement("button", { onClick: () => setView("settings", { root: true }), className: "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[0.6875rem] font-medium", style: { color: view === "settings" || view === "categories" || view === "goals" || view === "crypto" ? "var(--accent)" : "var(--text-dim)" } },
                     React.createElement(SettingsIcon, { size: 20 }),
                     tr("Ще"))),
             saveFailed && (React.createElement("div", { className: "fixed top-0 left-0 right-0 z-[60] px-4 py-2.5 text-center text-xs font-semibold", style: { background: "var(--danger)", color: "#fff" } },
@@ -4076,7 +4081,7 @@ window.__K3_START = function () {
             React.createElement("div", { "data-tour": "total" },
                 React.createElement("div", { className: "flex items-center gap-2" },
                     React.createElement("p", { className: "text-sm mb-1", style: { color: "var(--text-dim)" } }, tr("Загальний капітал")),
-                    React.createElement("button", { onClick: () => setShowTotalHint((v) => !v), "aria-label": tr("Як читати цю суму"), className: "w-5 h-5 rounded-full border flex items-center justify-center font-display font-bold text-[10px] shrink-0", style: { borderColor: showTotalHint ? "var(--accent)" : "var(--border)", color: showTotalHint ? "var(--accent)" : "var(--text-dim)", background: showTotalHint ? "rgba(201,163,98,0.10)" : "transparent" } }, "\u0456")),
+                    React.createElement("button", { onClick: () => setShowTotalHint((v) => !v), "aria-label": tr("Як читати цю суму"), className: "w-5 h-5 rounded-full border flex items-center justify-center font-display font-bold text-[0.625rem] shrink-0", style: { borderColor: showTotalHint ? "var(--accent)" : "var(--border)", color: showTotalHint ? "var(--accent)" : "var(--text-dim)", background: showTotalHint ? "rgba(201,163,98,0.10)" : "transparent" } }, "\u0456")),
                 React.createElement("h1", { onClick: toggleHide, className: "font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none", style: { color: "var(--text)", WebkitUserSelect: "none" }, title: tr("Тап — склад суми · подвійний тап — приховати") }, hideTotal ? React.createElement("span", { className: "font-normal text-2xl" }, "$$$$$$$$$$") : fmtMoney(totalInBase + (cryptoTotalBase || 0) + (loansNetBase || 0), baseCurrency)),
                 showBreak && React.createElement("div", { className: "flex flex-wrap gap-2 mt-3" },
                     Object.entries(byCurrencyTotals).map(([cur, val]) => React.createElement(Badge, { key: cur, color: "var(--accent2)" }, hideTotal ? "••••" : fmtMoney(val, cur))),
@@ -4084,7 +4089,7 @@ window.__K3_START = function () {
                     includeLoansInTotal && totalLoanedOut > 0 && React.createElement(Badge, { color: "var(--warn)" }, hideTotal ? "••••" : `↗ ${fmtMoney(totalLoanedOut, baseCurrency)}`),
                     includeLoansInTotal && totalOwed > 0 && React.createElement(Badge, { color: "var(--danger)" }, hideTotal ? "••••" : `↘ −${fmtMoney(totalOwed, baseCurrency)}`)),
                 showTotalHint && (React.createElement("div", { className: "flex items-start gap-2.5 rounded-2xl p-3.5 mt-3 animate-in", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
-                    React.createElement("span", { className: "w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[11px]", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } }, "\u0456"),
+                    React.createElement("span", { className: "w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.6875rem]", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } }, "\u0456"),
                     React.createElement("div", { className: "min-w-0 flex-1 text-xs leading-relaxed", style: { color: "var(--text)" } },
                         React.createElement("p", { className: "font-semibold mb-1" }, tr("Як читати цю суму")),
                         React.createElement("p", null, tr("Один тап по сумі — розгортає склад капіталу: валюти, крипто-портфель, видані позики й борги. Подвійний тап — маскує суму крапками; ще один подвійний — показує знову."))),
@@ -4101,13 +4106,13 @@ window.__K3_START = function () {
                             tr("за"),
                             " ",
                             MONTHS_FULL[+o.month.slice(5, 7) - 1]),
-                        React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                        React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                             tr("орієнтир"),
                             " ",
                             fmtMoney(o.rule.amount, o.currency))),
                     React.createElement("button", { onClick: () => setModal({ type: "transaction", payload: { kind: o.rule.kind, presetPocketId: o.rule.pocketId, presetCategoryId: o.rule.categoryId, presetAmount: o.rule.amount, presetNote: o.rule.title, presetDate: o.date, presetProjectId: o.rule.projectId || null, focusAmount: true, recurringDone: { id: o.rule.id, month: o.month } } }), className: "px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Внести")),
                     React.createElement("button", { onClick: () => markRecurringDone(o.rule.id, o.month), className: "px-2.5 py-1.5 rounded-lg text-xs font-medium shrink-0", style: { background: "var(--surface2)", color: "var(--text-dim)" } }, tr("Пропустити"))))),
-                pendingRecurring.length > 4 && React.createElement("p", { className: "text-[11px] text-center", style: { color: "var(--text-dim)" } },
+                pendingRecurring.length > 4 && React.createElement("p", { className: "text-[0.6875rem] text-center", style: { color: "var(--text-dim)" } },
                     "+",
                     pendingRecurring.length - 4,
                     " ",
@@ -4132,7 +4137,7 @@ window.__K3_START = function () {
                     cryptoFav && (React.createElement("button", { onClick: () => setView("crypto"), className: "bank-card w-72 shrink-0 snap-card text-left cursor-pointer active:scale-[0.98] transition-transform", style: { "--card-accent": "#C9A362" } },
                         React.createElement("div", { className: "bank-card-glow" }),
                         React.createElement("div", { className: "flex items-center justify-between gap-2 mb-8" },
-                            React.createElement("span", { className: "flex items-center gap-1.5 text-[11px] font-medium min-w-0", style: { color: "rgba(255,255,255,0.55)" } },
+                            React.createElement("span", { className: "flex items-center gap-1.5 text-[0.6875rem] font-medium min-w-0", style: { color: "rgba(255,255,255,0.55)" } },
                                 React.createElement(Coins, { size: 13, style: { color: "rgba(255,255,255,0.55)" } }),
                                 React.createElement("span", { className: "truncate" }, tr("Крипто-портфель"))),
                             React.createElement("span", { className: "font-display font-bold shrink-0 leading-none", style: { fontSize: 17, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.96)" } },
@@ -4140,7 +4145,7 @@ window.__K3_START = function () {
                                 React.createElement("sup", { style: { color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 } }, "3"))),
                         React.createElement("div", { className: "flex items-baseline gap-2 flex-wrap" },
                             React.createElement("p", { className: "font-display font-bold text-2xl tabular text-white" }, fmtMoney(cryptoTotalBase || 0, baseCurrency)),
-                            React.createElement("span", { className: "text-[10px] font-semibold px-2 py-0.5 rounded-full", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, "\u20BF")),
+                            React.createElement("span", { className: "text-[0.625rem] font-semibold px-2 py-0.5 rounded-full", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, "\u20BF")),
                         React.createElement("p", { className: "text-xs mt-1.5 tracking-wider", style: { color: "rgba(255,255,255,0.35)" } },
                             tr("живі ціни"),
                             " \u00B7 CoinGecko"),
@@ -4163,13 +4168,13 @@ window.__K3_START = function () {
                 React.createElement("div", { "data-tour": "period", className: "flex items-center gap-1.5 mb-3 flex-wrap" }, [["day", tr("День")], ["month", tr("Місяць")], ["year", tr("Рік")], ["custom", tr("Свій період")]].map(([id, label]) => (React.createElement("button", { key: id, onClick: () => setPeriod(id), className: "px-3 py-1.5 rounded-lg text-xs font-medium transition", style: { background: period === id ? "var(--accent)" : "var(--surface2)", color: period === id ? "#08110D" : "var(--text-dim)", border: "1px solid var(--border)" } }, label)))),
                 period === "custom" && (React.createElement(Card, { className: "p-3 mb-3 space-y-3" },
                     React.createElement("label", { className: "block min-w-0" },
-                        React.createElement("span", { className: "text-[11px] font-medium mb-1.5 flex items-center gap-1", style: { color: "var(--text-dim)" } },
+                        React.createElement("span", { className: "text-[0.6875rem] font-medium mb-1.5 flex items-center gap-1", style: { color: "var(--text-dim)" } },
                             React.createElement(Calendar, { size: 12 }),
                             " ",
                             tr("Від")),
                         React.createElement(Input, { type: "date", value: customFrom, onChange: (e) => setCustomFrom(e.target.value) })),
                     React.createElement("label", { className: "block min-w-0" },
-                        React.createElement("span", { className: "text-[11px] font-medium mb-1.5 flex items-center gap-1", style: { color: "var(--text-dim)" } },
+                        React.createElement("span", { className: "text-[0.6875rem] font-medium mb-1.5 flex items-center gap-1", style: { color: "var(--text-dim)" } },
                             React.createElement(Calendar, { size: 12 }),
                             " ",
                             tr("До")),
@@ -4233,7 +4238,7 @@ window.__K3_START = function () {
                             React.createElement(Icon, { name: pj.icon || "Home", size: 14, style: { color: pj.color || "var(--text-dim)" } })),
                         React.createElement("span", { className: "flex-1 min-w-0 text-left" },
                             React.createElement("span", { className: "block text-sm font-medium truncate" }, tr(pj.name)),
-                            inc > 0.004 && exp > 0.004 && React.createElement("span", { className: "block text-[10px] tabular truncate", style: { color: "var(--text-dim)" } },
+                            inc > 0.004 && exp > 0.004 && React.createElement("span", { className: "block text-[0.625rem] tabular truncate", style: { color: "var(--text-dim)" } },
                                 "+",
                                 fmtMoney(inc, baseCurrency),
                                 " \u00B7 \u2212",
@@ -4254,7 +4259,7 @@ window.__K3_START = function () {
                         " ",
                         fmtMoney(Math.abs(nwDelta), baseCurrency))),
                 React.createElement(TrendArea, { data: netWorthSeries }),
-                React.createElement("p", { className: "text-[11px] mt-2", style: { color: "var(--text-dim)" } }, tr("Загальний капітал за останні 6 місяців · зміна за місяць")))),
+                React.createElement("p", { className: "text-[0.6875rem] mt-2", style: { color: "var(--text-dim)" } }, tr("Загальний капітал за останні 6 місяців · зміна за місяць")))),
             period === "month" && (monthExpense > 0 || monthlyBudget > 0 || prevMonthExpense > 0) && (React.createElement(Card, { className: "p-4" },
                 React.createElement("div", { className: "flex items-center justify-between mb-3 gap-2" },
                     React.createElement("h3", { className: "font-display font-semibold text-sm" }, tr("Місяць у цифрах")),
@@ -4390,16 +4395,16 @@ window.__K3_START = function () {
         return (React.createElement("div", { onClick: handleClick, onContextMenu: (e) => { if (onLongPress) {
                 e.preventDefault();
                 onLongPress();
-            } }, onTouchStart: startPress, onTouchEnd: clearPress, onTouchMove: clearPress, onMouseDown: startPress, onMouseUp: clearPress, onMouseLeave: clearPress, className: `bank-card h-[208px] flex flex-col ${onClick ? "cursor-pointer active:scale-[0.98] transition-transform" : ""} ${className}`, style: { "--card-accent": acc.color, WebkitTouchCallout: "none", WebkitUserSelect: "none" } },
+            } }, onTouchStart: startPress, onTouchEnd: clearPress, onTouchMove: clearPress, onMouseDown: startPress, onMouseUp: clearPress, onMouseLeave: clearPress, className: `bank-card h-[13rem] flex flex-col ${onClick ? "cursor-pointer active:scale-[0.98] transition-transform" : ""} ${className}`, style: { "--card-accent": acc.color, WebkitTouchCallout: "none", WebkitUserSelect: "none" } },
             React.createElement("div", { className: "bank-card-glow" }),
             React.createElement("div", { className: "flex items-center justify-between gap-2" },
-                React.createElement("span", { className: "flex items-center gap-1.5 text-[11px] font-medium min-w-0", style: { color: "rgba(255,255,255,0.55)" } },
+                React.createElement("span", { className: "flex items-center gap-1.5 text-[0.6875rem] font-medium min-w-0", style: { color: "rgba(255,255,255,0.55)" } },
                     React.createElement(Icon, { name: typeInfo?.icon, size: 13, style: { color: "rgba(255,255,255,0.55)" } }),
                     React.createElement("span", { className: "truncate" }, tr(pocket.name ? pocket.name : (typeInfo ? typeInfo.label : "")))),
                 React.createElement("span", { className: "font-display font-bold shrink-0 leading-none", style: { fontSize: 17, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.96)" } },
                     "K",
                     React.createElement("sup", { style: { color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 } }, "3"))),
-            React.createElement("div", { className: "h-8 flex items-end pb-1 min-w-0" }, grace && (React.createElement("p", { className: "text-[10px] leading-none truncate", style: { color: grace.left <= 3 ? "#E8A79B" : grace.left <= 7 ? "var(--accent)" : "rgba(255,255,255,0.55)" } },
+            React.createElement("div", { className: "h-8 flex items-end pb-1 min-w-0" }, grace && (React.createElement("p", { className: "text-[0.625rem] leading-none truncate", style: { color: grace.left <= 3 ? "#E8A79B" : grace.left <= 7 ? "var(--accent)" : "rgba(255,255,255,0.55)" } },
                 "\u23F3 ",
                 grace.left >= 0 ? tr("Пільговий: лишилось") + " " + grace.left + " " + tr("дн.") : tr("Пільговий прострочено на") + " " + (-grace.left) + " " + tr("дн.")))),
             React.createElement("div", { className: "flex items-baseline gap-2 flex-wrap" },
@@ -4407,7 +4412,7 @@ window.__K3_START = function () {
             pocket.creditLimit > 0 && (() => {
                 const avail = pocket.creditLimit + balance;
                 return (React.createElement("div", { className: "mt-1.5" },
-                    React.createElement("p", { className: "text-[11px] mb-1", style: { color: "rgba(255,255,255,0.6)" } },
+                    React.createElement("p", { className: "text-[0.6875rem] mb-1", style: { color: "rgba(255,255,255,0.6)" } },
                         tr("Доступно"),
                         " ",
                         React.createElement("span", { className: "font-semibold tabular", style: { color: "rgba(255,255,255,0.92)" } }, fmtMoney(avail, pocket.currency)),
@@ -4418,12 +4423,12 @@ window.__K3_START = function () {
                     React.createElement(CreditUsageBar, { limit: pocket.creditLimit, balance: balance, height: 4 })));
             })(),
             React.createElement("div", { className: "mt-auto pt-2" },
-                pocket.last4 && React.createElement("p", { className: "text-[11px] tabular mb-1", style: { color: "rgba(255,255,255,0.5)", letterSpacing: "0.16em" } },
+                pocket.last4 && React.createElement("p", { className: "text-[0.6875rem] tabular mb-1", style: { color: "rgba(255,255,255,0.5)", letterSpacing: "0.16em" } },
                     "\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 ",
                     pocket.last4),
                 React.createElement("div", { className: "flex items-center justify-between gap-2" },
                     React.createElement("p", { className: "text-sm font-medium truncate", style: { color: "rgba(255,255,255,0.75)" } }, tr(acc.name)),
-                    acc.bank && React.createElement("span", { className: "text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, tr(acc.bank))))));
+                    acc.bank && React.createElement("span", { className: "text-[0.625rem] font-medium px-2 py-0.5 rounded-full shrink-0", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, tr(acc.bank))))));
     }
     function TxRow({ tx, categories, pocketLabel, onClick }) {
         let label = "", sub = "", amountStr = "", amountColor = "var(--text)";
@@ -4501,11 +4506,11 @@ window.__K3_START = function () {
                     label,
                     (() => { const rc = txReceipts(tx).length; return rc ? React.createElement("span", { style: { whiteSpace: "nowrap" } },
                         React.createElement(Camera, { size: 12, "aria-label": tr("чек"), style: { display: "inline", verticalAlign: "-1px", marginLeft: 5, color: "var(--text-dim)" } }),
-                        rc > 1 ? React.createElement("span", { className: "text-[10px]", style: { color: "var(--text-dim)" } }, rc) : null) : null; })()),
+                        rc > 1 ? React.createElement("span", { className: "text-[0.625rem]", style: { color: "var(--text-dim)" } }, rc) : null) : null; })()),
                 React.createElement("p", { className: "text-xs truncate", style: { color: "var(--text-dim)" } }, sub)),
             React.createElement("div", { className: "text-right shrink-0" },
                 React.createElement("p", { className: "text-sm font-semibold tabular", style: { color: amountColor } }, amountStr),
-                React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } }, fmtDate(tx.date)))));
+                React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, fmtDate(tx.date)))));
     }
     /* Tap on a transaction anywhere → full details */
     function TxDetailModal({ onClose, tx, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring, projects, rates, baseCurrency, updateRepayAmount }) {
@@ -4541,7 +4546,7 @@ window.__K3_START = function () {
                 (() => { const rcs = txReceipts(tx); return rcs.length ? React.createElement("div", { className: "py-2.5", style: { borderBottom: "1px solid var(--border)" } },
                     React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Фото чека") + (rcs.length > 1 ? ` (${rcs.length})` : "")),
                     React.createElement("div", { className: "space-y-2" }, rcs.map((r, i) => (React.createElement("img", { key: i, src: r, alt: tr("чек"), onClick: () => setReceiptOpen(i), className: "w-full rounded-xl cursor-pointer", style: { objectFit: "contain", maxHeight: 200, background: "var(--surface2)", border: "1px solid var(--border)" } })))),
-                    React.createElement("p", { className: "text-[11px] mt-1 text-center", style: { color: "var(--text-dim)" } }, tr("Торкніться фото, щоб відкрити на весь екран і збільшити")),
+                    React.createElement("p", { className: "text-[0.6875rem] mt-1 text-center", style: { color: "var(--text-dim)" } }, tr("Торкніться фото, щоб відкрити на весь екран і збільшити")),
                     receiptOpen != null && rcs[receiptOpen] && React.createElement(PhotoViewer, { src: rcs[receiptOpen], onClose: () => setReceiptOpen(null) })) : null; })()),
             React.createElement("div", { className: "flex gap-2" },
                 (() => {
@@ -4780,27 +4785,27 @@ window.__K3_START = function () {
                             else {
                                 setConfirmArcAcc(acc.id);
                                 setTimeout(() => setConfirmArcAcc((v) => (v === acc.id ? null : v)), 2800);
-                            } }, className: "p-1.5 rounded-lg", style: { color: confirmArcAcc === acc.id ? "var(--danger)" : "var(--text-dim)" } }, confirmArcAcc === acc.id ? React.createElement("span", { className: "text-[10px] font-bold whitespace-nowrap px-0.5" }, tr("Точно?")) : React.createElement(Archive, { size: 14 })),
+                            } }, className: "p-1.5 rounded-lg", style: { color: confirmArcAcc === acc.id ? "var(--danger)" : "var(--text-dim)" } }, confirmArcAcc === acc.id ? React.createElement("span", { className: "text-[0.625rem] font-bold whitespace-nowrap px-0.5" }, tr("Точно?")) : React.createElement(Archive, { size: 14 })),
                         React.createElement("button", { onClick: () => setConfirmDel(confirmDel === acc.id ? null : acc.id), className: "p-1.5 rounded-lg", style: { color: "var(--danger)" } },
                             React.createElement(Trash2, { size: 14 })),
                         confirmDel === acc.id && (React.createElement("div", { className: "flex items-center gap-2 ml-1" },
                             React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Видалити рахунок?")),
                             React.createElement("button", { onClick: () => { deleteAccount(acc.id); setConfirmDel(null); }, className: "text-xs font-semibold px-2 py-1 rounded-md", style: { background: "var(--danger)", color: "#fff" } }, tr("Так")),
                             React.createElement("button", { onClick: () => setConfirmDel(null), className: "text-xs font-medium px-2 py-1 rounded-md", style: { background: "var(--surface2)", color: "var(--text)" } }, tr("Ні")))),
-                        acc.bank && confirmDel !== acc.id && React.createElement("span", { className: "ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md shrink-0", style: { background: "var(--surface2)", color: "var(--accent)" } }, tr(acc.bank))),
+                        acc.bank && confirmDel !== acc.id && React.createElement("span", { className: "ml-auto text-[0.625rem] font-medium px-2 py-0.5 rounded-md shrink-0", style: { background: "var(--surface2)", color: "var(--accent)" } }, tr(acc.bank))),
                     isOpen && (React.createElement("div", { className: "space-y-2 pt-2 border-t", style: { borderColor: "var(--border)" } },
                         pks.map((p) => (React.createElement("div", { key: p.id, onClick: () => setModal({ type: "pocketDetail", payload: p.id }), className: `flex items-center justify-between gap-2 py-2 px-3 rounded-xl cursor-pointer hover:opacity-90 ${p.archived ? "opacity-50" : ""}`, style: { background: "var(--surface2)" } },
                             React.createElement("div", { className: "flex items-center gap-2 min-w-0" },
                                 React.createElement(Badge, { color: acc.color }, p.currency),
                                 p.name && React.createElement("span", { className: "text-xs font-medium truncate", style: { color: "var(--text)" } }, tr(p.name)),
-                                showArchived && (p.archivedAt || acc.archivedAt) && React.createElement("span", { className: "text-[10px] truncate", style: { color: "var(--text-dim)" } }, tr("в архіві з") + " " + fmtDate(p.archivedAt || acc.archivedAt))),
+                                showArchived && (p.archivedAt || acc.archivedAt) && React.createElement("span", { className: "text-[0.625rem] truncate", style: { color: "var(--text-dim)" } }, tr("в архіві з") + " " + fmtDate(p.archivedAt || acc.archivedAt))),
                             !showArchived && (p.creditLimit > 0 ? (() => {
                                 const bal2 = pocketBalance(p.id);
                                 const avail2 = p.creditLimit + bal2;
                                 const pct2 = (avail2 / p.creditLimit) * 100;
                                 return (React.createElement("span", { className: "text-right shrink-0" },
                                     React.createElement("span", { className: "block font-semibold text-sm tabular", style: { color: pct2 <= 20 ? "var(--danger)" : "var(--text)" } }, fmtMoney(avail2, p.currency)),
-                                    React.createElement("span", { className: "block text-[10px] tabular", style: { color: "var(--text-dim)" } },
+                                    React.createElement("span", { className: "block text-[0.625rem] tabular", style: { color: "var(--text-dim)" } },
                                         tr("ліміт"),
                                         " ",
                                         fmtMoney(p.creditLimit, p.currency))));
@@ -4812,7 +4817,7 @@ window.__K3_START = function () {
                                 if (acc.archived)
                                     archiveAccount(acc.id);
                                 if (p.archived)
-                                    archivePocket(p.id); }, className: "p-1 rounded-md flex items-center gap-1 text-[11px] font-semibold", style: { color: "var(--accent)" } },
+                                    archivePocket(p.id); }, className: "p-1 rounded-md flex items-center gap-1 text-[0.6875rem] font-semibold", style: { color: "var(--accent)" } },
                                 React.createElement(RotateCcw, { size: 13 }),
                                 " ",
                                 tr("Відновити"))) : (React.createElement(React.Fragment, null,
@@ -4827,7 +4832,7 @@ window.__K3_START = function () {
                                     else {
                                         setConfirmArc(p.id);
                                         setTimeout(() => setConfirmArc((v) => (v === p.id ? null : v)), 2800);
-                                    } }, className: "p-1 rounded-md", style: { color: confirmArc === p.id ? "var(--danger)" : "var(--text-dim)" } }, confirmArc === p.id ? React.createElement("span", { className: "text-[10px] font-bold whitespace-nowrap px-0.5" }, tr("Точно?")) : React.createElement(Archive, { size: 13 })))))))),
+                                    } }, className: "p-1 rounded-md", style: { color: confirmArc === p.id ? "var(--danger)" : "var(--text-dim)" } }, confirmArc === p.id ? React.createElement("span", { className: "text-[0.625rem] font-bold whitespace-nowrap px-0.5" }, tr("Точно?")) : React.createElement(Archive, { size: 13 })))))))),
                         !showArchived && (React.createElement("button", { onClick: () => setModal({ type: "pocket", payload: { accountId: acc.id } }), className: "w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed text-xs font-medium", style: { borderColor: "var(--border)", color: "var(--text-dim)" } },
                             React.createElement(Plus, { size: 14 }),
                             " ",
@@ -4907,7 +4912,7 @@ window.__K3_START = function () {
                                     React.createElement("span", { className: "w-6 h-6 rounded-md flex items-center justify-center shrink-0", style: { background: "var(--surface2)" } },
                                         React.createElement(Banknote, { size: 13, style: { color: "var(--accent)" } })),
                                     React.createElement("span", { className: "font-display font-semibold text-sm truncate" }, tr(g.bank)),
-                                    React.createElement("span", { className: "text-[11px] shrink-0", style: { color: "var(--text-dim)" } },
+                                    React.createElement("span", { className: "text-[0.6875rem] shrink-0", style: { color: "var(--text-dim)" } },
                                         "(",
                                         g.accs.length,
                                         ")")),
@@ -5051,7 +5056,7 @@ window.__K3_START = function () {
                         React.createElement(ArrowDownRight, { size: 14 }),
                         " ",
                         tr("Імпорт")),
-                    React.createElement("button", { onClick: () => setShowImportHint((v) => !v), "aria-label": tr("Як імпортувати виписку"), className: "w-8 h-8 rounded-lg border flex items-center justify-center font-display font-bold text-[13px] shrink-0", style: { borderColor: showImportHint ? "var(--accent)" : "var(--border)", color: showImportHint ? "var(--accent)" : "var(--text-dim)", background: showImportHint ? "rgba(201,163,98,0.10)" : "transparent" } }, "\u0456"),
+                    React.createElement("button", { onClick: () => setShowImportHint((v) => !v), "aria-label": tr("Як імпортувати виписку"), className: "w-8 h-8 rounded-lg border flex items-center justify-center font-display font-bold text-[0.8125rem] shrink-0", style: { borderColor: showImportHint ? "var(--accent)" : "var(--border)", color: showImportHint ? "var(--accent)" : "var(--text-dim)", background: showImportHint ? "rgba(201,163,98,0.10)" : "transparent" } }, "\u0456"),
                     React.createElement("button", { onClick: () => { if (selMode)
                             exitSel();
                         else
@@ -5060,7 +5065,7 @@ window.__K3_START = function () {
                     React.createElement("button", { onClick: () => setShowFilters(!showFilters), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)" } },
                         React.createElement(Filter, { size: 16 })))),
             showImportHint && (React.createElement("div", { className: "flex items-start gap-2.5 rounded-2xl p-3.5 animate-in", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
-                React.createElement("span", { className: "w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[11px]", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } }, "\u0456"),
+                React.createElement("span", { className: "w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.6875rem]", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } }, "\u0456"),
                 React.createElement("div", { className: "min-w-0 flex-1 text-xs leading-relaxed", style: { color: "var(--text)" } },
                     React.createElement("p", { className: "font-semibold mb-1" }, tr("Як імпортувати виписку")),
                     React.createElement("p", null, tr("Вивантажте з банку виписку у форматі CSV. Натисніть «Імпорт», оберіть рахунок і файл — застосунок сам розпізнає колонки (дата, сума, опис) і розкладе операції за категоріями. Мінус — витрата, плюс — дохід. Перевірте список, зніміть галочки із зайвого й підтвердіть."))),
@@ -5118,7 +5123,7 @@ window.__K3_START = function () {
                 React.createElement(Field, { label: tr("Період до") },
                     React.createElement(Input, { type: "date", value: dateTo, onChange: (e) => setDateTo(e.target.value) })),
                 (projects || []).filter((xx) => !xx.archived).length > 0 && (React.createElement("div", { className: "sm:col-span-2 lg:col-span-3 flex items-center gap-2 rounded-xl p-2.5", style: { background: "var(--surface2)" } },
-                    React.createElement("span", { className: "text-[11px] shrink-0", style: { color: "var(--text-dim)" } },
+                    React.createElement("span", { className: "text-[0.6875rem] shrink-0", style: { color: "var(--text-dim)" } },
                         tr("Проєкт для відфільтрованих"),
                         ":"),
                     React.createElement(Select, { value: bulkPrj, onChange: (e) => setBulkPrj(e.target.value) },
@@ -5149,7 +5154,7 @@ window.__K3_START = function () {
                         React.createElement("span", { className: "truncate text-sm font-display font-semibold flex-1 min-w-0" },
                             prj ? tr(prj.name) : tr("Проєкт"),
                             " ",
-                            React.createElement("span", { className: "text-[11px] font-normal", style: { color: "var(--text-dim)" } },
+                            React.createElement("span", { className: "text-[0.6875rem] font-normal", style: { color: "var(--text-dim)" } },
                                 "\u00B7 ",
                                 "P&L")),
                         React.createElement("span", { className: "tabular text-sm font-bold shrink-0", style: { color: net >= 0 ? "var(--accent)" : "var(--danger)" } },
@@ -5171,11 +5176,11 @@ window.__K3_START = function () {
                             React.createElement("div", { className: "pt-1.5 flex items-center justify-between", style: { borderTop: "1px solid var(--border)" } },
                                 React.createElement("span", { className: "text-xs font-semibold flex items-center gap-1.5" },
                                     tr("Разом"),
-                                    React.createElement("button", { onClick: () => setPrjPnlInfo(!prjPnlInfo), "aria-label": "info", className: "w-5 h-5 rounded-full border text-[10px] font-semibold", style: { borderColor: prjPnlInfo ? "var(--accent)" : "var(--border)", color: prjPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "i")),
+                                    React.createElement("button", { onClick: () => setPrjPnlInfo(!prjPnlInfo), "aria-label": "info", className: "w-5 h-5 rounded-full border text-[0.625rem] font-semibold", style: { borderColor: prjPnlInfo ? "var(--accent)" : "var(--border)", color: prjPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "i")),
                                 React.createElement("span", { className: "tabular font-display font-bold text-base", style: { color: net >= 0 ? "var(--accent)" : "var(--danger)" } },
                                     net >= 0 ? "+" : "−",
                                     fmtMoney(Math.abs(net), baseCurrency)))),
-                        prjPnlInfo && (React.createElement("p", { className: "text-[11px] mt-2.5 px-3 py-2 rounded-lg", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
+                        prjPnlInfo && (React.createElement("p", { className: "text-[0.6875rem] mt-2.5 px-3 py-2 rounded-lg", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
                             tr("Суми з різних валют зведені до базової"),
                             " (",
                             baseCurrency,
@@ -5197,7 +5202,7 @@ window.__K3_START = function () {
                             tr("Вибрано"),
                             ": ",
                             selCount),
-                        React.createElement("button", { onClick: () => { const n = {}; filtered.forEach((t) => { n[t.id] = 1; }); setSelIds(n); }, className: "px-2.5 py-1 rounded-lg text-[11px] font-medium", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
+                        React.createElement("button", { onClick: () => { const n = {}; filtered.forEach((t) => { n[t.id] = 1; }); setSelIds(n); }, className: "px-2.5 py-1 rounded-lg text-[0.6875rem] font-medium", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
                             tr("Всі"),
                             " (",
                             filtered.length,
@@ -5333,7 +5338,7 @@ window.__K3_START = function () {
                     " (",
                     active.length,
                     ")",
-                    overdueCount > 0 && React.createElement("span", { className: "min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, overdueCount)),
+                    overdueCount > 0 && React.createElement("span", { className: "min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[0.625rem] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, overdueCount)),
                 React.createElement("button", { onClick: () => setShowArchived(true), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: showArchived ? "var(--surface2)" : "transparent", color: showArchived ? "var(--text)" : "var(--text-dim)" } },
                     tr("Архів"),
                     " (",
@@ -5471,7 +5476,7 @@ window.__K3_START = function () {
                             const monthsLeft = Math.max(0, (new Date(g.deadline).getFullYear() - new Date().getFullYear()) * 12 + (new Date(g.deadline).getMonth() - new Date().getMonth()));
                             const overdue = new Date(g.deadline) < new Date();
                             const perMonth = monthsLeft > 0 ? remaining / monthsLeft : remaining;
-                            return (React.createElement("p", { className: "text-[11px] mb-3", style: { color: overdue ? "var(--danger)" : "var(--text-dim)" } }, overdue ? tr("Термін минув") + " · " + fmtDate(g.deadline) : tr("До") + " " + fmtDate(g.deadline) + " · ≈ " + fmtMoney(perMonth, g.currency) + tr("/міс")));
+                            return (React.createElement("p", { className: "text-[0.6875rem] mb-3", style: { color: overdue ? "var(--danger)" : "var(--text-dim)" } }, overdue ? tr("Термін минув") + " · " + fmtDate(g.deadline) : tr("До") + " " + fmtDate(g.deadline) + " · ≈ " + fmtMoney(perMonth, g.currency) + tr("/міс")));
                         })(),
                         React.createElement(Button, { variant: "secondary", className: "w-full", onClick: () => setModal({ type: "goalContribute", payload: g }) }, tr("Поповнити"))));
                 }),
@@ -5605,7 +5610,7 @@ window.__K3_START = function () {
                 React.createElement("p", { className: "text-xs mb-1", style: { color: "#A7B0C4" } }, tr("Загальна вартість портфелю")),
                 React.createElement("p", { className: "font-display font-extrabold text-3xl tabular", style: { color: "#F3F0E8" } }, fmtMoney(total, baseCurrency)),
                 React.createElement("div", { className: "flex items-center justify-between mt-3 gap-2 flex-wrap" },
-                    React.createElement("span", { className: "text-[11px]", style: { color: "#A7B0C4" } },
+                    React.createElement("span", { className: "text-[0.6875rem]", style: { color: "#A7B0C4" } },
                         tr("Оновлено: "),
                         fmtUpd),
                     React.createElement(Button, { variant: "secondary", onClick: refresh, disabled: busy },
@@ -5613,7 +5618,7 @@ window.__K3_START = function () {
                         " ",
                         busy ? tr("Оновлення…") : tr("Оновити ціни")))),
             React.createElement("div", { className: "flex flex-wrap items-center gap-1.5" },
-                React.createElement("span", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                React.createElement("span", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                     tr("Гаманці"),
                     ":"),
                 React.createElement("button", { onClick: () => setWalletFilter("all"), className: "px-3 py-1.5 rounded-full text-xs font-semibold", style: { background: wf === "all" ? "var(--accent)" : "var(--surface2)", border: "1px solid " + (wf === "all" ? "var(--accent)" : "var(--border)"), color: wf === "all" ? "var(--accent-ink)" : "var(--text)" } }, tr("Всі")),
@@ -5623,7 +5628,7 @@ window.__K3_START = function () {
                     React.createElement(Edit3, { size: 12 }))),
                 !wNew && React.createElement("button", { onClick: () => setWNew(true), className: "px-3 py-1.5 rounded-full text-xs font-semibold", style: { border: "1px dashed var(--border)", color: "var(--text-dim)" } }, tr("+ Гаманець")),
                 wNew && (React.createElement("span", { className: "flex items-center gap-1.5" },
-                    React.createElement("input", { value: wName, onChange: (e) => setWName(e.target.value), placeholder: tr("Назва"), autoFocus: true, className: "px-2 py-1 rounded-lg text-[11px] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", width: 110, color: "var(--text)" } }),
+                    React.createElement("input", { value: wName, onChange: (e) => setWName(e.target.value), placeholder: tr("Назва"), autoFocus: true, className: "px-2 py-1 rounded-lg text-[0.6875rem] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", width: 110, color: "var(--text)" } }),
                     React.createElement("button", { onClick: () => { if (addCryptoWallet(wName)) {
                             setWName("");
                             setWNew(false);
@@ -5632,11 +5637,11 @@ window.__K3_START = function () {
                     React.createElement("button", { onClick: () => { setWNew(false); setWName(""); }, style: { color: "var(--text-dim)" } },
                         React.createElement(X, { size: 14 }))))),
             crypto.length > 1 && (React.createElement("div", { className: "flex items-center gap-2" },
-                React.createElement("span", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                React.createElement("span", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                     tr("Сортування"),
                     ":"),
-                React.createElement("button", { onClick: () => setCryptoSort && setCryptoSort("value"), className: "px-2.5 py-1 rounded-full text-[11px] font-medium", style: { background: cryptoSort !== "name" ? "var(--accent)" : "var(--surface2)", color: cryptoSort !== "name" ? "var(--accent-ink)" : "var(--text-dim)" } }, tr("За вартістю")),
-                React.createElement("button", { onClick: () => setCryptoSort && setCryptoSort("name"), className: "px-2.5 py-1 rounded-full text-[11px] font-medium", style: { background: cryptoSort === "name" ? "var(--accent)" : "var(--surface2)", color: cryptoSort === "name" ? "var(--accent-ink)" : "var(--text-dim)" } }, tr("За назвою")))),
+                React.createElement("button", { onClick: () => setCryptoSort && setCryptoSort("value"), className: "px-2.5 py-1 rounded-full text-[0.6875rem] font-medium", style: { background: cryptoSort !== "name" ? "var(--accent)" : "var(--surface2)", color: cryptoSort !== "name" ? "var(--accent-ink)" : "var(--text-dim)" } }, tr("За вартістю")),
+                React.createElement("button", { onClick: () => setCryptoSort && setCryptoSort("name"), className: "px-2.5 py-1 rounded-full text-[0.6875rem] font-medium", style: { background: cryptoSort === "name" ? "var(--accent)" : "var(--surface2)", color: cryptoSort === "name" ? "var(--accent-ink)" : "var(--text-dim)" } }, tr("За назвою")))),
             React.createElement("div", { className: "space-y-3" },
                 groups.slice().sort((x, y) => cryptoSort === "name" ? String(x.name || x.symbol || "").localeCompare(String(y.name || y.symbol || ""), "uk") : valBase(y) - valBase(x)).map((g) => {
                     const price = cryptoPrices[g.coinId] || 0;
@@ -5645,7 +5650,7 @@ window.__K3_START = function () {
                     return (React.createElement(Card, { key: g.coinId, className: "overflow-hidden" },
                         React.createElement("button", { type: "button", onClick: () => setOpenCoin(open ? null : g.coinId), className: "w-full p-4 flex items-center justify-between gap-3 text-left" },
                             React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
-                                React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[11px]", style: { background: "var(--surface2)", color: "var(--accent)" } }, g.symbol),
+                                React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.6875rem]", style: { background: "var(--surface2)", color: "var(--accent)" } }, g.symbol),
                                 React.createElement("div", { className: "min-w-0" },
                                     React.createElement("p", { className: "text-sm font-semibold truncate" },
                                         Math.round(g.amount * 1e8) / 1e8,
@@ -5662,7 +5667,7 @@ window.__K3_START = function () {
                             g.rows.map((c) => (React.createElement("div", { key: c.id, className: "flex items-center gap-2 rounded-xl px-3 py-2", style: { background: "var(--surface2)" } },
                                 React.createElement("div", { className: "flex-1 min-w-0" },
                                     React.createElement("p", { className: "text-xs font-medium truncate" }, walletName(c.walletId)),
-                                    React.createElement("p", { className: "text-[11px] tabular", style: { color: "var(--text-dim)" } },
+                                    React.createElement("p", { className: "text-[0.6875rem] tabular", style: { color: "var(--text-dim)" } },
                                         c.amount,
                                         " ",
                                         c.symbol,
@@ -5670,24 +5675,24 @@ window.__K3_START = function () {
                                 React.createElement("button", { onClick: () => setModal({ type: "crypto", payload: c }), className: "p-1.5 rounded-lg shrink-0", style: { color: "var(--text-dim)" } },
                                     React.createElement(Edit3, { size: 13 }))))),
                             (cryptoWallets || []).length > 0 && (React.createElement("div", { className: "flex flex-wrap items-center gap-1.5 pt-1.5", style: { borderTop: "1px dashed var(--border)" } },
-                                React.createElement("span", { className: "text-[10px] shrink-0", style: { color: "var(--text-dim)" } },
+                                React.createElement("span", { className: "text-[0.625rem] shrink-0", style: { color: "var(--text-dim)" } },
                                     tr("Перенести"),
                                     ":"),
-                                React.createElement("select", { value: trF, onChange: (e) => setTrF(e.target.value), className: "px-1.5 py-1 rounded-lg text-[11px] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", maxWidth: 96 } },
+                                React.createElement("select", { value: trF, onChange: (e) => setTrF(e.target.value), className: "px-1.5 py-1 rounded-lg text-[0.6875rem] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", maxWidth: 96 } },
                                     React.createElement("option", { value: "" }, tr("Основний")),
                                     (cryptoWallets || []).map((w) => React.createElement("option", { key: w.id, value: w.id }, w.name))),
                                 React.createElement(ArrowLeftRight, { size: 11, style: { color: "var(--text-dim)" } }),
-                                React.createElement("select", { value: trT, onChange: (e) => setTrT(e.target.value), className: "px-1.5 py-1 rounded-lg text-[11px] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", maxWidth: 96 } },
+                                React.createElement("select", { value: trT, onChange: (e) => setTrT(e.target.value), className: "px-1.5 py-1 rounded-lg text-[0.6875rem] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", maxWidth: 96 } },
                                     React.createElement("option", { value: "" }, tr("Основний")),
                                     (cryptoWallets || []).map((w) => React.createElement("option", { key: w.id, value: w.id }, w.name))),
-                                React.createElement("input", { value: trA, onChange: (e) => setTrA(e.target.value), inputMode: "decimal", placeholder: "0", className: "px-2 py-1 rounded-lg text-[11px] tabular outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", width: 72, color: "var(--text)" } }),
+                                React.createElement("input", { value: trA, onChange: (e) => setTrA(e.target.value), inputMode: "decimal", placeholder: "0", className: "px-2 py-1 rounded-lg text-[0.6875rem] tabular outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", width: 72, color: "var(--text)" } }),
                                 React.createElement("button", { onClick: () => { const av = parseFloat(String(trA).replace(",", ".")); if (!(av > 0))
                                         return; transferCrypto(g.coinId, trF || null, trT || null, av); setTrA(""); }, className: "p-1 rounded-lg", style: { color: "var(--accent)" } },
                                     React.createElement(Check, { size: 14 }))))))));
                 }),
                 crypto.length === 0 && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("Портфель порожній. Додайте перший актив — і бачте його вартість за живими цінами.")),
                 crypto.length > 0 && visible.length === 0 && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("У цьому гаманці поки немає монет."))),
-            React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } }, tr("Ціни надає CoinGecko й оновлюються за вашим запитом (потрібен інтернет). Кількість монет вводиться вручну."))));
+            React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, tr("Ціни надає CoinGecko й оновлюються за вашим запитом (потрібен інтернет). Кількість монет вводиться вручну."))));
     }
     // Full-screen coin selector — behaves like a country/city picker: sticky search,
     // "Popular" first, then the full list; live CoinGecko lookup covers every other coin.
@@ -5727,13 +5732,13 @@ window.__K3_START = function () {
         const Row = ({ c }) => {
             const on = selected && selected.id === c.id;
             return (React.createElement("button", { onClick: () => onPick(c), className: "w-full flex items-center gap-3 px-4 py-3 text-left active:opacity-70 transition", style: { background: on ? "var(--surface2)" : "transparent", borderBottom: "1px solid var(--border)" } },
-                React.createElement("span", { className: "w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[10px]", style: { background: "var(--surface2)", color: "var(--accent)" } }, c.symbol.slice(0, 5)),
+                React.createElement("span", { className: "w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.625rem]", style: { background: "var(--surface2)", color: "var(--accent)" } }, c.symbol.slice(0, 5)),
                 React.createElement("span", { className: "min-w-0 flex-1" },
                     React.createElement("span", { className: "block text-sm font-semibold truncate" }, c.name),
                     React.createElement("span", { className: "block text-xs", style: { color: "var(--text-dim)" } }, c.symbol)),
                 on && React.createElement(Check, { size: 17, style: { color: "var(--accent)", flexShrink: 0 } })));
         };
-        const Header = ({ children }) => (React.createElement("p", { className: "px-4 py-2 text-[11px] font-semibold uppercase sticky top-0", style: { letterSpacing: "0.1em", color: "var(--text-dim)", background: "var(--bg)" } }, children));
+        const Header = ({ children }) => (React.createElement("p", { className: "px-4 py-2 text-[0.6875rem] font-semibold uppercase sticky top-0", style: { letterSpacing: "0.1em", color: "var(--text-dim)", background: "var(--bg)" } }, children));
         return (React.createElement("div", { className: "fixed inset-0 z-[140] flex flex-col", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
             React.createElement("div", { className: "flex items-center gap-2 px-4 py-3 shrink-0", style: { borderBottom: "1px solid var(--border)" } },
                 React.createElement("h2", { className: "font-display font-bold text-lg flex-1" }, tr("Оберіть монету")),
@@ -5798,7 +5803,7 @@ window.__K3_START = function () {
                 React.createElement("button", { onClick: () => { setMode("sell"); setError(""); }, className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: seg(mode === "sell") }, tr("Продати"))),
             React.createElement(Field, { label: tr("Криптовалюта") },
                 React.createElement("button", { onClick: () => setPicker(true), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
-                    React.createElement("span", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[10px]", style: { background: "var(--surface)", color: "var(--accent)" } }, coin ? coin.symbol.slice(0, 5) : "—"),
+                    React.createElement("span", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.625rem]", style: { background: "var(--surface)", color: "var(--accent)" } }, coin ? coin.symbol.slice(0, 5) : "—"),
                     React.createElement("span", { className: "min-w-0 flex-1" },
                         React.createElement("span", { className: "block text-sm font-semibold truncate" }, coin ? coin.name : tr("Оберіть монету")),
                         React.createElement("span", { className: "block text-xs", style: { color: "var(--text-dim)" } }, mode === "sell" ? tr("У портфелі:") + " " + heldAmt + " " + (coin ? coin.symbol : "") : (coin ? coin.symbol : ""))),
@@ -5809,7 +5814,7 @@ window.__K3_START = function () {
                 React.createElement(Input, { type: "number", step: "0.01", value: fiat, onChange: (e) => { setFiat(e.target.value); setError(""); }, placeholder: "0" })),
             React.createElement(Field, { label: (mode === "buy" ? tr("Отримано монет") : tr("Продано монет")) + (coin ? ` (${coin.symbol})` : "") },
                 React.createElement(Input, { type: "number", value: coins, onChange: (e) => { setCoins(e.target.value); setError(""); }, placeholder: tr("напр. 0.5") })),
-            implied > 0 && (React.createElement("div", { className: "text-[11px] -mt-2 mb-3 px-3 py-2 rounded-lg", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" } },
+            implied > 0 && (React.createElement("div", { className: "text-[0.6875rem] -mt-2 mb-3 px-3 py-2 rounded-lg", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)", color: "var(--text)" } },
                 React.createElement("p", null,
                     "\u2248 1 ",
                     coin.symbol,
@@ -5846,17 +5851,17 @@ window.__K3_START = function () {
         const [name, setName] = useState(w ? w.name : "");
         return (React.createElement(Modal, { title: isMain ? tr("Основний") : (w ? w.name : tr("Гаманець")), onClose: onClose },
             React.createElement("div", { className: "rounded-xl p-4 mb-4 text-center", style: { background: "var(--surface2)" } },
-                React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } }, tr("Разом у гаманці")),
+                React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, tr("Разом у гаманці")),
                 React.createElement("p", { className: "font-display font-extrabold text-2xl tabular" }, fmtMoney(total, baseCurrency))),
             React.createElement("div", { className: "space-y-2" },
                 rows.map((cc) => (React.createElement("div", { key: cc.id, className: "flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" } },
-                    React.createElement("div", { className: "w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[10px]", style: { background: "var(--surface)", color: "var(--accent)" } }, cc.symbol),
+                    React.createElement("div", { className: "w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.625rem]", style: { background: "var(--surface)", color: "var(--accent)" } }, cc.symbol),
                     React.createElement("div", { className: "flex-1 min-w-0" },
                         React.createElement("p", { className: "text-sm font-semibold truncate" },
                             cc.amount,
                             " ",
                             cc.symbol),
-                        React.createElement("p", { className: "text-[11px] truncate", style: { color: "var(--text-dim)" } }, tr(cc.name))),
+                        React.createElement("p", { className: "text-[0.6875rem] truncate", style: { color: "var(--text-dim)" } }, tr(cc.name))),
                     React.createElement("p", { className: "text-sm font-bold tabular shrink-0" }, (cryptoPrices[cc.coinId] || 0) > 0 ? fmtMoney(val(cc), baseCurrency) : "—"),
                     React.createElement("button", { onClick: () => setModal({ type: "crypto", payload: cc, returnTo: { type: "cryptoWallet", payload: walletId } }), className: "p-1.5 rounded-lg shrink-0", style: { color: "var(--text-dim)" } },
                         React.createElement(Edit3, { size: 13 }))))),
@@ -5903,7 +5908,7 @@ window.__K3_START = function () {
         return (React.createElement(Modal, { title: isEdit ? tr("Редагувати актив") : tr("Додати крипто-актив"), onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Криптовалюта") },
                 React.createElement("button", { onClick: () => setPicker(true), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
-                    React.createElement("span", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[10px]", style: { background: "var(--surface)", color: "var(--accent)" } }, coin ? coin.symbol.slice(0, 5) : "—"),
+                    React.createElement("span", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.625rem]", style: { background: "var(--surface)", color: "var(--accent)" } }, coin ? coin.symbol.slice(0, 5) : "—"),
                     React.createElement("span", { className: "min-w-0 flex-1" },
                         React.createElement("span", { className: "block text-sm font-semibold truncate" }, coin ? coin.name : tr("Оберіть монету")),
                         React.createElement("span", { className: "block text-xs", style: { color: "var(--text-dim)" } }, coin ? coin.symbol : "")),
@@ -6382,7 +6387,7 @@ window.__K3_START = function () {
                         React.createElement("input", { type: "checkbox", checked: r.include, onChange: (e) => setRow(r.key, { include: e.target.checked }), style: { width: 17, height: 17, accentColor: "var(--accent)", flexShrink: 0 } }),
                         React.createElement("div", { className: "min-w-0 flex-1" },
                             React.createElement("p", { className: "text-sm font-medium truncate" }, r.desc || "—"),
-                            React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                            React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                                 fmtDate(r.date),
                                 r.bankCat ? " · " + r.bankCat : "",
                                 r.dup && React.createElement("span", { style: { color: "var(--warn)" } },
@@ -6643,7 +6648,7 @@ window.__K3_START = function () {
                 React.createElement("h3", { "data-tour": "setpin", className: "font-display font-semibold text-sm mb-1" }, tr("PIN-код")),
                 pin && !pinMode ? (React.createElement("div", null,
                     React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Увімкнено. Застосунок запитуватиме код при відкритті та після згортання.")),
-                    React.createElement("p", { className: "text-[11px] font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Запитувати PIN")),
+                    React.createElement("p", { className: "text-[0.6875rem] font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Запитувати PIN")),
                     React.createElement("div", { className: "flex gap-2 mb-3" },
                         React.createElement("button", { onClick: () => applyPinDelay(0), className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: { background: pinDelay === 0 ? "var(--accent)" : "var(--surface2)", color: pinDelay === 0 ? "var(--accent-ink)" : "var(--text)", border: "1px solid var(--border)" } }, tr("Одразу")),
                         React.createElement("button", { onClick: () => applyPinDelay(60), className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: { background: pinDelay === 60 ? "var(--accent)" : "var(--surface2)", color: pinDelay === 60 ? "var(--accent-ink)" : "var(--text)", border: "1px solid var(--border)" } }, tr("Через 1 хв"))),
@@ -6678,7 +6683,7 @@ window.__K3_START = function () {
                         React.createElement(HistoryIcon, { size: 15 }),
                         " ",
                         tr("Експорт у CSV"))),
-                React.createElement("p", { className: "text-[11px] mt-2", style: { color: "var(--text-dim)" } }, tr("Відновлення замінить поточні дані на цьому пристрої. CSV зручний для Excel і аналізу операцій."))),
+                React.createElement("p", { className: "text-[0.6875rem] mt-2", style: { color: "var(--text-dim)" } }, tr("Відновлення замінить поточні дані на цьому пристрої. CSV зручний для Excel і аналізу операцій."))),
             React.createElement(SettingsSection, { icon: ArrowDownRight, title: React.createElement(React.Fragment, null, tr("Імпорт виписки (CSV)")), open: openSec === "sec5", onToggle: () => setOpenSec(openSec === "sec5" ? "" : "sec5") },
                 React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Завантажте CSV-виписку з банку — застосунок сам розпізнає колонки й розкладе витрати за категоріями.")),
                 React.createElement(Button, { variant: "secondary", onClick: () => setModal && setModal({ type: "statementImport" }) },
@@ -6724,7 +6729,7 @@ window.__K3_START = function () {
                         React.createElement(RefreshCw, { size: 15, className: ratesBusy ? "spin" : "" }),
                         " ",
                         ratesBusy ? tr("Оновлення…") : tr("Оновити курси онлайн")),
-                    ratesMsg && React.createElement("span", { className: "text-[11px]", style: { color: ratesErr ? "var(--danger)" : "var(--text-dim)" } }, ratesMsg)),
+                    ratesMsg && React.createElement("span", { className: "text-[0.6875rem]", style: { color: ratesErr ? "var(--danger)" : "var(--text-dim)" } }, ratesMsg)),
                 React.createElement("div", { className: "grid grid-cols-2 gap-3" }, activeCurs.filter((c) => c !== "UAH").map((c) => (React.createElement("div", { key: c },
                     React.createElement("div", { className: "flex items-center justify-between mb-1 gap-1" },
                         React.createElement("span", { className: "text-xs font-medium", style: { color: "var(--text-dim)" } },
@@ -6732,12 +6737,12 @@ window.__K3_START = function () {
                             c,
                             " ="),
                         React.createElement("div", { className: "flex items-center gap-2" },
-                            React.createElement("button", { onClick: () => toggleRateMode(c), className: "text-[10px] font-semibold px-1.5 py-0.5 rounded-md", style: localRateMode[c] === "manual" ? { background: "var(--surface2)", color: "var(--text-dim)", border: "1px solid var(--border)" } : { background: "var(--accent)", color: "var(--accent-ink)" } }, localRateMode[c] === "manual" ? tr("Вручну") : tr("Авто")),
-                            React.createElement("button", { onClick: () => removeCurrency(c), className: "text-[11px] font-medium", style: { color: "var(--danger)" } }, tr("Прибрати")))),
+                            React.createElement("button", { onClick: () => toggleRateMode(c), className: "text-[0.625rem] font-semibold px-1.5 py-0.5 rounded-md", style: localRateMode[c] === "manual" ? { background: "var(--surface2)", color: "var(--text-dim)", border: "1px solid var(--border)" } : { background: "var(--accent)", color: "var(--accent-ink)" } }, localRateMode[c] === "manual" ? tr("Вручну") : tr("Авто")),
+                            React.createElement("button", { onClick: () => removeCurrency(c), className: "text-[0.6875rem] font-medium", style: { color: "var(--danger)" } }, tr("Прибрати")))),
                     React.createElement(Input, { type: "number", step: "0.0001", inputMode: "decimal", value: localRates[c] ?? "", onChange: (e) => setLocalRates({ ...localRates, [c]: e.target.value }), placeholder: "0" }))))),
                 addableCurs.length > 0 && (React.createElement("div", { className: "flex gap-2 items-end mt-3" },
                     React.createElement("div", { className: "flex-1 min-w-0" },
-                        React.createElement("span", { className: "text-[11px] font-medium mb-1 block", style: { color: "var(--text-dim)" } }, tr("Додати валюту")),
+                        React.createElement("span", { className: "text-[0.6875rem] font-medium mb-1 block", style: { color: "var(--text-dim)" } }, tr("Додати валюту")),
                         React.createElement(Select, { value: addCur, onChange: (e) => setAddCur(e.target.value) },
                             React.createElement("option", { value: "" }, tr("— оберіть валюту —")),
                             addableCurs.map((c) => React.createElement("option", { key: c, value: c }, c)))),
@@ -6766,7 +6771,7 @@ window.__K3_START = function () {
                     showTerms ? React.createElement(ChevronDown, { size: 18, style: { color: "var(--text-dim)" } }) : React.createElement(ChevronRight, { size: 18, style: { color: "var(--text-dim)" } })),
                 showTerms && (React.createElement("div", { className: "mt-3" },
                     React.createElement(AgreementText, null)))),
-            React.createElement("button", { onClick: () => setModal({ type: "diag" }), className: "w-full text-center text-[11px] pt-1 pb-2", style: { color: "var(--text-dim)" } }, "K³ Finance · " + tr("збірка") + " " + K3_BUILD)));
+            React.createElement("button", { onClick: () => setModal({ type: "diag" }), className: "w-full text-center text-[0.6875rem] pt-1 pb-2", style: { color: "var(--text-dim)" } }, "K³ Finance · " + tr("збірка") + " " + K3_BUILD)));
     }
     /* Storage diagnostics: shows the revision and account counts in all three layers
        (memory / localStorage / IndexedDB mirror) so device-side data loss can be pinpointed
@@ -6905,7 +6910,7 @@ window.__K3_START = function () {
             React.createElement("img", { ref: imgRef, src: src, alt: tr("чек"), style: { maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain", transformOrigin: "0 0", willChange: "transform" } }),
             React.createElement("button", { onClick: onClose, "aria-label": tr("Закрити"), className: "absolute top-4 right-4 w-11 h-11 rounded-full flex items-center justify-center", style: { background: "rgba(255,255,255,0.14)", color: "#fff" } },
                 React.createElement(X, { size: 22 })),
-            React.createElement("p", { className: "absolute bottom-5 left-0 right-0 text-center text-[11px]", style: { color: "rgba(255,255,255,0.55)" } }, tr("Щіпка — масштаб · подвійний тап — збільшити/скинути"))));
+            React.createElement("p", { className: "absolute bottom-5 left-0 right-0 text-center text-[0.6875rem]", style: { color: "rgba(255,255,255,0.55)" } }, tr("Щіпка — масштаб · подвійний тап — збільшити/скинути"))));
     }
     /* ============================== MODAL ROUTER ============================== */
     // Quick editor for per-category monthly limits (opened from the budgets card)
@@ -6958,7 +6963,7 @@ window.__K3_START = function () {
         }, [transactions, rates, baseCurrency]);
         return (React.createElement(Modal, { title: tr("Проєкти"), onClose: onClose, onBack: onClose },
             list.length === 0 && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Проєктів ще немає. Створіть перший — «Квартира», «Авто» чи «Ремонт» — і привʼязуйте до нього витрати з форми, імпорту та регулярних платежів.")),
-            list.length > 0 && React.createElement("p", { className: "text-[11px] mb-2", style: { color: "var(--text-dim)" } }, tr("Зірочка — показувати проєкт на головному.")),
+            list.length > 0 && React.createElement("p", { className: "text-[0.6875rem] mb-2", style: { color: "var(--text-dim)" } }, tr("Зірочка — показувати проєкт на головному.")),
             React.createElement("div", { ref: prjHold.containerRef, className: "space-y-2.5 mb-3" }, list.map((x, xi) => (React.createElement("div", Object.assign({ key: x.id, className: "flex items-center gap-2.5 rounded-xl p-3", style: Object.assign({ background: "var(--surface2)", border: "1px solid var(--border)" }, holdDragStyle(prjHold.dragId === x.id, 12)) }, prjHold.itemProps(x.id)),
                 React.createElement("button", { type: "button", className: "flex items-center gap-2.5 flex-1 min-w-0 text-left", onClick: () => { if (setHistoryPreset && setView) {
                         setHistoryPreset({ type: "all", projectId: x.id, origin: "projects" });
@@ -6969,7 +6974,7 @@ window.__K3_START = function () {
                         React.createElement(Icon, { name: x.icon || "Home", size: 15, style: { color: x.color || "var(--text-dim)" } })),
                     React.createElement("div", { className: "min-w-0" },
                         React.createElement("p", { className: "text-sm font-medium truncate" }, tr(x.name)),
-                        showArrows === false && React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                        showArrows === false && React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                             txCount(x.id),
                             " ",
                             tr("операцій"),
@@ -6993,7 +6998,7 @@ window.__K3_START = function () {
                     else {
                         setConfirmDel(x.id);
                         setTimeout(() => setConfirmDel((v) => (v === x.id ? null : v)), 2800);
-                    } }, className: "p-1.5 rounded-md shrink-0", style: { color: confirmDel === x.id ? "var(--danger)" : "var(--text-dim)" } }, confirmDel === x.id ? React.createElement("span", { className: "text-[10px] font-bold whitespace-nowrap" }, tr("Точно?")) : React.createElement(Trash2, { size: 14 })))))),
+                    } }, className: "p-1.5 rounded-md shrink-0", style: { color: confirmDel === x.id ? "var(--danger)" : "var(--text-dim)" } }, confirmDel === x.id ? React.createElement("span", { className: "text-[0.625rem] font-bold whitespace-nowrap" }, tr("Точно?")) : React.createElement(Trash2, { size: 14 })))))),
             React.createElement(Button, { className: "w-full", onClick: () => openEdit(null) },
                 React.createElement(Plus, { size: 15 }),
                 " ",
@@ -7045,7 +7050,7 @@ window.__K3_START = function () {
                             React.createElement("p", { className: "text-sm font-medium truncate" },
                                 tr(r.title),
                                 r.paused ? " · " + tr("пауза") : ""),
-                            React.createElement("p", { className: "text-[11px] truncate", style: { color: "var(--text-dim)" } },
+                            React.createElement("p", { className: "text-[0.6875rem] truncate", style: { color: "var(--text-dim)" } },
                                 tr("Щомісяця"),
                                 " ",
                                 r.dayOfMonth,
@@ -7055,7 +7060,7 @@ window.__K3_START = function () {
                                 fmtMoney(r.amount, cur),
                                 " \u00B7 ",
                                 pocketLabel(r.pocketId))),
-                        React.createElement("button", { onClick: () => editRecurring(r.id, { paused: !r.paused }), className: "px-2 py-1 rounded-md text-[11px] font-medium shrink-0", style: { background: "var(--surface)", color: "var(--text-dim)" } }, r.paused ? tr("Увімкнути") : tr("Пауза")),
+                        React.createElement("button", { onClick: () => editRecurring(r.id, { paused: !r.paused }), className: "px-2 py-1 rounded-md text-[0.6875rem] font-medium shrink-0", style: { background: "var(--surface)", color: "var(--text-dim)" } }, r.paused ? tr("Увімкнути") : tr("Пауза")),
                         React.createElement("button", { onClick: () => openEdit(r), className: "p-1.5 rounded-md shrink-0", style: { color: "var(--text-dim)" } },
                             React.createElement(Edit3, { size: 14 })),
                         React.createElement("button", { onClick: () => { if (confirmDel === r.id) {
@@ -7065,7 +7070,7 @@ window.__K3_START = function () {
                             else {
                                 setConfirmDel(r.id);
                                 setTimeout(() => setConfirmDel((v) => (v === r.id ? null : v)), 2800);
-                            } }, className: "p-1.5 rounded-md shrink-0", style: { color: confirmDel === r.id ? "var(--danger)" : "var(--text-dim)" } }, confirmDel === r.id ? React.createElement("span", { className: "text-[10px] font-bold whitespace-nowrap" }, tr("Точно?")) : React.createElement(Trash2, { size: 14 })))));
+                            } }, className: "p-1.5 rounded-md shrink-0", style: { color: confirmDel === r.id ? "var(--danger)" : "var(--text-dim)" } }, confirmDel === r.id ? React.createElement("span", { className: "text-[0.625rem] font-bold whitespace-nowrap" }, tr("Точно?")) : React.createElement(Trash2, { size: 14 })))));
             })),
             React.createElement(Button, { className: "w-full", onClick: () => openEdit(null) },
                 React.createElement(Plus, { size: 15 }),
@@ -7115,7 +7120,7 @@ window.__K3_START = function () {
                 React.createElement("div", { className: "grid grid-cols-2 gap-2" },
                     React.createElement("button", { type: "button", onClick: () => setMode("fixed"), className: "py-2 rounded-lg text-xs font-medium", style: { background: mode === "fixed" ? "var(--accent)" : "var(--surface2)", color: mode === "fixed" ? "var(--accent-ink)" : "var(--text)" } }, tr("Фіксована сума")),
                     React.createElement("button", { type: "button", onClick: () => setMode("ask"), className: "py-2 rounded-lg text-xs font-medium", style: { background: mode === "ask" ? "var(--accent)" : "var(--surface2)", color: mode === "ask" ? "var(--accent-ink)" : "var(--text)" } }, tr("Питати суму"))),
-                React.createElement("p", { className: "text-[11px] mt-1.5", style: { color: "var(--text-dim)" } }, mode === "fixed" ? tr("Транзакція створиться сама у день платежу (при відкритті застосунку).") : tr("У день платежу зʼявиться картка на головному — впишете фактичну суму."))),
+                React.createElement("p", { className: "text-[0.6875rem] mt-1.5", style: { color: "var(--text-dim)" } }, mode === "fixed" ? tr("Транзакція створиться сама у день платежу (при відкритті застосунку).") : tr("У день платежу зʼявиться картка на головному — впишете фактичну суму."))),
             React.createElement(Field, { label: mode === "fixed" ? `${tr("Сума")} (${currency})` : `${tr("Орієнтовна сума")} (${currency})`, error: error },
                 React.createElement(Input, { type: "number", step: "0.01", value: amount, onChange: (e) => { setAmount(e.target.value); setError(""); }, placeholder: "0.00" })),
             React.createElement(Field, { label: tr("Рахунок") },
@@ -7131,7 +7136,7 @@ window.__K3_START = function () {
                     React.createElement(Select, { value: String(dayOfMonth), onChange: (e) => setDayOfMonth(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1)))),
                 React.createElement(Field, { label: tr("Початок") },
                     React.createElement(Input, { type: "date", value: startDate, onChange: (e) => setStartDate(e.target.value) }))),
-            React.createElement("p", { className: "text-[11px] mb-3", style: { color: "var(--text-dim)" } }, tr("29–31 у коротких місяцях = останній день місяця.")),
+            React.createElement("p", { className: "text-[0.6875rem] mb-3", style: { color: "var(--text-dim)" } }, tr("29–31 у коротких місяцях = останній день місяця.")),
             React.createElement(Button, { className: "w-full", onClick: submit }, tr("Зберегти"))));
     }
     // Which expense categories take part in the period comparison (donut + list)
@@ -7139,7 +7144,7 @@ window.__K3_START = function () {
         const total = breakdown.reduce((s, cc) => s + cc.value, 0);
         return (React.createElement(Modal, { onClose: onClose, title: `${tr("Звіт за категоріями")} (${periodLabel})` },
             React.createElement("div", { className: "text-center mb-4 pt-1" },
-                React.createElement("p", { className: "text-[11px] font-medium", style: { color: "var(--text-dim)" } }, tr("Разом витрат")),
+                React.createElement("p", { className: "text-[0.6875rem] font-medium", style: { color: "var(--text-dim)" } }, tr("Разом витрат")),
                 React.createElement("p", { className: "font-display font-bold text-2xl tabular" }, fmtMoney(total, baseCurrency))),
             React.createElement("div", { className: "space-y-1.5" }, breakdown.map((cItem, i) => {
                 const cat = (categories || []).find((cc) => cc.type === "expense" && cc.name === cItem.name) || {};
@@ -7149,7 +7154,7 @@ window.__K3_START = function () {
                         React.createElement(Icon, { name: cat.icon || "MoreHorizontal", size: 14, style: { color: cItem.color } })),
                     React.createElement("span", { className: "flex-1 min-w-0 text-left" },
                         React.createElement("span", { className: "block text-sm font-medium truncate" }, tr(cItem.name)),
-                        React.createElement("span", { className: "block text-[10px]", style: { color: "var(--text-dim)" } },
+                        React.createElement("span", { className: "block text-[0.625rem]", style: { color: "var(--text-dim)" } },
                             pct,
                             "%")),
                     React.createElement("span", { className: "tabular text-sm font-semibold shrink-0" }, fmtMoney(cItem.value, baseCurrency)),
@@ -7331,7 +7336,7 @@ window.__K3_START = function () {
                         w.gi.left >= 0 ? tr("лишилось") + " " + w.gi.left + " " + tr("дн.") : tr("прострочено на") + " " + (-w.gi.left) + " " + tr("дн."),
                         " \u00B7 ",
                         React.createElement("span", { className: "tabular font-semibold" }, fmtMoney(w.gi.debt, w.pocket.currency)))))),
-                    React.createElement("p", { className: "text-[10px] mt-2", style: { color: "var(--text-dim)" } }, tr("Орієнтовно, за внесеними в K³ операціями. Точні дати перевіряйте у своєму банку.")))),
+                    React.createElement("p", { className: "text-[0.625rem] mt-2", style: { color: "var(--text-dim)" } }, tr("Орієнтовно, за внесеними в K³ операціями. Точні дати перевіряйте у своєму банку.")))),
                 editing ? (React.createElement(Card, { className: "p-5" },
                     React.createElement("h3", { className: "font-display font-semibold text-sm mb-3" }, editing === "new" ? tr("Нове нагадування") : tr("Редагувати нагадування")),
                     React.createElement(Field, { label: tr("Що зробити"), error: error },
@@ -7381,7 +7386,7 @@ window.__K3_START = function () {
         return (React.createElement("button", { onClick: onClick, className: "flex flex-col items-center gap-2" },
             React.createElement("div", { className: "mono-circle" },
                 React.createElement(Ic, { size: 18, color: "#fff" })),
-            React.createElement("span", { className: "text-[11px] font-medium text-center leading-tight", style: { color: "var(--text-dim)" } }, label)));
+            React.createElement("span", { className: "text-[0.6875rem] font-medium text-center leading-tight", style: { color: "var(--text-dim)" } }, label)));
     }
     function PocketDetailModal({ pocketId, onClose, setView, setHistoryPreset, getPocket, pocketBalance, pocketLabel, transactions, categories, pockets, accounts, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket, graceInfo }) {
         useBodyScrollLock();
@@ -7447,7 +7452,7 @@ window.__K3_START = function () {
                         tr(acc.name),
                         " \u00B7 ",
                         tr(ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label)),
-                    acc.bank && React.createElement("span", { className: "text-[10px] font-medium px-2 py-0.5 rounded-full", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, tr(acc.bank))),
+                    acc.bank && React.createElement("span", { className: "text-[0.625rem] font-medium px-2 py-0.5 rounded-full", style: { background: "rgba(201,163,98,0.18)", color: "#E7CF9B" } }, tr(acc.bank))),
                 React.createElement("div", { className: "flex items-baseline gap-2 flex-wrap" },
                     React.createElement("h1", { className: "font-display font-extrabold text-4xl tabular", style: { color: "#F3F0E8" } }, fmtMoney(balance, pocket.currency)),
                     pocket.creditLimit > 0 && (() => {
@@ -7651,7 +7656,7 @@ window.__K3_START = function () {
                 React.createElement(Input, { value: name, onChange: (e) => setName(e.target.value), placeholder: tr("Напр. Заначка, Зарплатна") })),
             React.createElement(Field, { label: tr("4 цифри для картки (необовʼязково)") },
                 React.createElement(Input, { inputMode: "numeric", maxLength: 4, value: last4, onChange: (e) => setLast4(e.target.value.replace(/\D/g, "").slice(0, 4)), placeholder: "1111" }),
-                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Для банківської — останні 4 цифри, для готівки — будь-які на ваш смак."))),
+                React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Для банківської — останні 4 цифри, для готівки — будь-які на ваш смак."))),
             React.createElement(Field, { label: tr("Валюта"), error: error },
                 React.createElement(Select, { value: currency, onChange: (e) => setCurrency(e.target.value) }, availableCurrencies.map((c) => React.createElement("option", { key: c, value: c }, c)))),
             currencyChanged && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--warn)" } }, tr("Зміна валюти не конвертує вже наявні операції — вони залишаться у своїх сумах.")),
@@ -7661,10 +7666,10 @@ window.__K3_START = function () {
                     React.createElement(Input, { type: "number", step: "0.01", value: balance, onChange: (e) => setBalance(e.target.value), placeholder: "0" }))),
             React.createElement(Field, { label: tr("Кредитний ліміт (необовʼязково)") },
                 React.createElement(Input, { type: "number", step: "0.01", inputMode: "decimal", value: creditLimit, onChange: (e) => setCreditLimit(e.target.value), placeholder: "0" }),
-                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Для кредитної картки. Доступно = ліміт + баланс."))),
+                React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Для кредитної картки. Доступно = ліміт + баланс."))),
             React.createElement(Field, { label: tr("Пільговий період (днів)") },
                 React.createElement(Input, { type: "number", step: "1", inputMode: "numeric", value: graceDays, onChange: (e) => setGraceDays(e.target.value), placeholder: "55" }),
-                React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку."))),
+                React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку."))),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, existing ? tr("Зберегти зміни") : tr("Додати субрахунок"))));
     }
     /* ---------- Category Modal ---------- */
@@ -7920,10 +7925,10 @@ window.__K3_START = function () {
                     React.createElement("div", { className: "grid grid-cols-4 gap-2" },
                         cats.map((c) => (React.createElement("button", { type: "button", key: c.id, onClick: () => { setCategoryId(c.id); setCatOpen(false); setError(""); }, className: "flex flex-col items-center gap-1 p-2 rounded-xl", style: { background: categoryId === c.id ? "var(--surface2)" : "transparent", border: categoryId === c.id ? `1px solid ${c.color}` : "1px solid var(--border)" } },
                             React.createElement(Icon, { name: c.icon, size: 16, style: { color: c.color } }),
-                            React.createElement("span", { className: "text-[10px] text-center leading-tight", style: { color: "var(--text)" } }, tr(c.name))))),
+                            React.createElement("span", { className: "text-[0.625rem] text-center leading-tight", style: { color: "var(--text)" } }, tr(c.name))))),
                         React.createElement("button", { type: "button", onClick: () => { setNewCatMode(true); setNewCatName(""); setNewCatIcon("MoreHorizontal"); }, className: "flex flex-col items-center justify-center gap-1 p-2 rounded-xl", style: { border: "1px dashed var(--border)", color: "var(--text-dim)" } },
                             React.createElement(Plus, { size: 16 }),
-                            React.createElement("span", { className: "text-[10px] leading-tight" }, tr("Нова")))),
+                            React.createElement("span", { className: "text-[0.625rem] leading-tight" }, tr("Нова")))),
                     newCatMode && (React.createElement("div", { className: "mt-2" },
                         React.createElement("div", { className: "flex items-center gap-2" },
                             React.createElement(Input, { value: newCatName, onChange: (e) => setNewCatName(e.target.value), placeholder: tr("Назва категорії"), autoFocus: true }),
@@ -7962,7 +7967,7 @@ window.__K3_START = function () {
                 const bvPrev = natural ? amt2 * effRate : (effRate ? amt2 / effRate : 0);
                 return (React.createElement(Field, { label: tr("Курс до базової") + ` (1 ${natural ? currency : baseCurrency} = ? ${natural ? baseCurrency : currency})` },
                     React.createElement(Input, { type: "number", step: "0.0001", value: rateStr, onChange: (e) => setRateStr(e.target.value), placeholder: String(Math.round((exRate || nowRate) * 10000) / 10000) }),
-                    React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } },
+                    React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } },
                         tr("Вартість у базовій"),
                         ": ",
                         fmtMoney(Math.round(bvPrev * 100) / 100, baseCurrency),
@@ -7980,7 +7985,7 @@ window.__K3_START = function () {
                         React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("День місяця")),
                         React.createElement("span", { className: "w-20" },
                             React.createElement(Select, { value: String(recDay != null ? recDay : (+date.slice(8, 10) || 1)), onChange: (e) => setRecDay(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1))))),
-                    React.createElement("p", { className: "text-[11px] mt-1.5", style: { color: "var(--text-dim)" } }, recMode === "fixed" ? tr("Щомісяця створюватиметься така сама операція.") : tr("Щомісяця K³ питатиме фактичну суму карткою на головному.")))))),
+                    React.createElement("p", { className: "text-[0.6875rem] mt-1.5", style: { color: "var(--text-dim)" } }, recMode === "fixed" ? tr("Щомісяця створюватиметься така сама операція.") : tr("Щомісяця K³ питатиме фактичну суму карткою на головному.")))))),
             React.createElement(Field, { label: tr("Фото чеку (необов'язково, до 4)") },
                 receipts.length < MAX_RECEIPTS && React.createElement("input", { type: "file", accept: "image/*", multiple: true, onChange: handleReceipt, className: "text-xs", style: { color: "var(--text-dim)" } }),
                 receiptErr && React.createElement("p", { className: "text-xs mt-1", style: { color: "var(--danger)" } }, receiptErr),
@@ -8123,7 +8128,7 @@ window.__K3_START = function () {
                     React.createElement("select", { value: fromCur, onChange: (e) => pickTrCur(e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))),
             crossCurrency && (React.createElement(Field, { label: `Курс обміну (1 ${quoteCur} = X ${otherCur})` },
                 React.createElement(Input, { type: "number", value: rate, onChange: (e) => { setRate(e.target.value); setManualTo(false); } }),
-                Math.abs(rateNum - onlineRate) > 1e-9 ? (React.createElement("button", { type: "button", onClick: () => { setRate(String(onlineRate)); setManualTo(false); }, className: "text-[11px] mt-1", style: { color: "var(--accent)" } },
+                Math.abs(rateNum - onlineRate) > 1e-9 ? (React.createElement("button", { type: "button", onClick: () => { setRate(String(onlineRate)); setManualTo(false); }, className: "text-[0.6875rem] mt-1", style: { color: "var(--accent)" } },
                     tr("Онлайн-курс"),
                     ": 1 ",
                     quoteCur,
@@ -8132,7 +8137,7 @@ window.__K3_START = function () {
                     " ",
                     otherCur,
                     " \u2014 ",
-                    tr("застосувати"))) : (React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Онлайн-курс. Зміни його вручну, якщо реальний курс інший — у цій операції він зафіксується назавжди."))))),
+                    tr("застосувати"))) : (React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Онлайн-курс. Зміни його вручну, якщо реальний курс інший — у цій операції він зафіксується назавжди."))))),
             crossCurrency && (isExchange ? (React.createElement(Field, { label: tr("Сума зарахування") },
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: toAmount, onChange: (e) => { setToAmount(e.target.value); setManualTo(true); } }),
@@ -8240,7 +8245,7 @@ window.__K3_START = function () {
                     React.createElement("div", { className: "flex items-center gap-2" },
                         React.createElement("div", { className: "flex-1 min-w-0" },
                             React.createElement("p", { className: "text-sm font-semibold tabular" }, v != null ? fmtMoney(v, loan.currency) : fmtMoney(t.amount, t.currency)),
-                            React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } },
+                            React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                                 fmtDate(t.date),
                                 " \u00B7 ",
                                 t.coinId && !t.pocketId ? tr("Крипто-портфель") + (t.coinAmount ? " · " + t.coinAmount : "") : t.pocketId ? pocketLabel(t.pocketId) : tr("Без рахунку"))),
@@ -8254,21 +8259,21 @@ window.__K3_START = function () {
                             else {
                                 setDelId(t.id);
                                 setTimeout(() => setDelId((x) => (x === t.id ? null : x)), 2800);
-                            } }, className: "p-1.5 rounded-lg", style: { color: delId === t.id ? "#fff" : "var(--danger)", background: delId === t.id ? "var(--danger)" : "transparent" } }, delId === t.id ? React.createElement("span", { className: "text-[10px] font-bold px-1 whitespace-nowrap" }, tr("Точно?")) : React.createElement(Trash2, { size: 14 }))),
+                            } }, className: "p-1.5 rounded-lg", style: { color: delId === t.id ? "#fff" : "var(--danger)", background: delId === t.id ? "var(--danger)" : "transparent" } }, delId === t.id ? React.createElement("span", { className: "text-[0.625rem] font-bold px-1 whitespace-nowrap" }, tr("Точно?")) : React.createElement(Trash2, { size: 14 }))),
                     editId === t.id && (React.createElement("div", { className: "flex gap-2 mt-2" },
                         React.createElement(Input, { type: "number", step: "0.01", inputMode: "decimal", value: amt, onChange: (e) => setAmt(e.target.value) }),
                         React.createElement(Button, { onClick: () => { const nv = parseFloat(String(amt).replace(",", ".")); if (!(nv >= 0))
                                 return; updateRepayAmount(t.id, nv); setEditId(null); } },
                             React.createElement(Check, { size: 15 }))))));
             })),
-            React.createElement("p", { className: "text-[11px] mt-3", style: { color: "var(--text-dim)" } }, tr("Зміни й видалення одразу перераховують залишок і статус позики."))));
+            React.createElement("p", { className: "text-[0.6875rem] mt-3", style: { color: "var(--text-dim)" } }, tr("Зміни й видалення одразу перераховують залишок і статус позики."))));
     }
     function LoanOrphansModal({ onClose, loans, transactions, accounts, pockets, restoreLoanOrigin, pocketBalance }) {
         const hasOrigin = (l) => (transactions || []).some((t) => t.loanId === l.id && (t.type === "loan_out" || t.type === "debt_take"));
         const orphans = loans.filter((l) => !l.archived && !hasOrigin(l));
         const [sel, setSel] = useState({});
         return (React.createElement(Modal, { onClose: onClose, title: tr("Записи без транзакції") },
-            React.createElement("p", { className: "text-[11px] mb-3", style: { color: "var(--text-dim)" } }, tr("У цих позик і боргів немає запису отримання в журналі. Віднови його — баланс обраного рахунку зміниться на суму запису, як при створенні.")),
+            React.createElement("p", { className: "text-[0.6875rem] mb-3", style: { color: "var(--text-dim)" } }, tr("У цих позик і боргів немає запису отримання в журналі. Віднови його — баланс обраного рахунку зміниться на суму запису, як при створенні.")),
             orphans.length === 0 && React.createElement("p", { className: "text-sm py-6 text-center", style: { color: "var(--text-dim)" } }, tr("Все узгоджено — осиротілих записів немає.")),
             React.createElement("div", { className: "space-y-3" }, orphans.map((l) => {
                 const isDebt = l.direction === "in";
@@ -8280,7 +8285,7 @@ window.__K3_START = function () {
                             isDebt ? tr("Борг від: ") : tr("Позика: "),
                             l.borrower),
                         React.createElement("span", { className: "tabular text-sm font-semibold shrink-0" }, fmtMoney(l.amount, l.currency || "UAH"))),
-                    list.length > 0 ? (React.createElement(PocketSelect, { accounts: accounts, pockets: list, value: chosen, onChange: (v) => setSel({ ...sel, [l.id]: v }), tint: isDebt ? "in" : "out", pocketBalance: pocketBalance })) : (React.createElement("p", { className: "text-[11px]", style: { color: "var(--text-dim)" } }, tr("Немає рахунку в цій валюті — запис створиться без прив'язки, баланс не зміниться."))),
+                    list.length > 0 ? (React.createElement(PocketSelect, { accounts: accounts, pockets: list, value: chosen, onChange: (v) => setSel({ ...sel, [l.id]: v }), tint: isDebt ? "in" : "out", pocketBalance: pocketBalance })) : (React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, tr("Немає рахунку в цій валюті — запис створиться без прив'язки, баланс не зміниться."))),
                     React.createElement(Button, { className: "w-full mt-2", onClick: () => restoreLoanOrigin(l.id, list.length > 0 ? chosen : null) }, tr("Відновити запис"))));
             }))));
     }
@@ -8339,12 +8344,12 @@ window.__K3_START = function () {
             setAmount(String(coinNum)); };
         const coinSearchBlock = (React.createElement("div", { className: "mb-3" },
             React.createElement(Input, { value: coinQ, onChange: (e) => setCoinQ(e.target.value), placeholder: tr("Пошук монети (напр., USDT)"), autoFocus: true }),
-            coinBusy && React.createElement("p", { className: "text-[11px] mt-1", style: { color: "var(--text-dim)" } }, tr("Шукаю…")),
+            coinBusy && React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Шукаю…")),
             coinList.length > 0 && (React.createElement("div", { className: "flex flex-wrap gap-1.5 mt-2" }, coinList.map((r) => (React.createElement("button", { key: r.id, type: "button", onClick: () => pickCoin(r), className: "px-2.5 py-1.5 rounded-full text-xs", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } },
                 r.symbol,
                 " \u00B7 ",
                 r.name))))),
-            React.createElement("p", { className: "text-[10px] mt-1.5", style: { color: "var(--text-dim)" } }, tr("Обрана монета зʼявиться в Крипто-портфелі автоматично."))));
+            React.createElement("p", { className: "text-[0.625rem] mt-1.5", style: { color: "var(--text-dim)" } }, tr("Обрана монета зʼявиться в Крипто-портфелі автоматично."))));
         const submit = () => {
             if (!(amtNum > 0))
                 return setError(tr("Введіть коректну суму повернення"));
@@ -8392,7 +8397,7 @@ window.__K3_START = function () {
                 cross && (React.createElement(React.Fragment, null,
                     React.createElement(Field, { label: (isDebt ? tr("Списано з рахунку") : tr("Зараховано на рахунок")) + ` (${pk.currency})` },
                         React.createElement(Input, { type: "number", step: "0.01", value: received, onChange: (e) => { setReceived(e.target.value); setError(""); }, placeholder: "0" })),
-                    amtNum > 0 && recNum > 0 && (React.createElement("p", { className: "text-[11px] -mt-2 mb-3", style: { color: "var(--text-dim)" } },
+                    amtNum > 0 && recNum > 0 && (React.createElement("p", { className: "text-[0.6875rem] -mt-2 mb-3", style: { color: "var(--text-dim)" } },
                         "\u2248 1 ",
                         loan.currency,
                         " = ",
@@ -8400,7 +8405,7 @@ window.__K3_START = function () {
                         " ",
                         pk.currency)))))) : mode === "crypto" ? (React.createElement(React.Fragment, null, holdings.length === 0 ? ((cryptoWallets || []).length === 0 ? (React.createElement("div", { className: "rounded-xl px-4 py-4 mb-3 text-center", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
                 React.createElement("p", { className: "text-sm font-semibold mb-1" }, tr("Спершу потрібен криптогаманець")),
-                React.createElement("p", { className: "text-[11px] mb-3", style: { color: "var(--text-dim)" } }, tr("Створіть гаманець — і повертайтесь сюди, щоб погасити криптою.")),
+                React.createElement("p", { className: "text-[0.6875rem] mb-3", style: { color: "var(--text-dim)" } }, tr("Створіть гаманець — і повертайтесь сюди, щоб погасити криптою.")),
                 React.createElement(Button, { className: "w-full", onClick: () => { onClose(); if (setModal)
                         setModal({ type: "cryptoWallet", payload: null }); } }, tr("Створити гаманець")))) : coinSearchBlock) : (React.createElement(React.Fragment, null,
                 React.createElement(Field, { label: tr("Монета") },
@@ -8420,12 +8425,12 @@ window.__K3_START = function () {
                 React.createElement(Field, { label: isDebt ? tr("Віддано монет") : tr("Отримано монет") },
                     React.createElement(Input, { type: "number", step: "0.00000001", inputMode: "decimal", value: coinAmt, onChange: (e) => { const v = e.target.value; setCoinAmt(v); const sym = ((holdings.find((h) => h.coinId === coinId) || {}).symbol || "").toUpperCase(); if (sym && sym === String(loan.currency).toUpperCase())
                             setAmount(v); setError(""); }, placeholder: "0" })),
-                React.createElement("p", { className: "text-[11px] -mt-1 mb-2", style: { color: "var(--text-dim)" } },
+                React.createElement("p", { className: "text-[0.6875rem] -mt-1 mb-2", style: { color: "var(--text-dim)" } },
                     tr("Зараховано в борг"),
                     ": ",
                     React.createElement("strong", { className: "tabular", style: { color: "var(--text)" } }, fmtMoney(amtNum, loan.currency)),
                     amtNum >= remaining - 0.005 ? " · " + tr("борг закриється повністю") : ""),
-                amtNum > 0 && coinNum > 0 && (React.createElement("p", { className: "text-[11px] -mt-2 mb-3", style: { color: "var(--text-dim)" } },
+                amtNum > 0 && coinNum > 0 && (React.createElement("p", { className: "text-[0.6875rem] -mt-2 mb-3", style: { color: "var(--text-dim)" } },
                     "\u2248 1 ",
                     ((holdings.find((h) => h.coinId === coinId) || {}).symbol || tr("монета")).toUpperCase(),
                     " = ",
@@ -8493,5 +8498,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-03.2");</script></body>
+<script>console.log("K³ build: 2026-08-03.3");</script></body>
 </html>
