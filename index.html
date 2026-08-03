@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-03.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-03.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1765,6 +1765,8 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Де зберігаються мої дані та резервні копії?": "Where are my data and backups stored?",
+        "Усі дані живуть тільки на вашому пристрої — ми нічого не надсилаємо на сервери. Всередині застосунку працюють три шари захисту: основне сховище, технічне дзеркало (рятує дані при різкому закритті) та щоденна автокопія у двох поколіннях (Налаштування → Відновити). Важливо: всі три шари зникнуть, якщо видалити іконку застосунку з екрана або втратити пристрій. Тому регулярно робіть Експорт даних у Налаштуваннях і зберігайте файл у Файли чи хмару — це єдина копія поза застосунком.": "All data lives only on your device — nothing is sent to any server. Inside the app there are three layers of protection: the main storage, a technical mirror (saves your data if the app is force-closed mid-write), and a daily auto-backup kept in two generations (Settings → Restore). Important: all three layers disappear if you delete the app icon from your home screen or lose the device. So export your data regularly in Settings and keep the file in Files or your cloud — that is the only copy outside the app.",
         "Зірочка — показувати проєкт на головному. Порядок змінюється перетягуванням.": "Star a project to pin it on the dashboard. Reorder by dragging.",
         "Ще немає проєктів.": "No projects yet.",
         "Торкніться фото, щоб відкрити на весь екран і збільшити": "Tap a photo to open it fullscreen and zoom",
@@ -2536,6 +2538,7 @@ window.__K3_START = function () {
             { q: tr("Резервні копії та експорт"), a: tr("Зберігайте копію даних у файл (JSON) або експортуйте операції в CSV для Excel. Дані зберігаються на вашому пристрої.") },
         ];
         const faq = [
+            { q: tr("Де зберігаються мої дані та резервні копії?"), a: tr("Усі дані живуть тільки на вашому пристрої — ми нічого не надсилаємо на сервери. Всередині застосунку працюють три шари захисту: основне сховище, технічне дзеркало (рятує дані при різкому закритті) та щоденна автокопія у двох поколіннях (Налаштування → Відновити). Важливо: всі три шари зникнуть, якщо видалити іконку застосунку з екрана або втратити пристрій. Тому регулярно робіть Експорт даних у Налаштуваннях і зберігайте файл у Файли чи хмару — це єдина копія поза застосунком.") },
             { q: tr("Як змінити порядок карток, категорій чи проєктів?"), a: tr("Затисніть елемент приблизно на пів секунди і, не відпускаючи, перетягніть на нове місце — так змінюється порядок категорій, проєктів і карток рахунків на головній. Ціль підсвічується рамкою, порядок зберігається автоматично.") },
             { q: tr("Як додати свою категорію?"), a: tr("Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт.") },
             { q: tr("Як налаштувати PIN-код?"), a: tr("Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати.") },
@@ -8520,5 +8523,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-03.4");</script></body>
+<script>console.log("K³ build: 2026-08-03.5");</script></body>
 </html>
