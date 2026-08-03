@@ -344,7 +344,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-03.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-03.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1765,6 +1765,8 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Зірочка — показувати проєкт на головному. Порядок змінюється перетягуванням.": "Star a project to pin it on the dashboard. Reorder by dragging.",
+        "Ще немає проєктів.": "No projects yet.",
         "Торкніться фото, щоб відкрити на весь екран і збільшити": "Tap a photo to open it fullscreen and zoom",
         "Щіпка — масштаб · подвійний тап — збільшити/скинути": "Pinch to zoom · double-tap to zoom in / reset",
         "Фото чеку (необов'язково, до 4)": "Receipt photos (optional, up to 4)",
@@ -1777,11 +1779,11 @@ window.__K3_START = function () {
         "Свій емоджі з клавіатури…": "Your own emoji from the keyboard…",
         "Обрати": "Use",
         "Розмір тексту": "Text size",
-        "Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом.": "Scales the whole interface — text, icons and buttons grow together.",
+        "Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом. «Дуже великий» розрахований на планшет або ноутбук.": "Scales the whole interface — text, icons and buttons grow together. \"Extra large\" is meant for tablets and laptops.",
         "Малий": "Small",
         "Стандарт": "Default",
         "Великий": "Large",
-        "Дуже великий": "Extra large",
+        "Дуже великий (планшет)": "Extra large (tablet)",
         "Архів порожній.": "The archive is empty.",
         "Показано новіші дані з іншої сесії застосунку.": "Showing newer data from another app session.",
         "Відновлено незбережені зміни з резервної копії пристрою.": "Unsaved changes were recovered from the device backup copy.",
@@ -1799,7 +1801,7 @@ window.__K3_START = function () {
         "Вгору": "Up",
         "Вниз": "Down",
         "Як змінити порядок карток, категорій чи проєктів?": "How do I reorder cards, categories or projects?",
-        "У списку категорій чи проєктів скористайтесь стрілками вгору/вниз у рядку — порядок змінюється миттєво. Картки рахунків на головній можна спробувати перетягнути: затисніть картку (~пів секунди) і, не відпускаючи, тягніть — ціль підсвічується рамкою; ця функція поки експериментальна.": "Use the up/down arrows in a category or project row — the order changes instantly. Account cards on the home screen can be dragged: press and hold a card (~half a second), then drag without letting go — the target gets a highlighted ring; this gesture is still experimental.",
+        "Затисніть елемент приблизно на пів секунди і, не відпускаючи, перетягніть на нове місце — так змінюється порядок категорій, проєктів і карток рахунків на головній. Ціль підсвічується рамкою, порядок зберігається автоматично.": "Press and hold an item for about half a second, then drag it to a new spot — this reorders categories, projects and the account cards on the home screen. The target gets a highlighted ring and the order is saved automatically.",
         "Чер": "Jun",
         "Через 1 хв": "After 1 min",
         "Чи можна повернути видалене?": "Can deleted items be restored?",
@@ -2534,7 +2536,7 @@ window.__K3_START = function () {
             { q: tr("Резервні копії та експорт"), a: tr("Зберігайте копію даних у файл (JSON) або експортуйте операції в CSV для Excel. Дані зберігаються на вашому пристрої.") },
         ];
         const faq = [
-            { q: tr("Як змінити порядок карток, категорій чи проєктів?"), a: tr("У списку категорій чи проєктів скористайтесь стрілками вгору/вниз у рядку — порядок змінюється миттєво. Картки рахунків на головній можна спробувати перетягнути: затисніть картку (~пів секунди) і, не відпускаючи, тягніть — ціль підсвічується рамкою; ця функція поки експериментальна.") },
+            { q: tr("Як змінити порядок карток, категорій чи проєктів?"), a: tr("Затисніть елемент приблизно на пів секунди і, не відпускаючи, перетягніть на нове місце — так змінюється порядок категорій, проєктів і карток рахунків на головній. Ціль підсвічується рамкою, порядок зберігається автоматично.") },
             { q: tr("Як додати свою категорію?"), a: tr("Налаштування → «Керувати категоріями» → «Нова категорія». Оберіть тип, іконку, колір і за бажанням місячний ліміт.") },
             { q: tr("Як налаштувати PIN-код?"), a: tr("Налаштування → блок «PIN-код» → «Встановити PIN». Далі оберіть, коли його запитувати.") },
             { q: tr("Як оновити курси валют?"), a: tr("Налаштування → блок курсів → «Оновити курси онлайн». Валюти з позначкою «Вручну» залишаться незмінними.") },
@@ -3799,6 +3801,7 @@ window.__K3_START = function () {
                         view === "history" && (React.createElement(HistoryView, { setView: setView, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
                         view === "loans" && (React.createElement(LoansView, { transactions: transactions, rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory, reorderCategories: reorderCategories })),
+                view === "projects" && (React.createElement(ProjectsView, { projects: projects, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
                         view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort, cryptoWallets: cryptoWallets, addCryptoWallet: addCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, transferCrypto: transferCrypto })),
                         view === "settings" && (React.createElement(SettingsView, { baseCurrency: baseCurrency, rates: rates, rateMode: state.rateMode || {}, includeLoansInTotal: includeLoansInTotal, uiScale: state.uiScale || "m", update: update, session: session, setToast: setToast, pin: pin, applyPin: applyPin, pinDelay: pinDelay, applyPinDelay: applyPinDelay, exportBackup: exportBackup, importBackup: importBackup, exportCSV: exportCSV, setView: setView, setModal: setModal, autoRefresh: state.autoRefresh || "open" }))))),
@@ -5398,6 +5401,33 @@ window.__K3_START = function () {
                 list.length === 0 && React.createElement("p", { className: "text-sm col-span-full text-center py-10", style: { color: "var(--text-dim)" } }, isIn ? tr("Немає боргів у цій категорії") : tr("Немає позик у цій категорії")))));
     }
     /* ============================== CATEGORIES VIEW ============================== */
+    /* Settings-route project management as a full page (header + bottom nav stay visible,
+       exactly like Categories). The modal remains only for the dashboard "all projects" route. */
+    function ProjectsView({ projects, setModal, deleteProject, editProject, reorderProjects }) {
+        const [confirmDel, setConfirmDel] = useState(null);
+        const list = (projects || []).filter((x) => !x.archived);
+        const prjHold = useHoldReorder(reorderProjects, "data-prjv", { radius: 16 });
+        const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null });
+        return (React.createElement("div", { className: "space-y-5 animate-in" },
+            React.createElement("div", { className: "flex items-center justify-between gap-3" },
+                React.createElement("h1", { className: "font-display text-2xl font-bold" }, tr("Проєкти")),
+                React.createElement(Button, { onClick: () => openEdit(null) },
+                    React.createElement(Plus, { size: 16 }),
+                    " ",
+                    tr("Додати проєкт"))),
+            React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Зірочка — показувати проєкт на головному. Порядок змінюється перетягуванням.")),
+            list.length === 0 && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("Ще немає проєктів.")),
+            React.createElement("div", { ref: prjHold.containerRef, className: "space-y-2.5" }, list.map((x) => (React.createElement("div", Object.assign({ key: x.id, className: "flex items-center gap-3 rounded-2xl p-4", style: Object.assign({ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow)" }, holdDragStyle(prjHold.dragId === x.id, 16)) }, prjHold.itemProps(x.id)),
+                React.createElement("div", { className: "w-12 h-12 rounded-xl flex items-center justify-center shrink-0", style: { background: `${x.color || "var(--accent)"}22` } },
+                    React.createElement(Icon, { name: x.icon || "Home", size: 22, style: { color: x.color || "var(--accent)" } })),
+                React.createElement("p", { className: "text-sm font-medium flex-1 truncate" }, x.name),
+                React.createElement("button", { onClick: () => editProject(x.id, { fav: !x.fav }), className: "p-1.5 rounded-md shrink-0", "aria-label": tr("Обраний") },
+                    React.createElement(Star, { size: 16, fill: x.fav ? "var(--accent)" : "none", style: { color: x.fav ? "var(--accent)" : "var(--text-dim)" } })),
+                React.createElement("button", { onClick: () => openEdit(x), className: "p-1.5 rounded-md shrink-0", style: { color: "var(--text-dim)" } },
+                    React.createElement(Edit3, { size: 16 })),
+                confirmDel === x.id ? (React.createElement("button", { onClick: () => { deleteProject(x.id); setConfirmDel(null); }, className: "px-2 py-1 rounded-md text-[0.6875rem] font-bold shrink-0", style: { background: "var(--danger)", color: "#fff" } }, tr("Точно?"))) : (React.createElement("button", { onClick: () => { setConfirmDel(x.id); setTimeout(() => setConfirmDel((v) => (v === x.id ? null : v)), 2800); }, className: "p-1.5 rounded-md shrink-0", style: { color: "var(--text-dim)" } },
+                    React.createElement(Trash2, { size: 16 })))))))));
+    }
     function CategoriesView({ categories, setModal, archiveCategory, reorderCategories }) {
         const [tab, setTab] = useState("expense");
         const list = categories.filter((c) => c.type === tab);
@@ -5417,10 +5447,6 @@ window.__K3_START = function () {
                     React.createElement("div", { className: "w-12 h-12 rounded-xl flex items-center justify-center shrink-0", style: { background: `${c.color}22` } },
                         React.createElement(Icon, { name: c.icon, size: 22, style: { color: c.color } })),
                     React.createElement("p", { className: "text-sm font-medium flex-1 truncate" }, tr(c.name)),
-                    React.createElement("button", { onClick: () => reorderCategories(c.id, list[ci - 1].id), disabled: ci === 0, "aria-label": tr("Вгору"), className: "p-1.5 rounded-lg disabled:opacity-25", style: { color: "var(--text-dim)" } },
-                        React.createElement(ChevronUp, { size: 14 })),
-                    React.createElement("button", { onClick: () => reorderCategories(c.id, list[ci + 1].id), disabled: ci === list.length - 1, "aria-label": tr("Вниз"), className: "p-1.5 rounded-lg disabled:opacity-25", style: { color: "var(--text-dim)" } },
-                        React.createElement(ChevronDown, { size: 14 })),
                     React.createElement("button", { onClick: () => setModal({ type: "category", payload: c }), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
                         React.createElement(Edit3, { size: 14 })),
                     React.createElement("button", { onClick: () => archiveCategory(c.id), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
@@ -6603,7 +6629,7 @@ window.__K3_START = function () {
                     tr("Керувати категоріями"))),
             React.createElement(SettingsSection, { icon: Home, title: React.createElement(React.Fragment, null, tr("Проєкти")), open: openSec === "sec9", onToggle: () => setOpenSec(openSec === "sec9" ? "" : "sec9") },
                 React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Обʼєднуйте витрати за обʼєктами: квартира, будинок, авто, ремонт. Аналітика на головному покаже, скільки коштує кожен.")),
-                React.createElement(Button, { variant: "secondary", onClick: () => setModal && setModal({ type: "projects", origin: "settings" }) },
+                React.createElement(Button, { variant: "secondary", onClick: () => setView && setView("projects") },
                     React.createElement(Home, { size: 15 }),
                     " ",
                     tr("Керувати проєктами"))),
@@ -6642,8 +6668,8 @@ window.__K3_START = function () {
                         React.createElement("span", { className: "absolute top-0.5 w-6 h-6 rounded-full transition-all", style: { left: includeLoansInTotal ? 22 : 2, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.25)" } })))),
             React.createElement(Card, { className: "p-5" },
                 React.createElement("p", { className: "font-display font-semibold text-sm mb-1" }, tr("Розмір тексту")),
-                React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом.")),
-                React.createElement("div", { className: "grid grid-cols-4 gap-2" }, [["s", tr("Малий")], ["m", tr("Стандарт")], ["l", tr("Великий")], ["xl", tr("Дуже великий")]].map(([v, lbl]) => (React.createElement("button", { key: v, onClick: () => update({ uiScale: v }), className: "py-2 rounded-lg text-xs font-medium", style: { background: (uiScale || "m") === v ? "var(--accent)" : "var(--surface2)", color: (uiScale || "m") === v ? "var(--accent-ink)" : "var(--text)" } }, lbl))))),
+                React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом. «Дуже великий» розрахований на планшет або ноутбук.")),
+                React.createElement("div", { className: "grid grid-cols-4 gap-2" }, [["s", tr("Малий")], ["m", tr("Стандарт")], ["l", tr("Великий")], ["xl", tr("Дуже великий (планшет)")]].map(([v, lbl]) => (React.createElement("button", { key: v, onClick: () => update({ uiScale: v }), className: "py-2 rounded-lg text-xs font-medium", style: { background: (uiScale || "m") === v ? "var(--accent)" : "var(--surface2)", color: (uiScale || "m") === v ? "var(--accent-ink)" : "var(--text)" } }, lbl))))),
             React.createElement(Card, { className: "p-5" },
                 React.createElement("h3", { "data-tour": "setpin", className: "font-display font-semibold text-sm mb-1" }, tr("PIN-код")),
                 pin && !pinMode ? (React.createElement("div", null,
@@ -6983,10 +7009,6 @@ window.__K3_START = function () {
                     showArrows === false && (() => { const n = prjNet[x.id] || 0; return React.createElement("span", { className: "ml-auto tabular text-xs font-semibold shrink-0", style: { color: n >= 0 ? "var(--accent)" : "var(--danger)" } },
                         n >= 0 ? "+" : "−",
                         fmtMoney(Math.abs(n), baseCurrency)); })()),
-                showArrows !== false && React.createElement("button", { onClick: () => reorderProjects(x.id, list[xi - 1].id), disabled: xi === 0, "aria-label": tr("Вгору"), className: "p-1.5 rounded-md shrink-0 disabled:opacity-25", style: { color: "var(--text-dim)" } },
-                    React.createElement(ChevronUp, { size: 14 })),
-                showArrows !== false && React.createElement("button", { onClick: () => reorderProjects(x.id, list[xi + 1].id), disabled: xi === list.length - 1, "aria-label": tr("Вниз"), className: "p-1.5 rounded-md shrink-0 disabled:opacity-25", style: { color: "var(--text-dim)" } },
-                    React.createElement(ChevronDown, { size: 14 })),
                 React.createElement("button", { onClick: () => editProject(x.id, { fav: !x.fav }), className: "p-1.5 rounded-md shrink-0", "aria-label": tr("Обраний") },
                     React.createElement(Star, { size: 14, fill: x.fav ? "var(--accent)" : "none", style: { color: x.fav ? "var(--accent)" : "var(--text-dim)" } })),
                 React.createElement("button", { onClick: () => openEdit(x), className: "p-1.5 rounded-md shrink-0", style: { color: "var(--text-dim)" } },
@@ -8498,5 +8520,5 @@ window.__K3_START = function () {
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-03.3");</script></body>
+<script>console.log("K³ build: 2026-08-03.4");</script></body>
 </html>
