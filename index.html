@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.8"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.9"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1837,6 +1837,11 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Підкатегорії": "Subcategories",
+        "Відновити": "Restore",
+        "Видалити?": "Delete?",
+        "Видалити": "Delete",
+        "Підкатегорію видалено, операції перенесено в батьківську.": "Subcategory deleted; its transactions moved to the parent.",
         "Підкатегорія (необовʼязково)": "Subcategory (optional)",
         "Батьківська": "Parent",
         "Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом.": "Scales the whole interface — text, icons and buttons grow together.",
@@ -3219,6 +3224,20 @@ window.__K3_START = function () {
         const setCategoryBudgets = (map) => update({ categories: categories.map((x) => (x.type === "expense" && !x.archived && map[x.id] !== undefined ? { ...x, budget: map[x.id] } : x)) });
         const setBreakdownCats = (ids) => update({ breakdownCats: ids && ids.length ? ids : null });
         const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+        // Deleting a subcategory is safe: its transactions and recurring rules move to the parent.
+        const deleteSubcategory = (id) => {
+            const cat = categories.find((c) => c.id === id);
+            if (!cat || !cat.parentId)
+                return;
+            const pid = cat.parentId;
+            update({
+                categories: categories.filter((c) => c.id !== id),
+                transactions: transactions.map((t) => (t.categoryId === id ? { ...t, categoryId: pid } : t)),
+                recurring: recurring.map((r) => (r.categoryId === id ? { ...r, categoryId: pid } : r)),
+                breakdownCats: state.breakdownCats ? state.breakdownCats.filter((x) => x !== id) : state.breakdownCats,
+            });
+            setToast(tr("Підкатегорію видалено, операції перенесено в батьківську."));
+        };
         const archiveCategory = (id) => {
             const cat = categories.find((c) => c.id === id);
             if (cat && !cat.archived && categories.some((c) => c.parentId === id && !c.archived)) {
@@ -3930,7 +3949,7 @@ window.__K3_START = function () {
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { setView: setView, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
                         view === "loans" && (React.createElement(LoansView, { transactions: transactions, rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
-                        view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory, reorderCategories: reorderCategories })),
+                        view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory, reorderCategories: reorderCategories, deleteSubcategory: deleteSubcategory })),
                 view === "projects" && (React.createElement(ProjectsView, { projects: projects, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
                         view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort, cryptoWallets: cryptoWallets, addCryptoWallet: addCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, transferCrypto: transferCrypto })),
@@ -5621,10 +5640,39 @@ window.__K3_START = function () {
                 confirmDel === x.id ? (React.createElement("button", { onClick: () => { deleteProject(x.id); setConfirmDel(null); }, className: "px-2 py-1 rounded-md text-[0.6875rem] font-bold shrink-0", style: { background: "var(--danger)", color: "#fff" } }, tr("Точно?"))) : (React.createElement("button", { onClick: () => { setConfirmDel(x.id); setTimeout(() => setConfirmDel((v) => (v === x.id ? null : v)), 2800); }, className: "p-1.5 rounded-md shrink-0", style: { color: "var(--text-dim)" } },
                     React.createElement(Trash2, { size: 16 })))))))));
     }
-    function CategoriesView({ categories, setModal, archiveCategory, reorderCategories }) {
+    function CategoriesView({ categories, setModal, archiveCategory, reorderCategories, deleteSubcategory }) {
         const [tab, setTab] = useState("expense");
+        const [openSubs, setOpenSubs] = useState({}); // parentId -> expanded
+        const [pendingDel, setPendingDel] = useState(null); // child id awaiting the second tap
+        useEffect(() => { if (!pendingDel) return; const t = setTimeout(() => setPendingDel(null), 3500); return () => clearTimeout(t); }, [pendingDel]);
         const list = categories.filter((c) => c.type === tab && !c.parentId);
         const catHold = useHoldReorder(reorderCategories, "data-cat", { radius: 16 });
+        const subRow = (k) => React.createElement("div", { key: k.id, "data-catsub": k.id, className: `flex items-center gap-2.5 ${k.archived ? "opacity-50" : ""}` },
+            React.createElement("div", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: `${k.color}22` } },
+                React.createElement(Icon, { name: k.icon, size: 15, style: { color: k.color } })),
+            React.createElement("p", { className: "text-[0.8125rem] flex-1 truncate" }, tr(k.name)),
+            k.archived
+                ? React.createElement("button", { onClick: () => archiveCategory(k.id), className: "px-2 py-1 rounded-md text-[0.6875rem] font-medium", style: { color: "var(--accent)" } }, tr("Відновити"))
+                : React.createElement(React.Fragment, null,
+                    React.createElement("button", { onClick: () => setModal({ type: "category", payload: k }), className: "p-1 rounded-md", style: { color: "var(--text-dim)" } },
+                        React.createElement(Edit3, { size: 13 })),
+                    pendingDel === k.id
+                        ? React.createElement("button", { "data-delconfirm": k.id, onClick: () => { setPendingDel(null); deleteSubcategory(k.id); }, className: "px-2 py-1 rounded-md text-[0.6875rem] font-semibold", style: { background: "var(--danger)", color: "#fff" } }, tr("Видалити?"))
+                        : React.createElement("button", { "aria-label": tr("Видалити"), onClick: () => setPendingDel(k.id), className: "p-1 rounded-md", style: { color: "var(--text-dim)" } },
+                            React.createElement(Trash2, { size: 13 }))));
+        const subBlock = (c) => {
+            const allKids = categories.filter((k) => k.parentId === c.id);
+            const opened = !!openSubs[c.id];
+            return React.createElement(React.Fragment, null,
+                allKids.length > 0 && React.createElement("button", { type: "button", "data-subtoggle": c.id, onClick: () => setOpenSubs((p) => ({ ...p, [c.id]: !p[c.id] })), className: "mt-2 flex items-center gap-1.5 text-[0.8125rem]", style: { color: "var(--text-dim)" } },
+                    React.createElement(opened ? ChevronUp : ChevronDown, { size: 13 }),
+                    tr("Підкатегорії"), " (" + allKids.length + ")"),
+                (opened || allKids.length === 0) && !c.archived && React.createElement("div", { className: "mt-2 pl-6 space-y-1.5", style: allKids.length ? { borderLeft: "2px solid var(--border)", marginLeft: "1.4rem" } : {} },
+                    opened && allKids.map(subRow),
+                    React.createElement("button", { onClick: () => setModal({ type: "category", payload: { type: c.type, parentId: c.id } }), className: "flex items-center gap-1.5 text-[0.8125rem] py-1", style: { color: "var(--text-dim)" } },
+                        React.createElement(Plus, { size: 13 }),
+                        tr("Додати підкатегорію"))));
+        };
         return (React.createElement("div", { className: "space-y-5 animate-in" },
             React.createElement("div", { className: "flex items-center justify-between" },
                 React.createElement("h1", { className: "font-display font-bold text-2xl" }, tr("Категорії")),
@@ -5635,7 +5683,7 @@ window.__K3_START = function () {
             React.createElement("div", { className: "flex gap-2 text-sm" },
                 React.createElement("button", { onClick: () => setTab("expense"), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: tab === "expense" ? "var(--surface2)" : "transparent", color: tab === "expense" ? "var(--text)" : "var(--text-dim)" } }, tr("Витрати")),
                 React.createElement("button", { onClick: () => setTab("income"), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: tab === "income" ? "var(--surface2)" : "transparent", color: tab === "income" ? "var(--text)" : "var(--text-dim)" } }, tr("Доходи"))),
-            React.createElement("div", { ref: catHold.containerRef, className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-3" }, list.map((c, ci) => { const kids = categories.filter((k) => k.parentId === c.id && !k.archived); return (React.createElement("div", Object.assign({ key: c.id, style: holdDragStyle(catHold.dragId === c.id, 16) }, catHold.itemProps(c.id)),
+            React.createElement("div", { ref: catHold.containerRef, className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-3" }, list.map((c, ci) => (React.createElement("div", Object.assign({ key: c.id, style: holdDragStyle(catHold.dragId === c.id, 16) }, catHold.itemProps(c.id)),
                 React.createElement(Card, { className: `p-4 ${c.archived ? "opacity-50" : ""}` },
                     React.createElement("div", { className: "flex items-center gap-3" },
                         React.createElement("div", { className: "w-12 h-12 rounded-xl flex items-center justify-center shrink-0", style: { background: `${c.color}22` } },
@@ -5645,18 +5693,7 @@ window.__K3_START = function () {
                             React.createElement(Edit3, { size: 14 })),
                         React.createElement("button", { onClick: () => archiveCategory(c.id), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
                             React.createElement(Archive, { size: 14 }))),
-                    (kids.length > 0 || !c.archived) && React.createElement("div", { className: "mt-2.5 pl-6 space-y-1.5", style: { borderLeft: "2px solid var(--border)", marginLeft: "1.4rem" } },
-                        kids.map((k) => (React.createElement("div", { key: k.id, "data-catsub": k.id, className: "flex items-center gap-2.5" },
-                            React.createElement("div", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: `${k.color}22` } },
-                                React.createElement(Icon, { name: k.icon, size: 15, style: { color: k.color } })),
-                            React.createElement("p", { className: "text-[0.8125rem] flex-1 truncate" }, tr(k.name)),
-                            React.createElement("button", { onClick: () => setModal({ type: "category", payload: k }), className: "p-1 rounded-md", style: { color: "var(--text-dim)" } },
-                                React.createElement(Edit3, { size: 13 })),
-                            React.createElement("button", { onClick: () => archiveCategory(k.id), className: "p-1 rounded-md", style: { color: "var(--text-dim)" } },
-                                React.createElement(Archive, { size: 13 }))))),
-                        !c.archived && React.createElement("button", { onClick: () => setModal({ type: "category", payload: { type: c.type, parentId: c.id } }), className: "flex items-center gap-1.5 text-[0.8125rem] py-1", style: { color: "var(--text-dim)" } },
-                            React.createElement(Plus, { size: 13 }),
-                            tr("Додати підкатегорію")))))); }))));
+                    subBlock(c))))))));
     }
     /* ============================== GOALS ============================== */
     function GoalsView({ goals, setModal, baseCurrency, rates }) {
@@ -9131,5 +9168,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.8");</script></body>
+<script>console.log("K³ build: 2026-08-04.9");</script></body>
 </html>
