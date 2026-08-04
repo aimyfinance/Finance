@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -748,7 +748,8 @@ window.__K3_START = function () {
                     days.forEach((dd) => push(clampDay(y, m, dd)));
                 }
                 else if (freq === "quarterly") {
-                    if (((y - sy) * 12 + (m - sm)) % 3 === 0)
+                    const anchor = rule.month ? (rule.month - 1) : sm; // explicit anchor month or the start month
+                    if ((((m - anchor) % 3) + 3) % 3 === 0)
                         push(clampDay(y, m, rule.dayOfMonth || 1));
                 }
                 else if (freq === "yearly") {
@@ -778,7 +779,7 @@ window.__K3_START = function () {
         if (freq === "semimonthly")
             return tr("Двічі на місяць") + ": " + (rule.day1 || 1) + " " + tr("і") + " " + (rule.day2 || 15);
         if (freq === "quarterly")
-            return tr("Щокварталу") + ", " + (rule.dayOfMonth || 1) + tr("-го");
+            return tr("Щокварталу") + ", " + (rule.dayOfMonth || 1) + tr("-го") + (rule.month ? " (" + tr(MONTHS_UA[rule.month - 1]) + " +3)" : "");
         if (freq === "yearly")
             return tr("Щороку") + ", " + (rule.dayOfMonth || 1) + " " + tr(MONTHS_UA[(rule.month || 1) - 1]);
         return tr("Щомісяця") + " " + (rule.dayOfMonth || 1) + tr("-го");
@@ -1836,6 +1837,10 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "весь час": "all time",
+        "Весь час": "All time",
+        "Свій": "Custom",
+        "Місяць-якір (далі кожні 3 місяці)": "Anchor month (then every 3 months)",
         "Повторювати": "Repeat",
         "Періодичність": "Frequency",
         "Щодня": "Daily",
@@ -3916,7 +3921,7 @@ window.__K3_START = function () {
                                 React.createElement("div", { className: "flex gap-2 mt-2" },
                                     React.createElement(Button, { variant: "secondary", onClick: exportBackup }, tr("Зберегти копію")),
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[0.6875rem] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
-                        view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, update: update })),
+                        view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, projectsPeriod: state.projectsPeriod || null, update: update })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { setView: setView, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk })),
                         view === "loans" && (React.createElement(LoansView, { transactions: transactions, rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
@@ -4097,7 +4102,7 @@ window.__K3_START = function () {
             React.createElement(Button, { variant: "secondary", onClick: save }, "OK")));
     }
     /* ============================== DASHBOARD ============================== */
-    function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, carouselOrder, update }) {
+    function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, carouselOrder, projectsPeriod, update }) {
         const net = monthIncome - monthExpense;
         const recent = [...transactions].sort(byRecent).slice(0, 6);
         const activeAccounts = accounts.filter((a) => !a.archived);
@@ -4157,6 +4162,29 @@ window.__K3_START = function () {
         const periodExpense = periodTx.filter((t) => t.type === "expense").reduce((s, t) => s + txToBase(t, baseCurrency, rates), 0);
         const periodNet = periodIncome - periodExpense;
         const periodLabel = period === "day" ? tr("за сьогодні") : period === "month" ? tr("за місяць") : period === "year" ? tr("за рік") : tr("за період");
+        /* ---- Projects card has its own period, persisted in state (default: all time) ---- */
+        const prjMode = (projectsPeriod && projectsPeriod.mode) || "all";
+        let prjStart = "", prjEnd = "";
+        if (prjMode === "day") {
+            prjStart = isoD(nowD);
+            prjEnd = isoD(nowD);
+        }
+        else if (prjMode === "month") {
+            prjStart = isoD(new Date(nowD.getFullYear(), nowD.getMonth(), 1));
+            prjEnd = isoD(new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0));
+        }
+        else if (prjMode === "year") {
+            prjStart = isoD(new Date(nowD.getFullYear(), 0, 1));
+            prjEnd = isoD(new Date(nowD.getFullYear(), 11, 31));
+        }
+        else if (prjMode === "custom") {
+            prjStart = (projectsPeriod && projectsPeriod.from) || "";
+            prjEnd = (projectsPeriod && projectsPeriod.to) || "";
+        }
+        const prjInRange = (d) => (!prjStart || d >= prjStart) && (!prjEnd || d <= prjEnd);
+        const prjTx = transactions.filter((t) => (t.type === "income" || t.type === "expense") && prjInRange(t.date));
+        const prjLabel = prjMode === "all" ? tr("весь час") : prjMode === "day" ? tr("за сьогодні") : prjMode === "month" ? tr("за місяць") : prjMode === "year" ? tr("за рік") : tr("за період");
+        const setPrjPeriod = (mode, extra) => update && update({ projectsPeriod: { mode, from: (extra && extra.from) || (projectsPeriod && projectsPeriod.from) || "", to: (extra && extra.to) || (projectsPeriod && projectsPeriod.to) || "" } });
         const periodBreakdown = (() => {
             const m = {};
             const selSet = breakdownCats && breakdownCats.length ? new Set(breakdownCats) : null;
@@ -4379,16 +4407,21 @@ window.__K3_START = function () {
                                     React.createElement("span", { className: "tabular shrink-0", style: { color: "var(--text-dim)" } }, fmtMoney(k.value, baseCurrency))))))));
                         }))))),
                 projects && projects.filter((x) => !x.archived).length > 0 && (React.createElement(Card, { className: "p-5 overflow-hidden" },
-                    React.createElement("h3", { className: "font-display font-semibold text-sm mb-3" },
+                    React.createElement("h3", { className: "font-display font-semibold text-sm mb-2" },
                         tr("Проєкти"),
                         " (",
-                        periodLabel,
+                        prjLabel,
                         ")"),
-                    React.createElement("div", { className: "space-y-2" }, (() => { const act = projects.filter((x) => !x.archived); const favs = act.filter((x) => x.fav); return (favs.length ? favs : act).map((pj) => { let inc = 0, exp = 0; periodTx.forEach((t) => { if (t.projectId !== pj.id)
+                    React.createElement("div", { className: "flex flex-wrap gap-1.5 mb-3" }, [["all", tr("Весь час")], ["day", tr("День")], ["month", tr("Місяць")], ["year", tr("Рік")], ["custom", tr("Свій")]].map(([md, lb]) => (React.createElement("button", { type: "button", key: md, "data-prjper": md, onClick: () => setPrjPeriod(md), className: "px-2.5 py-1 rounded-full text-[0.6875rem] font-medium", style: { background: prjMode === md ? "var(--accent)" : "var(--surface2)", color: prjMode === md ? "var(--accent-ink)" : "var(--text-dim)" } }, lb)))),
+                    prjMode === "custom" && React.createElement("div", { className: "flex items-center gap-2 mb-3" },
+                        React.createElement(Input, { type: "date", value: (projectsPeriod && projectsPeriod.from) || "", onChange: (e) => setPrjPeriod("custom", { from: e.target.value }) }),
+                        React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, "\u2014"),
+                        React.createElement(Input, { type: "date", value: (projectsPeriod && projectsPeriod.to) || "", onChange: (e) => setPrjPeriod("custom", { to: e.target.value }) })),
+                    React.createElement("div", { className: "space-y-2" }, (() => { const act = projects.filter((x) => !x.archived); const favs = act.filter((x) => x.fav); return (favs.length ? favs : act).map((pj) => { let inc = 0, exp = 0; prjTx.forEach((t) => { if (t.projectId !== pj.id)
                         return; const v = txToBase(t, baseCurrency, rates); if (t.type === "income")
                         inc += v;
                     else if (t.type === "expense")
-                        exp += v; }); return { pj, inc, exp, net: inc - exp, act2: inc + exp }; }).sort((x, y) => y.act2 - x.act2).slice(0, 5); })().map(({ pj, inc, exp, net }) => (React.createElement("button", { type: "button", key: pj.id, className: "w-full min-w-0 flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" }, onClick: () => { setHistoryPreset({ type: "all", projectId: pj.id, from: pStart, to: pEnd }); setView("history"); } },
+                        exp += v; }); return { pj, inc, exp, net: inc - exp, act2: inc + exp }; }).sort((x, y) => y.act2 - x.act2).slice(0, 5); })().map(({ pj, inc, exp, net }) => (React.createElement("button", { type: "button", key: pj.id, className: "w-full min-w-0 flex items-center gap-2.5 rounded-xl px-3 py-2.5", style: { background: "var(--surface2)" }, onClick: () => { setHistoryPreset({ type: "all", projectId: pj.id, from: prjStart || undefined, to: prjEnd || undefined }); setView("history"); } },
                         React.createElement("span", { className: "w-7 h-7 rounded-lg flex items-center justify-center shrink-0", style: { background: (pj.color || "#8B93A3") + "22" } },
                             React.createElement(Icon, { name: pj.icon || "Home", size: 14, style: { color: pj.color || "var(--text-dim)" } })),
                         React.createElement("span", { className: "flex-1 min-w-0 text-left" },
@@ -4402,7 +4435,7 @@ window.__K3_START = function () {
                             net > 0.004 ? "+" : "",
                             fmtMoney(net, baseCurrency)),
                         React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } }))))),
-                    React.createElement("button", { type: "button", className: "w-full flex items-center justify-center gap-1 mt-2 text-xs font-medium", style: { color: "var(--accent)" }, onClick: () => setModal({ type: "projects", origin: "dashboard", payload: { from: pStart, to: pEnd } }) },
+                    React.createElement("button", { type: "button", className: "w-full flex items-center justify-center gap-1 mt-2 text-xs font-medium", style: { color: "var(--accent)" }, onClick: () => setModal({ type: "projects", origin: "dashboard", payload: { from: prjStart || null, to: prjEnd || null } }) },
                         tr("Всі проєкти"),
                         " ",
                         React.createElement(ChevronRight, { size: 12 }))))),
@@ -7295,7 +7328,7 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть рахунок"));
             if (!categoryId)
                 return setError(tr("Оберіть категорію"));
-            const data = { projectId: projectId || null, kind, title: title.trim(), mode, amount: Math.round(amt * 100) / 100, pocketId, categoryId, dayOfMonth: Number(dayOfMonth) || 1, startDate, frequency, weekday: frequency === "weekly" ? Number(weekday) : null, day1: frequency === "semimonthly" ? Number(day1) || 1 : null, day2: frequency === "semimonthly" ? Number(day2) || 15 : null, month: frequency === "yearly" ? Number(recMonth) || 1 : null };
+            const data = { projectId: projectId || null, kind, title: title.trim(), mode, amount: Math.round(amt * 100) / 100, pocketId, categoryId, dayOfMonth: Number(dayOfMonth) || 1, startDate, frequency, weekday: frequency === "weekly" ? Number(weekday) : null, day1: frequency === "semimonthly" ? Number(day1) || 1 : null, day2: frequency === "semimonthly" ? Number(day2) || 15 : null, month: (frequency === "yearly" || frequency === "quarterly") ? Number(recMonth) || 1 : null };
             if (existing && existing.id)
                 editRecurring(existing.id, data);
             else
@@ -7339,7 +7372,7 @@ window.__K3_START = function () {
                         React.createElement(Select, { value: String(day1), onChange: (e) => setDay1(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1)))),
                     React.createElement(Field, { label: tr("Другий день") },
                         React.createElement(Select, { value: String(day2), onChange: (e) => setDay2(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1))))),
-                frequency === "yearly" && React.createElement(Field, { label: tr("Місяць") },
+                (frequency === "yearly" || frequency === "quarterly") && React.createElement(Field, { label: frequency === "quarterly" ? tr("Місяць-якір (далі кожні 3 місяці)") : tr("Місяць") },
                     React.createElement(Select, { value: String(recMonth), onChange: (e) => setRecMonth(Number(e.target.value)) }, MONTHS_UA.map((mn, i) => React.createElement("option", { key: i + 1, value: i + 1 }, tr(mn))))),
                 (frequency === "monthly" || frequency === "quarterly" || frequency === "yearly") && React.createElement(Field, { label: tr("День місяця") },
                     React.createElement(Select, { value: String(dayOfMonth), onChange: (e) => setDayOfMonth(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1)))),
@@ -7996,6 +8029,7 @@ window.__K3_START = function () {
         const [recWeekday, setRecWeekday] = useState(null); // null = derive from the tx date
         const [recDay1, setRecDay1] = useState(1);
         const [recDay2, setRecDay2] = useState(15);
+        const [recMonthQ, setRecMonthQ] = useState(null); // null = derive from the tx date
         const [recMode, setRecMode] = useState("fixed");
         const [recDay, setRecDay] = useState(null);
         const [projectId, setProjectId] = useState(editing?.projectId || P.presetProjectId || "");
@@ -8103,7 +8137,7 @@ window.__K3_START = function () {
                     weekday: recFreq === "weekly" ? (recWeekday != null ? recWeekday : new Date(date + "T12:00:00").getDay()) : null,
                     day1: recFreq === "semimonthly" ? recDay1 : null,
                     day2: recFreq === "semimonthly" ? recDay2 : null,
-                    month: recFreq === "yearly" ? (+date.slice(5, 7) || 1) : null,
+                    month: recFreq === "yearly" ? (+date.slice(5, 7) || 1) : recFreq === "quarterly" ? (recMonthQ != null ? recMonthQ : (+date.slice(5, 7) || 1)) : null,
                     // this transaction counts as the first occurrence — the next one is due strictly later
                     lastDone: date };
             };
@@ -8249,6 +8283,10 @@ window.__K3_START = function () {
                         React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("і")),
                         React.createElement("span", { className: "w-20" },
                             React.createElement(Select, { value: String(recDay2), onChange: (e) => setRecDay2(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1))))),
+                    recFreq === "quarterly" && React.createElement("div", { className: "flex items-center gap-2 mb-2" },
+                        React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Місяць-якір (далі кожні 3 місяці)")),
+                        React.createElement("span", { className: "flex-1" },
+                            React.createElement(Select, { value: String(recMonthQ != null ? recMonthQ : (+date.slice(5, 7) || 1)), onChange: (e) => setRecMonthQ(Number(e.target.value)) }, MONTHS_UA.map((mn, mi) => React.createElement("option", { key: mi + 1, value: mi + 1 }, tr(mn)))))),
                     (recFreq === "monthly" || recFreq === "quarterly" || recFreq === "yearly") && React.createElement("div", { className: "flex items-center gap-2" },
                         React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("День місяця")),
                         React.createElement("span", { className: "w-20" },
@@ -9069,5 +9107,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.3");</script></body>
+<script>console.log("K³ build: 2026-08-04.5");</script></body>
 </html>
