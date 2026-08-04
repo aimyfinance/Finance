@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.10"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.11"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4455,7 +4455,7 @@ window.__K3_START = function () {
                                 fmtMoney(inc, baseCurrency),
                                 " \u00B7 \u2212",
                                 fmtMoney(exp, baseCurrency))),
-                        React.createElement("span", { className: "tabular text-sm font-semibold shrink-0", style: { color: net > 0.004 ? "var(--accent)" : net < -0.004 ? "var(--danger)" : "var(--text-dim)" } },
+                        React.createElement("span", { className: "tabular text-sm font-semibold shrink-0", style: { color: net > 0.004 ? "var(--income, #2F8F5B)" : net < -0.004 ? "var(--danger)" : "var(--text-dim)" } },
                             net > 0.004 ? "+" : "",
                             fmtMoney(net, baseCurrency)),
                         React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } }))))),
@@ -5374,7 +5374,7 @@ window.__K3_START = function () {
                             React.createElement("span", { className: "text-[0.6875rem] font-normal", style: { color: "var(--text-dim)" } },
                                 "\u00B7 ",
                                 "P&L")),
-                        React.createElement("span", { className: "tabular text-sm font-bold shrink-0", style: { color: net >= 0 ? "var(--accent)" : "var(--danger)" } },
+                        React.createElement("span", { className: "tabular text-sm font-bold shrink-0", style: { color: net >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
                             net >= 0 ? "+" : "−",
                             fmtMoney(Math.abs(net), baseCurrency)),
                         React.createElement(ChevronDown, { size: 15, className: "shrink-0 transition-transform", style: { color: "var(--text-dim)", transform: prjPnlOpen ? "rotate(180deg)" : "none" } })),
@@ -5394,7 +5394,7 @@ window.__K3_START = function () {
                                 React.createElement("span", { className: "text-xs font-semibold flex items-center gap-1.5" },
                                     tr("Разом"),
                                     React.createElement("button", { onClick: () => setPrjPnlInfo(!prjPnlInfo), "aria-label": "info", className: "w-5 h-5 rounded-full border text-[0.625rem] font-semibold", style: { borderColor: prjPnlInfo ? "var(--accent)" : "var(--border)", color: prjPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "i")),
-                                React.createElement("span", { className: "tabular font-display font-bold text-base", style: { color: net >= 0 ? "var(--accent)" : "var(--danger)" } },
+                                React.createElement("span", { className: "tabular font-display font-bold text-base", style: { color: net >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
                                     net >= 0 ? "+" : "−",
                                     fmtMoney(Math.abs(net), baseCurrency)))),
                         prjPnlInfo && (React.createElement("p", { className: "text-[0.6875rem] mt-2.5 px-3 py-2 rounded-lg", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
@@ -9170,5 +9170,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.10");</script></body>
+<script>console.log("K³ build: 2026-08-04.11");</script></body>
 </html>
