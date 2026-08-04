@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.13"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.14"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1837,6 +1837,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Ваші емоджі": "Your emojis",
         "Редагувати підкатегорію": "Edit subcategory",
         "Змінити іконку": "Change icon",
         "Фінанси": "Finance",
@@ -3236,6 +3237,13 @@ window.__K3_START = function () {
         const setCategoryBudgets = (map) => update({ categories: categories.map((x) => (x.type === "expense" && !x.archived && map[x.id] !== undefined ? { ...x, budget: map[x.id] } : x)) });
         const setBreakdownCats = (ids) => update({ breakdownCats: ids && ids.length ? ids : null });
         const editCategory = (id, patch) => update({ categories: categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+        const customEmojis = state.customEmojis || [];
+        const addCustomEmoji = (e) => {
+            const em = (e || "").trim();
+            if (!em)
+                return;
+            update({ customEmojis: [em, ...customEmojis.filter((x) => x !== em)].slice(0, 18) });
+        };
         // Deleting a subcategory is safe: its transactions and recurring rules move to the parent.
         const deleteSubcategory = (id) => {
             const cat = categories.find((c) => c.id === id);
@@ -3986,7 +3994,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, state: state, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, state: state, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -7494,7 +7502,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, state, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings }) {
+    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, state, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings, customEmojis, addCustomEmoji }) {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
@@ -7506,9 +7514,9 @@ window.__K3_START = function () {
             if (modal.type === "cardMenu")
                 return React.createElement(CardMenuModal, { onClose: close, onBack: modal.returnTo ? close : undefined, pocketId: modal.payload, returnTo: modal.returnTo, pockets: pockets, getPocket: getPocket, setModal: setModal, archivePocket: archivePocket, deletePocket: deletePocket, movePocket: movePocket });
             if (modal.type === "category")
-                return React.createElement(CategoryModal, { onClose: close, existing: modal.payload, addCategory: addCategory, editCategory: editCategory, categories: categories });
+                return React.createElement(CategoryModal, { onClose: close, existing: modal.payload, addCategory: addCategory, editCategory: editCategory, categories: categories, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji });
             if (modal.type === "transaction")
-                return React.createElement(TransactionModal, { onClose: close, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory });
+                return React.createElement(TransactionModal, { onClose: close, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji });
             if (modal.type === "transfer")
                 return React.createElement(TransferExchangeModal, { onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, accounts: accounts, pockets: pockets, rates: rates, addTransaction: addTransaction, pocketBalance: pocketBalance });
             if (modal.type === "exchange")
@@ -7989,7 +7997,7 @@ window.__K3_START = function () {
         ["Природа й улюбленці", ["🐶","🐱","🌿"]],
     ];
     const K3_EMOJI_CHOICES = K3_EMOJI_GROUPS.flatMap((g) => g[1]);
-    function IconPickerField({ icon, setIcon, color }) {
+    function IconPickerField({ icon, setIcon, color, customEmojis, onCustomEmoji }) {
         const [open, setOpen] = useState(false);
         const [custom, setCustom] = useState("");
         const tint = color || "var(--accent)";
@@ -8004,14 +8012,18 @@ window.__K3_START = function () {
                 React.createElement("div", { className: "grid grid-cols-6 gap-2 max-h-40 overflow-y-auto p-0.5" }, ICON_CHOICES.map((k) => (React.createElement("button", { type: "button", key: k, onClick: () => { setIcon(k); setOpen(false); }, className: "w-12 h-12 rounded-xl flex items-center justify-center", style: { background: icon === k ? "var(--accent)" : "var(--surface2)" } },
                     React.createElement(Icon, { name: k, size: 22, style: { color: icon === k ? "#08110D" : "var(--text-dim)" } }))))),
                 React.createElement("span", { className: "block text-xs font-medium", style: { color: "var(--text-dim)" } }, tr("Або оберіть емоджі")),
-                React.createElement("div", { className: "max-h-56 overflow-y-auto p-0.5 space-y-2" }, K3_EMOJI_GROUPS.map(([gname, glist]) => (React.createElement("div", { key: gname },
+                React.createElement("div", { className: "max-h-56 overflow-y-auto p-0.5 space-y-2" },
+                    (customEmojis && customEmojis.length > 0) && React.createElement("div", { key: "__custom" },
+                        React.createElement("p", { className: "text-[0.6875rem] mb-1 font-medium", style: { color: "var(--text-dim)" } }, tr("Ваші емоджі")),
+                        React.createElement("div", { className: "grid grid-cols-6 gap-2" }, customEmojis.map((e) => (React.createElement("button", { type: "button", key: e, "data-customemoji": e, onClick: () => { setIcon(e); onCustomEmoji && onCustomEmoji(e); setOpen(false); }, className: "w-12 h-12 rounded-xl flex items-center justify-center text-2xl", style: { background: icon === e ? "var(--accent)" : "var(--surface2)" } }, e))))),
+                    K3_EMOJI_GROUPS.map(([gname, glist]) => (React.createElement("div", { key: gname },
                     React.createElement("p", { className: "text-[0.6875rem] mb-1 font-medium", style: { color: "var(--text-dim)" } }, tr(gname)),
                     React.createElement("div", { className: "grid grid-cols-6 gap-2" }, glist.map((e) => (React.createElement("button", { type: "button", key: e, onClick: () => { setIcon(e); setOpen(false); }, className: "w-12 h-12 rounded-xl flex items-center justify-center text-2xl", style: { background: icon === e ? "var(--accent)" : "var(--surface2)" } }, e)))))))),
                 React.createElement("div", { className: "flex gap-2 items-center" },
                     React.createElement(Input, { value: custom, onChange: (e) => setCustom(e.target.value), placeholder: tr("Свій емоджі з клавіатури…"), maxLength: 4 }),
-                    React.createElement(Button, { variant: "secondary", disabled: !custom.trim(), onClick: () => { setIcon(custom.trim()); setCustom(""); setOpen(false); } }, tr("Обрати")))))));
+                    React.createElement(Button, { variant: "secondary", disabled: !custom.trim(), onClick: () => { const em = custom.trim(); setIcon(em); onCustomEmoji && onCustomEmoji(em); setCustom(""); setOpen(false); } }, tr("Обрати")))))));
     }
-    function CategoryModal({ onClose, existing, addCategory, editCategory, categories }) {
+    function CategoryModal({ onClose, existing, addCategory, editCategory, categories, customEmojis, addCustomEmoji }) {
         const isEdit = existing && existing.id;
         const [name, setName] = useState(existing?.name || "");
         const [type, setType] = useState(existing?.type || "expense");
@@ -8057,7 +8069,7 @@ window.__K3_START = function () {
                     parentOptions.map((c) => React.createElement("option", { key: c.id, value: c.id }, tr(c.name)))))),
             React.createElement("div", { className: "block mb-3" },
                 React.createElement("span", { className: "block text-xs font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Іконка")),
-                React.createElement(IconPickerField, { icon: icon, setIcon: setIcon, color: color })),
+                React.createElement(IconPickerField, { icon: icon, setIcon: setIcon, color: color, customEmojis: customEmojis, onCustomEmoji: addCustomEmoji })),
             React.createElement(Field, { label: tr("Колір") },
                 React.createElement("div", { className: "flex gap-2 flex-wrap" }, ACCOUNT_COLORS.map((c) => React.createElement("button", { key: c, onClick: () => setColor(c), className: "w-8 h-8 rounded-full", style: { background: c, border: color === c ? "2px solid var(--text)" : "2px solid transparent" } })))),
             effType === "expense" && !parentId && (React.createElement(Field, { label: tr("Місячний ліміт (бюджет), необовʼязково") },
@@ -8065,7 +8077,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти зміни") : tr("Створити категорію"))));
     }
     /* ---------- Transaction (income/expense) Modal ---------- */
-    function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, }) {
+    function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, customEmojis, addCustomEmoji, }) {
         const P = payload || {};
         const isIncome = kind === "income";
         const cats = categories.filter((c) => c.type === kind && !c.archived && !c.parentId);
@@ -8210,7 +8222,7 @@ window.__K3_START = function () {
                                     React.createElement("option", { value: "" }, tr("— без батьківської —")),
                                     cats.map((pc) => React.createElement("option", { key: pc.id, value: pc.id }, tr(pc.name)))))),
                         React.createElement("div", { className: "mt-2 p-2 rounded-xl", style: { background: "var(--surface)", border: "1px solid var(--border)" } },
-                            React.createElement(IconPickerField, { icon: newCatIcon, setIcon: setNewCatIcon })))));
+                            React.createElement(IconPickerField, { icon: newCatIcon, setIcon: setNewCatIcon, customEmojis: customEmojis, onCustomEmoji: addCustomEmoji })))));
         const submit = () => {
             const amt = parseFloat(String(amount).replace(",", "."));
             if (!amt || amt <= 0)
@@ -9210,5 +9222,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.13");</script></body>
+<script>console.log("K³ build: 2026-08-04.14");</script></body>
 </html>
