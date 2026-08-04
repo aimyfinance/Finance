@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -8240,8 +8240,8 @@ window.__K3_START = function () {
                                 React.createElement("option", { value: "yearly" }, tr("Щороку"))))),
                     recFreq === "weekly" && React.createElement("div", { className: "flex items-center gap-2" },
                         React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("День тижня")),
-                        React.createElement("span", { className: "w-24" },
-                            React.createElement(Select, { value: String(recWeekday != null ? recWeekday : new Date(date + "T12:00:00").getDay()), onChange: (e) => setRecWeekday(Number(e.target.value)) }, [1, 2, 3, 4, 5, 6, 0].map((w) => React.createElement("option", { key: w, value: w }, tr(["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"][w]))))),
+                        React.createElement("span", { className: "w-28" },
+                            React.createElement(Select, { value: String(recWeekday != null ? recWeekday : new Date(date + "T12:00:00").getDay()), onChange: (e) => setRecWeekday(Number(e.target.value)) }, [1, 2, 3, 4, 5, 6, 0].map((w) => React.createElement("option", { key: w, value: w }, tr(["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"][w])))))),
                     recFreq === "semimonthly" && React.createElement("div", { className: "flex items-center gap-2" },
                         React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Дні")),
                         React.createElement("span", { className: "w-20" },
@@ -8252,8 +8252,7 @@ window.__K3_START = function () {
                     (recFreq === "monthly" || recFreq === "quarterly" || recFreq === "yearly") && React.createElement("div", { className: "flex items-center gap-2" },
                         React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("День місяця")),
                         React.createElement("span", { className: "w-20" },
-                            React.createElement(Select, { value: String(recDay != null ? recDay : (+date.slice(8, 10) || 1)), onChange: (e) => setRecDay(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1))))),
-                    React.createElement("p", { className: "text-[0.6875rem] mt-1.5", style: { color: "var(--text-dim)" } }, recMode === "fixed" ? tr("Створюватиметься така сама операція з обраною періодичністю.") : tr("K³ питатиме фактичну суму карткою на головному з обраною періодичністю."))))))),
+                            React.createElement(Select, { value: String(recDay != null ? recDay : (+date.slice(8, 10) || 1)), onChange: (e) => setRecDay(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1))))))))),
             React.createElement(Field, { label: tr("Фото чеку (необов'язково, до 4)") },
                 receipts.length < MAX_RECEIPTS && React.createElement("input", { type: "file", accept: "image/*", multiple: true, onChange: handleReceipt, className: "text-xs", style: { color: "var(--text-dim)" } }),
                 receiptErr && React.createElement("p", { className: "text-xs mt-1", style: { color: "var(--danger)" } }, receiptErr),
@@ -9070,5 +9069,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.1");</script></body>
+<script>console.log("K³ build: 2026-08-04.2");</script></body>
 </html>
