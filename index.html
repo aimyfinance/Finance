@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.14"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.15"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4537,7 +4537,7 @@ window.__K3_START = function () {
                 React.createElement("div", { className: "space-y-3.5" }, budgetStatus.map((b) => {
                     const over = b.pct > 100;
                     const barColor = over ? "var(--danger)" : b.pct >= 80 ? "var(--warn)" : "var(--accent)";
-                    return (React.createElement("button", { type: "button", key: b.id, className: "w-full text-left block", onClick: () => { const y = nowD.getFullYear(), m = nowD.getMonth(); const pad2 = (n) => String(n).padStart(2, "0"); setHistoryPreset({ type: "expense", categoryId: b.id, from: y + "-" + pad2(m + 1) + "-01", to: y + "-" + pad2(m + 1) + "-" + pad2(new Date(y, m + 1, 0).getDate()) }); setView("history"); } },
+                    return (React.createElement("button", { type: "button", key: b.id, "data-budrow": b.id, className: "w-full text-left block", onClick: () => { const y = nowD.getFullYear(), m = nowD.getMonth(); const pad2 = (n) => String(n).padStart(2, "0"); setHistoryPreset({ type: "expense", categoryId: b.id, from: y + "-" + pad2(m + 1) + "-01", to: y + "-" + pad2(m + 1) + "-" + pad2(new Date(y, m + 1, 0).getDate()) }); setView("history"); } },
                         React.createElement("div", { className: "flex items-center justify-between text-xs mb-1.5 gap-2" },
                             React.createElement("span", { className: "flex items-center gap-1.5 font-medium min-w-0" },
                                 React.createElement(Icon, { name: b.icon, size: 13, style: { color: b.color } }),
@@ -9222,5 +9222,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.14");</script></body>
+<script>console.log("K³ build: 2026-08-04.15");</script></body>
 </html>
