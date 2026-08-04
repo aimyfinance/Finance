@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4402,7 +4402,7 @@ window.__K3_START = function () {
                             net > 0.004 ? "+" : "",
                             fmtMoney(net, baseCurrency)),
                         React.createElement(ChevronRight, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } }))))),
-                    React.createElement("button", { type: "button", className: "w-full flex items-center justify-center gap-1 mt-2 text-xs font-medium", style: { color: "var(--accent)" }, onClick: () => setModal({ type: "projects", origin: "dashboard" }) },
+                    React.createElement("button", { type: "button", className: "w-full flex items-center justify-center gap-1 mt-2 text-xs font-medium", style: { color: "var(--accent)" }, onClick: () => setModal({ type: "projects", origin: "dashboard", payload: { from: pStart, to: pEnd } }) },
                         tr("Всі проєкти"),
                         " ",
                         React.createElement(ChevronRight, { size: 12 }))))),
@@ -7136,7 +7136,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
     // ---------- Projects: manager + editor ----------
-    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, reorderProjects, origin, showArrows, setView, setHistoryPreset, rates, baseCurrency }) {
+    function ProjectsListModal({ onClose, projects, transactions, setModal, deleteProject, editProject, reorderProjects, origin, showArrows, setView, setHistoryPreset, rates, baseCurrency, periodFrom, periodTo }) {
         const [confirmDel, setConfirmDel] = useState(null);
         const list = (projects || []).filter((x) => !x.archived);
         const openEdit = (x) => setModal({ type: "projectEdit", payload: x || null, returnTo: { type: "projects", origin: origin } });
@@ -7160,7 +7160,7 @@ window.__K3_START = function () {
             list.length > 0 && React.createElement("p", { className: "text-[0.6875rem] mb-2", style: { color: "var(--text-dim)" } }, tr("Зірочка — показувати проєкт на головному.")),
             React.createElement("div", { ref: prjHold.containerRef, className: "space-y-2.5 mb-3" }, list.map((x, xi) => (React.createElement("div", Object.assign({ key: x.id, className: "flex items-center gap-2.5 rounded-xl p-3", style: Object.assign({ background: "var(--surface2)", border: "1px solid var(--border)" }, holdDragStyle(prjHold.dragId === x.id, 12)) }, prjHold.itemProps(x.id)),
                 React.createElement("button", { type: "button", className: "flex items-center gap-2.5 flex-1 min-w-0 text-left", onClick: () => { if (setHistoryPreset && setView) {
-                        setHistoryPreset({ type: "all", projectId: x.id, origin: "projects" });
+                        setHistoryPreset({ type: "all", projectId: x.id, origin: "projects", from: periodFrom || undefined, to: periodTo || undefined });
                         setView("history");
                         onClose();
                     } } },
@@ -7447,7 +7447,7 @@ window.__K3_START = function () {
             if (modal.type === "recurringEdit")
                 return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
             if (modal.type === "projects")
-                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, origin: modal.origin, showArrows: modal.origin !== "dashboard", setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency });
+                return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, origin: modal.origin, showArrows: modal.origin !== "dashboard", setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency, periodFrom: (modal.payload || {}).from || null, periodTo: (modal.payload || {}).to || null });
             if (modal.type === "projectEdit")
                 return React.createElement(ProjectEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, addProject: addProject, editProject: editProject });
             if (modal.type === "loanEdit")
@@ -9069,5 +9069,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.2");</script></body>
+<script>console.log("K³ build: 2026-08-04.3");</script></body>
 </html>
