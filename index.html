@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.9"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.10"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4705,7 +4705,9 @@ window.__K3_START = function () {
             amountStr = `+${fmtMoney(tx.amount, tx.currency)}`;
             amountColor = "var(--income, #2F8F5B)";
         }
-        const TypeIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : (ICONS[cat?.icon] || MoreHorizontal);
+        const specialIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : null;
+        // plain income/expense rows go through the emoji-aware Icon component
+        const TypeIcon = specialIcon || ((p) => React.createElement(Icon, Object.assign({ name: cat?.icon || "MoreHorizontal" }, p)));
         if (tx.coinId && !tx.pocketId)
             sub = tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "");
         else if (tx.loanId && !tx.pocketId && (tx.type === "loan_return" || tx.type === "debt_repay"))
@@ -9168,5 +9170,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.9");</script></body>
+<script>console.log("K³ build: 2026-08-04.10");</script></body>
 </html>
