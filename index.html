@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.7"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1837,6 +1837,10 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Батьківська": "Parent",
+        "Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом.": "Scales the whole interface — text, icons and buttons grow together.",
+        "«Дуже великий» розрахований на планшет або ноутбук.": "“Extra large” is meant for a tablet or laptop.",
+        "Дуже великий": "Extra large",
         "весь час": "all time",
         "Весь час": "All time",
         "Свій": "Custom",
@@ -6869,8 +6873,11 @@ window.__K3_START = function () {
                         React.createElement("span", { className: "absolute top-0.5 w-6 h-6 rounded-full transition-all", style: { left: includeLoansInTotal ? 22 : 2, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.25)" } })))),
             React.createElement(Card, { className: "p-5" },
                 React.createElement("p", { className: "font-display font-semibold text-sm mb-1" }, tr("Розмір тексту")),
-                React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом. «Дуже великий» розрахований на планшет або ноутбук.")),
-                React.createElement("div", { className: "grid grid-cols-4 gap-2" }, [["s", tr("Малий")], ["m", tr("Стандарт")], ["l", tr("Великий")], ["xl", tr("Дуже великий (планшет)")]].map(([v, lbl]) => (React.createElement("button", { key: v, onClick: () => update({ uiScale: v }), className: "py-2 rounded-lg text-xs font-medium", style: { background: (uiScale || "m") === v ? "var(--accent)" : "var(--surface2)", color: (uiScale || "m") === v ? "var(--accent-ink)" : "var(--text)" } }, lbl))))),
+                React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } },
+                    tr("Масштабує весь інтерфейс — текст, іконки й кнопки збільшуються разом."),
+                    " ",
+                    React.createElement("strong", null, tr("«Дуже великий» розрахований на планшет або ноутбук."))),
+                React.createElement("div", { className: "grid grid-cols-4 gap-2" }, [["s", tr("Малий")], ["m", tr("Стандарт")], ["l", tr("Великий")], ["xl", tr("Дуже великий")]].map(([v, lbl]) => (React.createElement("button", { key: v, onClick: () => update({ uiScale: v }), className: "py-2 rounded-lg text-xs font-medium", style: { background: (uiScale || "m") === v ? "var(--accent)" : "var(--surface2)", color: (uiScale || "m") === v ? "var(--accent-ink)" : "var(--text)" } }, lbl))))),
             React.createElement(Card, { className: "p-5" },
                 React.createElement("h3", { "data-tour": "setpin", className: "font-display font-semibold text-sm mb-1" }, tr("PIN-код")),
                 pin && !pinMode ? (React.createElement("div", null,
@@ -8022,6 +8029,7 @@ window.__K3_START = function () {
         const [newCatMode, setNewCatMode] = useState(false);
         const [newCatName, setNewCatName] = useState("");
         const [newCatIcon, setNewCatIcon] = useState("MoreHorizontal");
+        const [newCatParent, setNewCatParent] = useState(""); // "" = top-level
         const [date, setDate] = useState(editing?.date || P.presetDate || new Date().toISOString().slice(0, 10));
         const [receipts, setReceipts] = useState(() => txReceipts(editing));
         const [recOn, setRecOn] = useState(false);
@@ -8102,11 +8110,12 @@ window.__K3_START = function () {
             const name = newCatName.trim();
             if (!name)
                 return;
-            const created = addCategory && addCategory({ name, type: kind, icon: newCatIcon || "MoreHorizontal", color: CAT_COLORS[categories.length % CAT_COLORS.length] });
+            const created = addCategory && addCategory({ name, type: kind, icon: newCatIcon || "MoreHorizontal", color: CAT_COLORS[categories.length % CAT_COLORS.length], parentId: newCatParent || null, budget: null });
             if (created && created.id) {
                 setCategoryId(created.id);
                 setNewCatMode(false);
                 setNewCatName("");
+                setNewCatParent("");
                 setCatOpen(false);
                 setError("");
             }
@@ -8196,26 +8205,35 @@ window.__K3_START = function () {
                         React.createElement(Icon, { name: selCat ? selCat.icon : "Tags", size: 15, style: { color: selCat ? selCat.color : "var(--text-dim)" } })),
                     React.createElement("span", { className: "flex-1 min-w-0 text-sm font-medium truncate", style: { color: selCat ? "var(--text)" : "var(--text-dim)" } }, selCat ? selCatLabel : tr("Обрати категорію")),
                     React.createElement(ChevronDown, { size: 16, style: { color: "var(--text-dim)", flexShrink: 0 } }))) : (React.createElement("div", null,
-                    React.createElement("div", { className: "grid grid-cols-4 gap-2" },
+                    !subFor && React.createElement("div", { className: "grid grid-cols-4 gap-2" },
                         cats.map((c) => { const kids = catChildrenOf(categories, c.id); const active = categoryId === c.id || (selCatRaw && selCatRaw.parentId === c.id); return (React.createElement("button", { type: "button", key: c.id, onClick: () => { setCategoryId(c.id); setError(""); if (kids.length) { setSubFor(c.id); } else { setSubFor(null); setCatOpen(false); } }, className: "flex flex-col items-center gap-1 p-2 rounded-xl", style: { background: active ? "var(--surface2)" : "transparent", border: active ? `1px solid ${c.color}` : "1px solid var(--border)" } },
                             React.createElement(Icon, { name: c.icon, size: 16, style: { color: c.color } }),
                             React.createElement("span", { className: "text-[0.625rem] text-center leading-tight", style: { color: "var(--text)" } }, tr(c.name) + (kids.length ? " ›" : "")))); }),
-                        React.createElement("button", { type: "button", onClick: () => { setNewCatMode(true); setNewCatName(""); setNewCatIcon("MoreHorizontal"); }, className: "flex flex-col items-center justify-center gap-1 p-2 rounded-xl", style: { border: "1px dashed var(--border)", color: "var(--text-dim)" } },
+                        React.createElement("button", { type: "button", onClick: () => { setNewCatMode(true); setNewCatName(""); setNewCatIcon("MoreHorizontal"); setNewCatParent(""); setSubFor(null); }, className: "flex flex-col items-center justify-center gap-1 p-2 rounded-xl", style: { border: "1px dashed var(--border)", color: "var(--text-dim)" } },
                             React.createElement(Plus, { size: 16 }),
                             React.createElement("span", { className: "text-[0.625rem] leading-tight" }, tr("Нова")))),
                     subFor && (() => { const par = categories.find((c) => c.id === subFor); const kids = catChildrenOf(categories, subFor); if (!par || !kids.length) return null; return React.createElement("div", { className: "mt-2 p-2 rounded-xl", style: { background: "var(--surface)", border: "1px solid var(--border)" } },
-                        React.createElement("p", { className: "text-[0.6875rem] mb-1.5", style: { color: "var(--text-dim)" } }, tr(par.name) + " — " + tr("оберіть підкатегорію")),
+                        React.createElement("button", { type: "button", onClick: () => setSubFor(null), className: "flex items-center gap-1 text-[0.6875rem] mb-1.5", style: { color: "var(--text-dim)" } }, React.createElement(ChevronLeft, { size: 12 }), tr(par.name) + " — " + tr("оберіть підкатегорію")),
                         React.createElement("div", { className: "flex flex-wrap gap-1.5" },
                             React.createElement("button", { type: "button", onClick: () => { setCategoryId(par.id); setSubFor(null); setCatOpen(false); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-medium", style: { background: categoryId === par.id ? "var(--accent)" : "var(--surface2)", color: categoryId === par.id ? "var(--accent-ink)" : "var(--text)" } }, tr("Загальна")),
                             kids.map((k) => (React.createElement("button", { type: "button", key: k.id, onClick: () => { setCategoryId(k.id); setSubFor(null); setCatOpen(false); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1", style: { background: categoryId === k.id ? "var(--accent)" : "var(--surface2)", color: categoryId === k.id ? "var(--accent-ink)" : "var(--text)" } },
                                 React.createElement(Icon, { name: k.icon, size: 12, style: { color: categoryId === k.id ? "var(--accent-ink)" : k.color } }),
-                                tr(k.name)))))); })(),
+                                tr(k.name)))),
+                            React.createElement("button", { type: "button", onClick: () => { setNewCatMode(true); setNewCatName(""); setNewCatIcon("MoreHorizontal"); setNewCatParent(par.id); setSubFor(null); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1", style: { border: "1px dashed var(--border)", color: "var(--text-dim)" } },
+                                React.createElement(Plus, { size: 11 }),
+                                tr("Нова")))); })(),
                     newCatMode && (React.createElement("div", { className: "mt-2" },
                         React.createElement("div", { className: "flex items-center gap-2" },
                             React.createElement(Input, { value: newCatName, onChange: (e) => setNewCatName(e.target.value), placeholder: tr("Назва категорії"), autoFocus: true }),
                             React.createElement(Button, { variant: "secondary", onClick: createCat }, "OK"),
                             React.createElement("button", { type: "button", onClick: () => setNewCatMode(false), className: "p-1.5 shrink-0", style: { color: "var(--text-dim)" } },
                                 React.createElement(X, { size: 14 }))),
+                        React.createElement("div", { className: "mt-2 flex items-center gap-2" },
+                            React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Батьківська")),
+                            React.createElement("span", { className: "flex-1" },
+                                React.createElement(Select, { value: newCatParent, onChange: (e) => setNewCatParent(e.target.value) },
+                                    React.createElement("option", { value: "" }, tr("— без батьківської —")),
+                                    cats.map((pc) => React.createElement("option", { key: pc.id, value: pc.id }, tr(pc.name)))))),
                         React.createElement("div", { className: "mt-2 p-2 rounded-xl", style: { background: "var(--surface)", border: "1px solid var(--border)" } },
                             React.createElement(IconPickerField, { icon: newCatIcon, setIcon: setNewCatIcon }))))))),
             React.createElement(Field, { label: tr("Проєкт (необовʼязково)") },
@@ -9107,5 +9125,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.5");</script></body>
+<script>console.log("K³ build: 2026-08-04.7");</script></body>
 </html>
