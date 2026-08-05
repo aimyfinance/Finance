@@ -349,7 +349,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-05.9"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-05.10"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4398,7 +4398,7 @@ window.__K3_START = function () {
             React.createElement("div", { "data-tour": "total" },
                 React.createElement("div", { className: "flex items-center gap-2" },
                     React.createElement("p", { className: "text-sm mb-1", style: { color: "var(--text-dim)" } }, tr("Загальний капітал")),
-                    React.createElement("button", { onClick: () => setShowTotalHint((v) => !v), "aria-label": tr("Як читати цю суму"), className: "w-5 h-5 rounded-full border flex items-center justify-center font-display font-bold text-[0.625rem] shrink-0", style: { borderColor: showTotalHint ? "var(--accent)" : "var(--border)", color: showTotalHint ? "var(--accent)" : "var(--text-dim)", background: showTotalHint ? "rgba(201,163,98,0.10)" : "transparent" } }, "\u0456")),
+                    React.createElement("button", { onClick: () => setShowTotalHint((v) => !v), "aria-label": tr("Як читати цю суму"), className: "w-6 h-6 rounded-full border flex items-center justify-center font-display font-bold text-[0.8125rem] shrink-0", style: { borderColor: showTotalHint ? "var(--accent)" : "var(--border)", color: showTotalHint ? "var(--accent)" : "var(--text-dim)", background: showTotalHint ? "rgba(201,163,98,0.10)" : "transparent" } }, "\u0456")),
                 React.createElement("h1", { onClick: toggleHide, className: "font-display font-extrabold text-4xl md:text-5xl tabular cursor-pointer select-none", style: { color: "var(--text)", WebkitUserSelect: "none" }, title: tr("Тап — склад суми · подвійний тап — приховати") }, hideTotal ? React.createElement("span", { className: "font-normal text-2xl" }, "$$$$$$$$$$") : fmtMoney(totalInBase + (cryptoTotalBase || 0) + (loansNetBase || 0), baseCurrency)),
                 showBreak && React.createElement("div", { className: "flex flex-wrap gap-2 mt-3" },
                     Object.entries(byCurrencyTotals).map(([cur, val]) => React.createElement(Badge, { key: cur, color: "var(--accent2)" }, hideTotal ? "••••" : fmtMoney(val, cur))),
@@ -4406,7 +4406,7 @@ window.__K3_START = function () {
                     includeLoansInTotal && totalLoanedOut > 0 && React.createElement(Badge, { color: "var(--warn)" }, hideTotal ? "••••" : `↗ ${fmtMoney(totalLoanedOut, baseCurrency)}`),
                     includeLoansInTotal && totalOwed > 0 && React.createElement(Badge, { color: "var(--danger)" }, hideTotal ? "••••" : `↘ −${fmtMoney(totalOwed, baseCurrency)}`)),
                 showTotalHint && (React.createElement("div", { className: "flex items-start gap-2.5 rounded-2xl p-3.5 mt-3 animate-in", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
-                    React.createElement("span", { className: "w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.6875rem]", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } }, "\u0456"),
+                    React.createElement("span", { className: "w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.8125rem]", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } }, "\u0456"),
                     React.createElement("div", { className: "min-w-0 flex-1 text-xs leading-relaxed", style: { color: "var(--text)" } },
                         React.createElement("p", { className: "font-semibold mb-1" }, tr("Як читати цю суму")),
                         React.createElement("p", null, tr("Один тап по сумі — розгортає склад капіталу: валюти, крипто-портфель, видані позики й борги. Подвійний тап — маскує суму крапками; ще один подвійний — показує знову."))),
@@ -5468,7 +5468,7 @@ window.__K3_START = function () {
                     React.createElement("button", { onClick: () => setShowFilters(!showFilters), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)" } },
                         React.createElement(Filter, { size: 16 })))),
             showImportHint && (React.createElement("div", { className: "flex items-start gap-2.5 rounded-2xl p-3.5 animate-in", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
-                React.createElement("span", { className: "w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.6875rem]", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } }, "\u0456"),
+                React.createElement("span", { className: "w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.8125rem]", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } }, "\u0456"),
                 React.createElement("div", { className: "min-w-0 flex-1 text-xs leading-relaxed", style: { color: "var(--text)" } },
                     React.createElement("p", { className: "font-semibold mb-1" }, tr("Як імпортувати виписку")),
                     React.createElement("p", null, tr("Вивантажте з банку виписку у форматі CSV. Натисніть «Імпорт», оберіть рахунок і файл — застосунок сам розпізнає колонки (дата, сума, опис) і розкладе операції за категоріями. Мінус — витрата, плюс — дохід. Перевірте список, зніміть галочки із зайвого й підтвердіть."))),
@@ -5582,7 +5582,7 @@ window.__K3_START = function () {
                             React.createElement("div", { className: "pt-1.5 flex items-center justify-between", style: { borderTop: "1px solid var(--border)" } },
                                 React.createElement("span", { className: "text-xs font-semibold flex items-center gap-1.5" },
                                     tr("Разом"),
-                                    React.createElement("button", { onClick: () => setPrjPnlInfo(!prjPnlInfo), "aria-label": "info", className: "w-5 h-5 rounded-full border text-[0.625rem] font-semibold", style: { borderColor: prjPnlInfo ? "var(--accent)" : "var(--border)", color: prjPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "i")),
+                                    React.createElement("button", { onClick: () => setPrjPnlInfo(!prjPnlInfo), "aria-label": "info", className: "w-6 h-6 rounded-full border font-display font-bold text-[0.8125rem]", style: { borderColor: prjPnlInfo ? "var(--accent)" : "var(--border)", color: prjPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "\u0456")),
                                 React.createElement("span", { className: "tabular font-display font-bold text-base", style: { color: net >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
                                     net >= 0 ? "+" : "−",
                                     fmtMoney(Math.abs(net), baseCurrency)))),
@@ -9588,5 +9588,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-05.9");</script></body>
+<script>console.log("K³ build: 2026-08-05.10");</script></body>
 </html>
