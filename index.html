@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.15"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-04.17"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1837,6 +1837,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Обрано": "Selected",
         "Ваші емоджі": "Your emojis",
         "Редагувати підкатегорію": "Edit subcategory",
         "Змінити іконку": "Change icon",
@@ -5162,14 +5163,43 @@ window.__K3_START = function () {
                 list.length === 0 && typeFilter !== "crypto" && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, showArchived ? tr("Архів порожній.") : tr("Немає рахунків у цій категорії")))));
     }
     /* ============================== HISTORY VIEW ============================== */
+    /* Collapsible checkbox multi-select for the history filters.
+       options: [{ value, label, indent?, parentValue? }]. Empty selection = "all".
+       A checked parent implies its whole nest: child rows render checked+disabled. */
+    function MultiPickField({ label, allLabel, options, selected, onChange }) {
+        const [open, setOpen] = useState(false);
+        const sel = selected || [];
+        const byVal = {};
+        options.forEach((o) => { byVal[o.value] = o; });
+        const names = sel.map((v) => (byVal[v] || {}).label).filter(Boolean);
+        const summary = sel.length === 0 ? allLabel : sel.length === 1 ? (names[0] || allLabel) : tr("Обрано") + ": " + sel.length;
+        const rowChecked = (o) => sel.includes(o.value) || (o.parentValue && sel.includes(o.parentValue));
+        const rowDisabled = (o) => !!(o.parentValue && sel.includes(o.parentValue));
+        const toggle = (o) => {
+            if (rowDisabled(o))
+                return;
+            onChange(sel.includes(o.value) ? sel.filter((x) => x !== o.value) : [...sel, o.value]);
+        };
+        return (React.createElement(Field, { label: label },
+            React.createElement("button", { type: "button", "data-mpick": label, onClick: () => setOpen((v) => !v), className: "w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm text-left", style: { background: "var(--surface)", border: "1px solid var(--border)", color: sel.length ? "var(--text)" : "var(--text-dim)" } },
+                React.createElement("span", { className: "min-w-0 truncate" }, summary),
+                React.createElement(open ? ChevronUp : ChevronDown, { size: 14, style: { color: "var(--text-dim)", flexShrink: 0 } })),
+            open && React.createElement("div", { className: "mt-1.5 rounded-xl p-1.5 max-h-56 overflow-y-auto space-y-0.5", style: { background: "var(--surface)", border: "1px solid var(--border)" } },
+                React.createElement("button", { type: "button", onClick: () => { onChange([]); }, className: "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm text-left", style: { color: sel.length === 0 ? "var(--text)" : "var(--text-dim)" } },
+                    React.createElement("span", { className: "w-4 h-4 rounded flex items-center justify-center shrink-0", style: { border: "1.5px solid " + (sel.length === 0 ? "var(--accent)" : "var(--border)"), background: sel.length === 0 ? "var(--accent)" : "transparent" } }, sel.length === 0 && React.createElement(Check, { size: 11, style: { color: "var(--accent-ink)" } })),
+                    allLabel),
+                options.map((o) => (React.createElement("button", { type: "button", key: o.value, "data-mopt": o.value, onClick: () => toggle(o), className: "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm text-left", style: { color: "var(--text)", opacity: rowDisabled(o) ? 0.45 : 1, paddingLeft: o.indent ? "1.75rem" : undefined } },
+                    React.createElement("span", { className: "w-4 h-4 rounded flex items-center justify-center shrink-0", style: { border: "1.5px solid " + (rowChecked(o) ? "var(--accent)" : "var(--border)"), background: rowChecked(o) ? "var(--accent)" : "transparent" } }, rowChecked(o) && React.createElement(Check, { size: 11, style: { color: "var(--accent-ink)" } })),
+                    React.createElement("span", { className: "min-w-0 truncate" }, o.label)))))));
+    }
     function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, setView, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, rates, baseCurrency, projects, addProject, assignProjectBulk, deleteTransactionsBulk, moveTransactionsBulk }) {
         const [search, setSearch] = useState("");
         const [showImportHint, setShowImportHint] = useState(false);
-        const [filterType, setFilterType] = useState("all");
-        const [filterPocket, setFilterPocket] = useState("all");
-        const [filterCategory, setFilterCategory] = useState("all");
-        const [filterCurrency, setFilterCurrency] = useState("all");
-        const [filterProject, setFilterProject] = useState("all");
+        const [filterType, setFilterType] = useState([]); // arrays; [] means "all"
+        const [filterPocket, setFilterPocket] = useState([]);
+        const [filterCategory, setFilterCategory] = useState([]);
+        const [filterCurrency, setFilterCurrency] = useState([]);
+        const [filterProject, setFilterProject] = useState([]);
         const [bulkPrj, setBulkPrj] = useState("");
         const [selMode, setSelMode] = useState(false);
         const [selIds, setSelIds] = useState({});
@@ -5211,10 +5241,10 @@ window.__K3_START = function () {
         useEffect(() => {
             if (!historyPreset)
                 return;
-            setFilterType(historyPreset.type || "all");
-            setFilterCategory(historyPreset.categoryId || "all");
-            setFilterProject(historyPreset.projectId || "all");
-            setFilterPocket(historyPreset.pocketId || "all");
+            setFilterType(historyPreset.type && historyPreset.type !== "all" ? [historyPreset.type] : []);
+            setFilterCategory(historyPreset.categoryId ? [historyPreset.categoryId] : []);
+            setFilterProject(historyPreset.projectId ? [historyPreset.projectId] : []);
+            setFilterPocket(historyPreset.pocketId ? [historyPreset.pocketId] : []);
             setSelMode(!!historyPreset.select);
             setDateFrom(historyPreset.from || "");
             setDateTo(historyPreset.to || "");
@@ -5223,40 +5253,29 @@ window.__K3_START = function () {
         }, [historyPreset]);
         const filtered = useMemo(() => {
             return transactions.filter((t) => {
-                if (filterType !== "all") {
-                    if (filterType === "crypto_ops") {
-                        if (t.type !== "crypto_buy" && t.type !== "crypto_sell")
-                            return false;
-                    }
-                    else if (filterType === "loan_ops") {
-                        if (t.type !== "loan_out" && t.type !== "loan_return")
-                            return false;
-                    }
-                    else if (filterType === "debt_ops") {
-                        if (t.type !== "debt_take" && t.type !== "debt_repay")
-                            return false;
-                    }
-                    else if (t.type !== filterType)
+                if (filterType.length) {
+                    const okT = filterType.some((v) => v === "crypto_ops" ? (t.type === "crypto_buy" || t.type === "crypto_sell")
+                        : v === "loan_ops" ? (t.type === "loan_out" || t.type === "loan_return")
+                            : v === "debt_ops" ? (t.type === "debt_take" || t.type === "debt_repay")
+                                : t.type === v);
+                    if (!okT)
                         return false;
                 }
-                if (filterPocket !== "all") {
-                    const match = t.pocketId === filterPocket || t.fromPocketId === filterPocket || t.toPocketId === filterPocket;
-                    if (!match)
+                if (filterPocket.length) {
+                    const okP = filterPocket.some((p) => t.pocketId === p || t.fromPocketId === p || t.toPocketId === p);
+                    if (!okP)
                         return false;
                 }
-                if (filterCategory !== "all" && !catNestIds(categories, filterCategory).includes(t.categoryId))
+                if (filterCategory.length && !filterCategory.some((id) => catNestIds(categories, id).includes(t.categoryId)))
                     return false;
-                if (filterProject !== "all") {
-                    if (filterProject === "__none__") {
-                        if (t.projectId)
-                            return false;
-                    }
-                    else if (t.projectId !== filterProject)
+                if (filterProject.length) {
+                    const okJ = filterProject.some((v) => v === "__none__" ? !t.projectId : t.projectId === v);
+                    if (!okJ)
                         return false;
                 }
-                if (filterCurrency !== "all") {
-                    const curMatch = t.currency === filterCurrency || t.fromCurrency === filterCurrency || t.toCurrency === filterCurrency;
-                    if (!curMatch)
+                if (filterCurrency.length) {
+                    const okC = filterCurrency.some((c) => t.currency === c || t.fromCurrency === c || t.toCurrency === c);
+                    if (!okC)
                         return false;
                 }
                 if (dateFrom && t.date < dateFrom)
@@ -5308,20 +5327,20 @@ window.__K3_START = function () {
             React.createElement("div", { className: "relative" },
                 React.createElement(Search, { size: 16, className: "absolute left-3 top-1/2 -translate-y-1/2", style: { color: "var(--text-dim)" } }),
                 React.createElement(Input, { "data-tour": "histsearch", placeholder: tr("Пошук: опис, категорія, рахунок..."), value: search, onChange: (e) => setSearch(e.target.value), className: "pl-9" })),
-            !showFilters && (filterType !== "all" || filterPocket !== "all" || filterCategory !== "all" || filterCurrency !== "all" || filterProject !== "all" || dateFrom || dateTo) && (React.createElement("div", { className: "flex items-center gap-2 rounded-xl px-3 py-2", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
+            !showFilters && (filterType.length > 0 || filterPocket.length > 0 || filterCategory.length > 0 || filterCurrency.length > 0 || filterProject.length > 0 || dateFrom || dateTo) && (React.createElement("div", { className: "flex items-center gap-2 rounded-xl px-3 py-2", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
                 React.createElement("button", { onClick: () => setShowFilters(true), className: "flex items-center gap-2 min-w-0 flex-1 text-left" },
                     React.createElement(Filter, { size: 12, style: { color: "var(--accent)", flexShrink: 0 } }),
                     React.createElement("span", { className: "text-xs min-w-0 truncate", style: { color: "var(--text)" } }, [
-                        filterType !== "all" ? (typeLabel[filterType] || filterType) : null,
+                        filterType.length ? filterType.map((v) => typeLabel[v] || v).join(", ") : null,
                         (dateFrom || dateTo) ? ((dateFrom ? fmtDate(dateFrom) : "…") + " – " + (dateTo ? fmtDate(dateTo) : "…")) : null,
-                        filterPocket !== "all" ? pocketLabel(filterPocket) : null,
-                        filterCategory !== "all" ? tr((categories.find((cc) => cc.id === filterCategory) || {}).name || "") : null,
-                        filterProject !== "all" ? (filterProject === "__none__" ? tr("Без проєкту") : tr(((projects || []).find((xx) => xx.id === filterProject) || {}).name || "")) : null,
-                        filterCurrency !== "all" ? filterCurrency : null,
+                        filterPocket.length ? filterPocket.map((p) => pocketLabel(p)).join(", ") : null,
+                        filterCategory.length ? filterCategory.map((id) => tr((categories.find((cc) => cc.id === id) || {}).name || "")).join(", ") : null,
+                        filterProject.length ? filterProject.map((v) => v === "__none__" ? tr("Без проєкту") : tr(((projects || []).find((xx) => xx.id === v) || {}).name || "")).join(", ") : null,
+                        filterCurrency.length ? filterCurrency.join(", ") : null,
                     ].filter(Boolean).join(" · ")),
                     React.createElement("span", { className: "pill-link shrink-0" }, tr("Налаштувати звіт"))),
-                (dateFrom || dateTo) && filterProject !== "all" && (React.createElement("button", { onClick: () => { setDateFrom(""); setDateTo(""); }, className: "pill-link shrink-0 text-xs", style: { color: "var(--accent)" } }, tr("Весь період"))),
-                React.createElement("button", { onClick: () => { setFilterType("all"); setFilterPocket("all"); setFilterCategory("all"); setFilterCurrency("all"); setFilterProject("all"); setDateFrom(""); setDateTo(""); }, "aria-label": tr("Скинути фільтри"), className: "p-1 shrink-0", style: { color: "var(--text-dim)" } },
+                (dateFrom || dateTo) && filterProject.length > 0 && (React.createElement("button", { onClick: () => { setDateFrom(""); setDateTo(""); }, className: "pill-link shrink-0 text-xs", style: { color: "var(--accent)" } }, tr("Весь період"))),
+                React.createElement("button", { onClick: () => { setFilterType([]); setFilterPocket([]); setFilterCategory([]); setFilterCurrency([]); setFilterProject([]); setDateFrom(""); setDateTo(""); }, "aria-label": tr("Скинути фільтри"), className: "p-1 shrink-0", style: { color: "var(--text-dim)" } },
                     React.createElement(X, { size: 14 })))),
             showFilters && (React.createElement(Card, { className: "p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3" },
                 React.createElement("div", { className: "sm:col-span-2 lg:col-span-3 flex items-center justify-between" },
@@ -5330,43 +5349,27 @@ window.__K3_START = function () {
                         tr("Згорнути"),
                         " ",
                         React.createElement(ChevronDown, { size: 13, style: { transform: "rotate(180deg)" } }))),
-                React.createElement(Field, { label: tr("Тип операції") },
-                    React.createElement(Select, { value: filterType, onChange: (e) => setFilterType(e.target.value) }, Object.entries(typeLabel).map(([k, v]) => React.createElement("option", { key: k, value: k }, v)))),
-                React.createElement(Field, { label: tr("Рахунок") },
-                    React.createElement(Select, { value: filterPocket, onChange: (e) => setFilterPocket(e.target.value) },
-                        React.createElement("option", { value: "all" }, tr("Усі рахунки")),
-                        accounts.map((acc) => pockets.filter((p) => p.accountId === acc.id).map((p) => (React.createElement("option", { key: p.id, value: p.id },
-                            tr(acc.name),
-                            " \u00B7 ",
-                            p.currency)))))),
-                React.createElement(Field, { label: tr("Категорія") },
-                    React.createElement(Select, { value: filterCategory, onChange: (e) => setFilterCategory(e.target.value) },
-                        React.createElement("option", { value: "all" }, tr("Усі категорії")),
-                        categories.filter((c) => !c.parentId).flatMap((c) => [
-                            React.createElement("option", { key: c.id, value: c.id }, tr(c.name)),
-                            ...categories.filter((k) => k.parentId === c.id).map((k) => React.createElement("option", { key: k.id, value: k.id }, "\u00A0\u00A0— " + tr(k.name)))
-                        ]))),
-                React.createElement(Field, { label: tr("Проєкт") },
-                    React.createElement(Select, { value: filterProject, onChange: (e) => setFilterProject(e.target.value) },
-                        React.createElement("option", { value: "all" }, tr("Усі")),
-                        React.createElement("option", { value: "__none__" }, tr("Без проєкту")),
-                        (projects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))))),
-                React.createElement(Field, { label: tr("Валюта") },
-                    React.createElement(Select, { value: filterCurrency, onChange: (e) => setFilterCurrency(e.target.value) },
-                        React.createElement("option", { value: "all" }, tr("Усі валюти")),
-                        (currencies || CURRENCIES).map((c) => React.createElement("option", { key: c, value: c }, c)))),
+                React.createElement(MultiPickField, { label: tr("Тип операції"), allLabel: tr("Усі типи"), options: Object.entries(typeLabel).filter(([k]) => k !== "all").map(([k, v]) => ({ value: k, label: v })), selected: filterType, onChange: setFilterType }),
+                React.createElement(MultiPickField, { label: tr("Рахунок"), allLabel: tr("Усі рахунки"), options: accounts.flatMap((acc) => pockets.filter((p) => p.accountId === acc.id).map((p) => ({ value: p.id, label: tr(acc.name) + " \u00B7 " + p.currency }))), selected: filterPocket, onChange: setFilterPocket }),
+                React.createElement(MultiPickField, { label: tr("Категорія"), allLabel: tr("Усі категорії"), options: categories.filter((c) => !c.parentId).flatMap((c) => [
+                        { value: c.id, label: tr(c.name) },
+                        ...categories.filter((k) => k.parentId === c.id).map((k) => ({ value: k.id, label: tr(k.name), indent: true, parentValue: c.id }))
+                    ]), selected: filterCategory, onChange: setFilterCategory }),
+                React.createElement(MultiPickField, { label: tr("Проєкт"), allLabel: tr("Усі"), options: [{ value: "__none__", label: tr("Без проєкту") }, ...(projects || []).filter((xx) => !xx.archived).map((xx) => ({ value: xx.id, label: tr(xx.name) }))], selected: filterProject, onChange: setFilterProject }),
+                React.createElement(MultiPickField, { label: tr("Валюта"), allLabel: tr("Усі валюти"), options: (currencies || CURRENCIES).map((c) => ({ value: c, label: c })), selected: filterCurrency, onChange: setFilterCurrency }),
                 React.createElement(Field, { label: tr("Період від") },
                     React.createElement(Input, { type: "date", value: dateFrom, onChange: (e) => setDateFrom(e.target.value) })),
                 React.createElement(Field, { label: tr("Період до") },
                     React.createElement(Input, { type: "date", value: dateTo, onChange: (e) => setDateTo(e.target.value) })),
-                (projects || []).filter((xx) => !xx.archived).length > 0 && (React.createElement("div", { className: "sm:col-span-2 lg:col-span-3 flex items-center gap-2 rounded-xl p-2.5", style: { background: "var(--surface2)" } },
+                (projects || []).filter((xx) => !xx.archived).length > 0 && (React.createElement("div", { className: "sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-2 rounded-xl p-2.5", style: { background: "var(--surface2)" } },
                     React.createElement("span", { className: "text-[0.6875rem] shrink-0", style: { color: "var(--text-dim)" } },
                         tr("Проєкт для відфільтрованих"),
                         ":"),
+                    React.createElement("span", { className: "flex-1 min-w-0", style: { minWidth: "8rem" } },
                     React.createElement(Select, { value: bulkPrj, onChange: (e) => setBulkPrj(e.target.value) },
                         React.createElement("option", { value: "" }, tr("— оберіть —")),
                         React.createElement("option", { value: "__none__" }, tr("Без проєкту")),
-                        (projects || []).filter((xx) => !xx.archived).map((xx) => React.createElement("option", { key: xx.id, value: xx.id }, tr(xx.name)))),
+                        (projects || []).filter((xx) => !xx.archived).map((xx) => React.createElement("option", { key: xx.id, value: xx.id }, tr(xx.name))))),
                     React.createElement(Button, { variant: "secondary", className: "shrink-0", onClick: () => { if (!bulkPrj || !assignProjectBulk)
                             return; assignProjectBulk(filtered.map((t) => t.id), bulkPrj === "__none__" ? null : bulkPrj); setBulkPrj(""); } },
                         tr("Застосувати"),
@@ -9222,5 +9225,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.15");</script></body>
+<script>console.log("K³ build: 2026-08-04.17");</script></body>
 </html>
