@@ -346,7 +346,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-04.17"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-05.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4802,6 +4802,10 @@ window.__K3_START = function () {
                     React.createElement(Edit3, { size: 14 }),
                     " ",
                     tr("Редагувати"))),
+                (tx.type === "transfer" || tx.type === "exchange") && (React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => setModal({ type: tx.type, payload: { editing: tx } }) },
+                    React.createElement(Edit3, { size: 14 }),
+                    " ",
+                    tr("Редагувати"))),
                 (tx.type === "loan_return" || tx.type === "debt_repay") && updateRepayAmount && (React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { setRepayEdit((v) => !v); setRepayAmt(String(tx.loanAmt != null ? tx.loanAmt : tx.amount)); } },
                     React.createElement(Edit3, { size: 14 }),
                     " ",
@@ -7521,9 +7525,9 @@ window.__K3_START = function () {
             if (modal.type === "transaction")
                 return React.createElement(TransactionModal, { onClose: close, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji });
             if (modal.type === "transfer")
-                return React.createElement(TransferExchangeModal, { onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, accounts: accounts, pockets: pockets, rates: rates, addTransaction: addTransaction, pocketBalance: pocketBalance });
+                return React.createElement(TransferExchangeModal, { onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, accounts: accounts, pockets: pockets, rates: rates, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
             if (modal.type === "exchange")
-                return React.createElement(TransferExchangeModal, { onClose: close, mode: "exchange", presetFromPocketId: modal.payload?.presetPocketId, accounts: accounts, pockets: pockets, rates: rates, addTransaction: addTransaction, pocketBalance: pocketBalance });
+                return React.createElement(TransferExchangeModal, { onClose: close, mode: "exchange", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, accounts: accounts, pockets: pockets, rates: rates, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
             if (modal.type === "loan")
                 return React.createElement(LoanModal, { onClose: close, accounts: accounts, pockets: pockets, addLoan: addLoan, direction: (modal.payload && modal.payload.direction) || "out", pocketBalance: pocketBalance });
             if (modal.type === "loanReturn")
@@ -8419,25 +8423,27 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, editing ? tr("Зберегти зміни") : tr("Зберегти"))));
     }
     /* ---------- Transfer / Exchange Modal ---------- */
-    function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, pockets, rates, addTransaction, pocketBalance }) {
+    function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, pockets, rates, addTransaction, editTransaction, editing, pocketBalance }) {
         const isExchange = mode === "exchange";
         const active = pockets.filter((p) => !p.archived);
-        const [fromPocketId, setFromPocketId] = useState(presetFromPocketId || active[0]?.id || "");
-        const [toPocketId, setToPocketId] = useState(active.find((p) => p.id !== (presetFromPocketId || active[0]?.id))?.id || active[0]?.id || "");
+        const [fromPocketId, setFromPocketId] = useState(editing?.fromPocketId || presetFromPocketId || active[0]?.id || "");
+        const [toPocketId, setToPocketId] = useState(editing?.toPocketId || active.find((p) => p.id !== (presetFromPocketId || active[0]?.id))?.id || active[0]?.id || "");
         const curListEx = Array.from(new Set(active.map((p) => p.currency)));
-        const [fromCur, setFromCur] = useState(() => (active.find((p) => p.id === (presetFromPocketId || active[0]?.id)) || active[0] || {}).currency || "UAH");
+        const [fromCur, setFromCur] = useState(() => editing?.fromCurrency || ((active.find((p) => p.id === (presetFromPocketId || active[0]?.id)) || active[0] || {}).currency || "UAH"));
         const [toCur, setToCur] = useState(() => {
+            if (editing?.toCurrency)
+                return editing.toCurrency;
             const f = (active.find((p) => p.id === (presetFromPocketId || active[0]?.id)) || active[0] || {}).currency || "UAH";
             return curListEx.find((cc) => cc !== f) || f;
         });
-        const [fromAmount, setFromAmount] = useState("");
-        const [rate, setRate] = useState("1");
+        const [fromAmount, setFromAmount] = useState(editing ? String(editing.fromAmount) : "");
+        const [rate, setRate] = useState(editing && editing.rate ? String(editing.rate) : "1");
         const rateNum = parseFloat(String(rate).replace(",", ".")) || 0;
-        const [toAmount, setToAmount] = useState("");
-        const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-        const [note, setNote] = useState("");
+        const [toAmount, setToAmount] = useState(editing ? String(editing.toAmount) : "");
+        const [date, setDate] = useState(editing?.date || new Date().toISOString().slice(0, 10));
+        const [note, setNote] = useState(editing?.note || "");
         const [error, setError] = useState("");
-        const [manualTo, setManualTo] = useState(false);
+        const [manualTo, setManualTo] = useState(!!editing); // keep the stored toAmount until the user touches inputs
         const pickCur = (side, v) => {
             const setCur = side === "from" ? setFromCur : setToCur;
             const setPk = side === "from" ? setFromPocketId : setToPocketId;
@@ -8538,7 +8544,11 @@ window.__K3_START = function () {
             const to = parseFloat(toAmount);
             if (!to || to <= 0)
                 return setError(tr("Сума зарахування має бути додатною"));
-            addTransaction({ type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? (quoteFrom ? rateNum : (rateNum > 0 ? Math.round((1 / rateNum) * 1e6) / 1e6 : 0)) : 1, fee: 0, note });
+            const data = { type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? (quoteFrom ? rateNum : (rateNum > 0 ? Math.round((1 / rateNum) * 1e6) / 1e6 : 0)) : 1, fee: 0, note };
+            if (editing && editTransaction)
+                editTransaction(editing.id, data);
+            else
+                addTransaction(data);
             onClose();
         };
         return (React.createElement(Modal, { title: isExchange ? tr("Обмін валюти") : tr("Переказ між рахунками"), onClose: onClose },
@@ -8579,7 +8589,7 @@ window.__K3_START = function () {
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Field, { label: tr("Коментар") },
                 React.createElement(Textarea, { rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково") })),
-            React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isExchange ? tr("Обміняти") : tr("Переказати"))));
+            React.createElement(Button, { className: "w-full mt-2", onClick: submit }, editing ? tr("Зберегти зміни") : (isExchange ? tr("Обміняти") : tr("Переказати")))));
     }
     /* ---------- Loan Modal ---------- */
     function LoanModal({ onClose, accounts, pockets, addLoan, direction, pocketBalance }) {
@@ -9225,5 +9235,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-04.17");</script></body>
+<script>console.log("K³ build: 2026-08-05.1");</script></body>
 </html>
