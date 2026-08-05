@@ -349,7 +349,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-05.8"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-05.9"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2653,19 +2653,6 @@ window.__K3_START = function () {
     }
     // PIN lock screen shown on app open when a PIN is set
     function LockScreen({ pin, onUnlock }) {
-        // The lock screen ignores the UI scale: it always renders at the "xl" root size
-        // and restores the user's setting on unmount (the scale effect re-applies it anyway).
-        useEffect(() => {
-            const prev = document.documentElement.style.fontSize;
-            try {
-                document.documentElement.style.fontSize = "20px";
-            }
-            catch (e) { }
-            return () => { try {
-                document.documentElement.style.fontSize = prev;
-            }
-            catch (e) { } };
-        }, []);
         const [entry, setEntry] = useState("");
         const [err, setErr] = useState(false);
         const press = (d) => {
@@ -2686,21 +2673,21 @@ window.__K3_START = function () {
         };
         const del = () => setEntry((e) => e.slice(0, -1));
         const dots = pin.split("").map((_, i) => i);
-        return (React.createElement("div", { className: "fixed inset-0 z-[100] flex flex-col items-center justify-center px-8", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
+        return (React.createElement("div", { className: "fixed inset-0 z-[100] flex flex-col items-center justify-center", style: { background: "var(--bg)", paddingLeft: 40, paddingRight: 40, paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
             React.createElement(AppIcon, { size: 72 }),
-            React.createElement("div", { className: "flex flex-col items-center gap-1.5 mt-4 mb-7 text-center" },
+            React.createElement("div", { className: "flex flex-col items-center text-center", style: { gap: 8, marginTop: 20, marginBottom: 35 } },
                 React.createElement("span", { className: "font-display font-bold tracking-tight", style: { fontSize: 30, color: "var(--text)" } },
                     "K",
                     React.createElement("sup", { style: { color: "var(--accent)", fontSize: "0.6em", fontWeight: 700, position: "relative", top: "-0.5em" } }, "3"),
                     React.createElement("span", { style: { fontWeight: 600, marginLeft: 9 } }, "Finance")),
                 React.createElement("span", { className: "font-display uppercase", style: { fontSize: 10, letterSpacing: "0.3em", color: "var(--accent)" } }, tr("Ваш капітал. Ваш контроль."))),
-            React.createElement("p", { className: "text-sm mb-6", style: { color: err ? "var(--danger)" : "var(--text-dim)" } }, err ? tr("Невірний код, спробуйте ще") : tr("Введіть PIN-код")),
-            React.createElement("div", { className: "flex gap-3 mb-9" }, dots.map((i) => (React.createElement("div", { key: i, className: "w-3 h-3 rounded-full transition", style: { background: i < entry.length ? (err ? "var(--danger)" : "var(--accent)") : "var(--surface2)" } })))),
-            React.createElement("div", { className: "grid grid-cols-3 gap-4" },
-                [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (React.createElement("button", { key: n, onClick: () => press(String(n)), className: "w-16 h-16 rounded-full text-xl font-semibold active:scale-95 transition", style: { background: "var(--surface2)", color: "var(--text)" } }, n))),
+            React.createElement("p", { style: { fontSize: 17.5, marginBottom: 30, color: err ? "var(--danger)" : "var(--text-dim)" } }, err ? tr("Невірний код, спробуйте ще") : tr("Введіть PIN-код")),
+            React.createElement("div", { className: "flex", style: { gap: 15, marginBottom: 45 } }, dots.map((i) => (React.createElement("div", { key: i, className: "rounded-full transition", style: { width: 15, height: 15, background: i < entry.length ? (err ? "var(--danger)" : "var(--accent)") : "var(--surface2)" } })))),
+            React.createElement("div", { className: "grid grid-cols-3", style: { gap: 20 } },
+                [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (React.createElement("button", { key: n, onClick: () => press(String(n)), className: "rounded-full font-semibold active:scale-95 transition", style: { width: 80, height: 80, fontSize: 25, background: "var(--surface2)", color: "var(--text)" } }, n))),
                 React.createElement("span", null),
-                React.createElement("button", { onClick: () => press("0"), className: "w-16 h-16 rounded-full text-xl font-semibold active:scale-95 transition", style: { background: "var(--surface2)", color: "var(--text)" } }, "0"),
-                React.createElement("button", { onClick: del, className: "w-16 h-16 rounded-full flex items-center justify-center active:scale-95 transition", style: { color: "var(--text-dim)" } },
+                React.createElement("button", { onClick: () => press("0"), className: "rounded-full font-semibold active:scale-95 transition", style: { width: 80, height: 80, fontSize: 25, background: "var(--surface2)", color: "var(--text)" } }, "0"),
+                React.createElement("button", { onClick: del, className: "rounded-full flex items-center justify-center active:scale-95 transition", style: { width: 80, height: 80, color: "var(--text-dim)" } },
                     React.createElement(X, { size: 22 })))));
     }
     /* Shared agreement copy (used in Settings and the first-run consent) */
@@ -9601,5 +9588,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-05.8");</script></body>
+<script>console.log("K³ build: 2026-08-05.9");</script></body>
 </html>
