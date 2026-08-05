@@ -349,7 +349,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-05.6"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-05.7"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -5286,8 +5286,20 @@ window.__K3_START = function () {
         options.forEach((o) => { byVal[o.value] = o; });
         const names = sel.map((v) => (byVal[v] || {}).label).filter(Boolean);
         const summary = sel.length === 0 ? allLabel : sel.length === 1 ? (names[0] || allLabel) : tr("Обрано") + ": " + sel.length;
-        const rowChecked = (o) => sel.includes(o.value) || (o.parentValue && sel.includes(o.parentValue));
-        const rowDisabled = (o) => !!(o.parentValue && sel.includes(o.parentValue));
+        const parentOf = {};
+        options.forEach((o) => { parentOf[o.value] = o.parentValue || null; });
+        const ancestorSelected = (o) => {
+            let pv = o.parentValue;
+            let guard = 0;
+            while (pv && guard++ < 6) {
+                if (sel.includes(pv))
+                    return true;
+                pv = parentOf[pv];
+            }
+            return false;
+        };
+        const rowChecked = (o) => sel.includes(o.value) || ancestorSelected(o);
+        const rowDisabled = (o) => ancestorSelected(o);
         const toggle = (o) => {
             if (rowDisabled(o))
                 return;
@@ -5302,10 +5314,17 @@ window.__K3_START = function () {
                     React.createElement("span", { className: "w-4 h-4 rounded flex items-center justify-center shrink-0", style: { border: "1.5px solid " + (sel.length === 0 ? "var(--accent)" : "var(--border)"), background: sel.length === 0 ? "var(--accent)" : "transparent" } }, sel.length === 0 && React.createElement(Check, { size: 11, style: { color: "var(--accent-ink)" } })),
                     allLabel),
                 options.map((o) => {
-                    if (collapsible && o.parentValue && !openGroups[o.parentValue])
-                        return null;
+                    if (collapsible && o.parentValue) {
+                        let pv = o.parentValue;
+                        let guard = 0;
+                        while (pv && guard++ < 6) {
+                            if (!openGroups[pv])
+                                return null;
+                            pv = parentOf[pv];
+                        }
+                    }
                     const isGroup = collapsible && o.group;
-                    return React.createElement("div", { key: o.value, "data-mopt": o.value, className: "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm", style: { color: "var(--text)", opacity: rowDisabled(o) ? 0.45 : 1, paddingLeft: o.indent ? "1.75rem" : undefined } },
+                    return React.createElement("div", { key: o.value, "data-mopt": o.value, className: "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm", style: { color: "var(--text)", opacity: rowDisabled(o) ? 0.45 : 1, paddingLeft: o.depth === 2 ? "3.25rem" : (o.depth === 1 || o.indent) ? "1.75rem" : undefined } },
                         React.createElement("button", { type: "button", "data-mchk": o.value, onClick: () => toggle(o), className: "w-4 h-4 rounded flex items-center justify-center shrink-0", style: { border: "1.5px solid " + (rowChecked(o) ? "var(--accent)" : "var(--border)"), background: rowChecked(o) ? "var(--accent)" : "transparent" } }, rowChecked(o) && React.createElement(Check, { size: 11, style: { color: "var(--accent-ink)" } })),
                         React.createElement("button", { type: "button", onClick: () => { if (isGroup) setOpenGroups((p) => ({ ...p, [o.value]: !p[o.value] })); else toggle(o); }, className: "flex-1 min-w-0 flex items-center gap-1.5 text-left" },
                             React.createElement("span", { className: "min-w-0 truncate" }, o.label),
@@ -5383,10 +5402,15 @@ window.__K3_START = function () {
                         return false;
                 }
                 if (filterPocket.length) {
+                    const hitPocket = (p) => t.pocketId === p.id || t.fromPocketId === p.id || t.toPocketId === p.id;
                     const okP = filterPocket.some((sel) => {
+                        if (sel.startsWith && sel.startsWith("bank::")) {
+                            const bk = sel.slice(6);
+                            return pockets.some((p) => { const acc = accounts.find((a) => a.id === p.accountId); return acc && (acc.bank || "").trim() === bk && hitPocket(p); });
+                        }
                         const acc = accounts.find((a) => a.id === sel);
                         if (acc)
-                            return pockets.some((p) => p.accountId === sel && (t.pocketId === p.id || t.fromPocketId === p.id || t.toPocketId === p.id));
+                            return pockets.some((p) => p.accountId === sel && hitPocket(p));
                         return t.pocketId === sel || t.fromPocketId === sel || t.toPocketId === sel;
                     });
                     if (!okP)
@@ -5459,7 +5483,7 @@ window.__K3_START = function () {
                     React.createElement("span", { className: "text-xs min-w-0 truncate", style: { color: "var(--text)" } }, [
                         filterType.length ? filterType.map((v) => typeLabel[v] || v).join(", ") : null,
                         (dateFrom || dateTo) ? ((dateFrom ? fmtDate(dateFrom) : "…") + " – " + (dateTo ? fmtDate(dateTo) : "…")) : null,
-                        filterPocket.length ? filterPocket.map((p) => { const acc = accounts.find((a) => a.id === p); return acc ? tr(acc.name) : pocketLabel(p); }).join(", ") : null,
+                        filterPocket.length ? filterPocket.map((p) => { if (p.startsWith && p.startsWith("bank::")) return tr(p.slice(6)); const acc = accounts.find((a) => a.id === p); return acc ? tr(acc.name) : pocketLabel(p); }).join(", ") : null,
                         filterCategory.length ? filterCategory.map((id) => tr((categories.find((cc) => cc.id === id) || {}).name || "")).join(", ") : null,
                         filterProject.length ? filterProject.map((v) => v === "__none__" ? tr("Без проєкту") : tr(((projects || []).find((xx) => xx.id === v) || {}).name || "")).join(", ") : null,
                         filterCurrency.length ? filterCurrency.join(", ") : null,
@@ -5476,11 +5500,28 @@ window.__K3_START = function () {
                         " ",
                         React.createElement(ChevronDown, { size: 13, style: { transform: "rotate(180deg)" } }))),
                 React.createElement(MultiPickField, { label: tr("Тип операції"), allLabel: tr("Усі типи"), options: Object.entries(typeLabel).filter(([k]) => k !== "all").map(([k, v]) => ({ value: k, label: v })), selected: filterType, onChange: setFilterType }),
-                React.createElement(MultiPickField, { label: tr("Рахунок"), allLabel: tr("Усі рахунки"), collapsible: true, options: accounts.flatMap((acc) => {
-                        const kids = pockets.filter((p) => p.accountId === acc.id && !p.archived);
-                        return [{ value: acc.id, label: tr(acc.name), group: kids.length > 0 },
-                            ...kids.map((p) => ({ value: p.id, label: (p.name ? tr(p.name) + " \u00B7 " : "") + p.currency, indent: true, parentValue: acc.id }))];
-                    }), selected: filterPocket, onChange: setFilterPocket }),
+                React.createElement(MultiPickField, { label: tr("Рахунок"), allLabel: tr("Усі рахунки"), collapsible: true, options: (() => {
+                        const act = accounts.filter((a) => !a.archived);
+                        const seen = [];
+                        const buckets = {};
+                        act.forEach((a) => { const k = (a.bank || "").trim(); if (!(k in buckets)) { buckets[k] = []; seen.push(k); } buckets[k].push(a); });
+                        const accRows = (acc, depth, parentValue) => {
+                            const kids = pockets.filter((p) => p.accountId === acc.id && !p.archived);
+                            return [{ value: acc.id, label: tr(acc.name), group: kids.length > 0, depth, parentValue },
+                                ...kids.map((p) => ({ value: p.id, label: (p.name ? tr(p.name) + " \u00B7 " : "") + p.currency, depth: depth + 1, parentValue: acc.id }))];
+                        };
+                        const out = [];
+                        seen.forEach((k) => {
+                            if (!k) {
+                                buckets[k].forEach((acc) => out.push(...accRows(acc, 0, undefined)));
+                                return;
+                            }
+                            const bk = "bank::" + k;
+                            out.push({ value: bk, label: tr(k) + " (" + buckets[k].length + ")", group: true, depth: 0 });
+                            buckets[k].forEach((acc) => out.push(...accRows(acc, 1, bk)));
+                        });
+                        return out;
+                    })(), selected: filterPocket, onChange: setFilterPocket }),
                 React.createElement(MultiPickField, { label: tr("Категорія"), allLabel: tr("Усі категорії"), options: categories.filter((c) => !c.parentId).flatMap((c) => [
                         { value: c.id, label: tr(c.name) },
                         ...categories.filter((k) => k.parentId === c.id).map((k) => ({ value: k.id, label: tr(k.name), indent: true, parentValue: c.id }))
@@ -9547,5 +9588,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-05.6");</script></body>
+<script>console.log("K³ build: 2026-08-05.7");</script></body>
 </html>
