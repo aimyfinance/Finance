@@ -349,7 +349,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-05.7"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-05.8"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2653,6 +2653,19 @@ window.__K3_START = function () {
     }
     // PIN lock screen shown on app open when a PIN is set
     function LockScreen({ pin, onUnlock }) {
+        // The lock screen ignores the UI scale: it always renders at the "xl" root size
+        // and restores the user's setting on unmount (the scale effect re-applies it anyway).
+        useEffect(() => {
+            const prev = document.documentElement.style.fontSize;
+            try {
+                document.documentElement.style.fontSize = "20px";
+            }
+            catch (e) { }
+            return () => { try {
+                document.documentElement.style.fontSize = prev;
+            }
+            catch (e) { } };
+        }, []);
         const [entry, setEntry] = useState("");
         const [err, setErr] = useState(false);
         const press = (d) => {
@@ -9588,5 +9601,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-05.7");</script></body>
+<script>console.log("K³ build: 2026-08-05.8");</script></body>
 </html>
