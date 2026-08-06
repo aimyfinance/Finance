@@ -350,7 +350,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4894,6 +4894,7 @@ window.__K3_START = function () {
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount > 0 ? React.createElement(Row, { k: tr("Курс"), v: `1 ${tx.coinSymbol || ""} = ${(tx.amount / tx.coinAmount).toFixed(4)} ${tx.currency}` }) : null,
                 !dual && React.createElement(Row, { k: tr("Рахунок"), v: tx.coinId && !tx.pocketId ? tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "") : (tx.loanId && !tx.pocketId && (tx.type === "loan_return" || tx.type === "debt_repay")) ? tr("Без рахунку") : pocketLabel(tx.pocketId) }),
                 tx.projectId && (() => { const pj = (projects || []).find((x) => x.id === tx.projectId); return pj ? React.createElement(Row, { k: tr("Проєкт"), v: tr(pj.name) }) : null; })(),
+                tx.comment && React.createElement(Row, { k: tr("Коментар"), v: tr(tx.comment) }),
                 dual && React.createElement(Row, { k: tr("З рахунку"), v: pocketLabel(tx.fromPocketId) }),
                 dual && React.createElement(Row, { k: tr("На рахунок"), v: pocketLabel(tx.toPocketId) }),
                 (tx.type === "income" || tx.type === "expense") && tx.fx != null && tx.currency !== "UAH" ? React.createElement(Row, { k: tr("Зафіксований курс"), v: `1 ${tx.currency} = ${tx.fx} UAH` }) : null,
@@ -4930,7 +4931,7 @@ window.__K3_START = function () {
                     React.createElement(Edit3, { size: 14 }),
                     " ",
                     tr("Сума"))),
-                tx.type !== "crypto_buy" && tx.type !== "crypto_sell" && React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { duplicateTransaction(tx); onClose(); } },
+                tx.type !== "crypto_buy" && tx.type !== "crypto_sell" && React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { const p = txCopyPayload(tx); if (p) setModal(p); else { duplicateTransaction(tx); onClose(); } } },
                     React.createElement(Plus, { size: 14 }),
                     " ",
                     tr("Дублювати"))),
@@ -5448,6 +5449,7 @@ window.__K3_START = function () {
                     const cat = categories.find((x) => x.id === t.categoryId);
                     const hay = [
                         t.note || "",
+                        t.comment || "",
                         cat ? cat.name : "",
                         pocketLabel(t.pocketId || t.fromPocketId),
                         t.toPocketId ? pocketLabel(t.toPocketId) : "",
@@ -5668,7 +5670,7 @@ window.__K3_START = function () {
                     const acts = [];
                     if (tx.type === "income" || tx.type === "expense")
                         acts.push({ icon: Edit3, label: tr("Ред."), bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } }) });
-                    acts.push({ icon: Plus, label: tr("Копія"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => duplicateTransaction(tx) });
+                    acts.push({ icon: Plus, label: tr("Копія"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => { const p = txCopyPayload(tx); if (p) setModal(p); else duplicateTransaction(tx); } });
                     acts.push({ icon: Trash2, label: tr("Видал."), bg: "var(--danger)", fg: "#fff", onClick: () => deleteTransaction(tx.id) });
                     const checked = !!selIds[tx.id];
                     const inner = (React.createElement("div", { className: "group flex items-center", style: { background: selMode && checked ? "rgba(201,163,98,0.10)" : "var(--surface)" }, ...lpHandlers(tx.id) },
@@ -5682,7 +5684,7 @@ window.__K3_START = function () {
                         !selMode && (React.createElement("div", { className: "hidden md:group-hover:flex items-center gap-2 pr-4 shrink-0" },
                             (tx.type === "income" || tx.type === "expense") && (React.createElement("button", { onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } }), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
                                 React.createElement(Edit3, { size: 14 }))),
-                            React.createElement("button", { onClick: () => duplicateTransaction(tx), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
+                            React.createElement("button", { onClick: () => { const p = txCopyPayload(tx); if (p) setModal(p); else duplicateTransaction(tx); }, className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
                                 React.createElement(Plus, { size: 14 })),
                             React.createElement("button", { onClick: () => deleteTransaction(tx.id), className: "p-1.5 rounded-lg", style: { color: "var(--danger)" } },
                                 React.createElement(Trash2, { size: 14 }))))));
@@ -5915,6 +5917,15 @@ window.__K3_START = function () {
             return { type: rule.kind, payload: { planned: { fromPocketId: rule.fromPocketId, toPocketId: rule.toPocketId, fromAmount: rule.amount, fromCurrency: rule.currency || undefined, note: rule.note || rule.title, date: date }, plannedDone: { id: rule.id, key: date } } };
         }
         return { type: "transaction", payload: { kind: rule.kind, presetPocketId: rule.pocketId, presetCategoryId: rule.categoryId, presetAmount: rule.amount, presetCurrency: rule.currency || null, presetNote: rule.note || rule.title, presetDate: date, presetProjectId: rule.projectId || null, focusAmount: true, plannedDone: { id: rule.id, key: date } } };
+    }
+    /* "Copy" opens a prefilled NEW form (today's date) instead of instantly cloning. */
+    function txCopyPayload(tx) {
+        const today = new Date().toISOString().slice(0, 10);
+        if (tx.type === "transfer" || tx.type === "exchange")
+            return { type: tx.type, payload: { planned: { fromPocketId: tx.fromPocketId, toPocketId: tx.toPocketId, fromAmount: tx.fromAmount, toAmount: tx.toAmount, fromCurrency: tx.fromCurrency, toCurrency: tx.toCurrency, rate: tx.rate, note: tx.note || "", date: today } } };
+        if (tx.type === "income" || tx.type === "expense")
+            return { type: "transaction", payload: { kind: tx.type, presetPocketId: tx.pocketId, presetCategoryId: tx.categoryId || null, presetAmount: tx.amount, presetCurrency: tx.currency || null, presetNote: tx.note || "", presetComment: tx.comment || "", presetDate: today, presetProjectId: tx.projectId || null, focusAmount: true } };
+        return null; // special types (crypto, loans) keep the instant clone
     }
     function PlannedListModal({ onClose, plannedOverdue, plannedUpcomingFor, planned, pockets, baseCurrency, setModal, markPlannedDone }) {
         const [horizon, setHorizon] = useState(7);
@@ -8238,7 +8249,7 @@ window.__K3_START = function () {
                             React.createElement("div", { className: "hidden md:group-hover:flex items-center gap-2 pr-4 shrink-0" },
                                 (tx.type === "income" || tx.type === "expense") && (React.createElement("button", { onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx }, returnTo: { type: "pocketDetail", payload: pid } }), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
                                     React.createElement(Edit3, { size: 14 }))),
-                                React.createElement("button", { onClick: () => duplicateTransaction(tx), className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
+                                React.createElement("button", { onClick: () => { const p = txCopyPayload(tx); if (p) setModal(p); else duplicateTransaction(tx); }, className: "p-1.5 rounded-lg", style: { color: "var(--text-dim)" } },
                                     React.createElement(Plus, { size: 14 })),
                                 React.createElement("button", { onClick: () => deleteTransaction(tx.id), className: "p-1.5 rounded-lg", style: { color: "var(--danger)" } },
                                     React.createElement(Trash2, { size: 14 }))))))),
@@ -8507,6 +8518,7 @@ window.__K3_START = function () {
         const cats = categories.filter((c) => c.type === kind && !c.archived && !c.parentId);
         const firstPocket = pockets.find((p) => !p.archived);
         const [note, setNote] = useState(editing?.note || P.presetNote || "");
+        const [comment, setComment] = useState(editing?.comment || P.presetComment || "");
         const [amount, setAmount] = useState(editing?.amount != null ? String(editing.amount) : (P.presetAmount != null ? String(P.presetAmount) : ""));
         const [pocketId, setPocketId] = useState(editing?.pocketId || presetPocketId || firstPocket?.id || "");
         const activeTx = pockets.filter((pp) => !pp.archived);
@@ -8655,7 +8667,7 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть рахунок"));
             if (!categoryId)
                 return setError(tr("Оберіть категорію"));
-            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, receipts, receipt: null };
+            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, comment: comment.trim() || null, receipts, receipt: null };
             if (baseCurrency && currency !== baseCurrency && rates) {
                 const rBase = rates[baseCurrency] || 1;
                 const rCur = rates[currency] != null ? rates[currency] : (editing && editing.fx != null ? editing.fx : 1);
@@ -8798,7 +8810,9 @@ window.__K3_START = function () {
             !(editing && editing.recurringId) && (React.createElement("div", { className: "mb-3" },
                 React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
                     React.createElement("input", { type: "checkbox", checked: recOn, onChange: (e) => setRecOn(e.target.checked), style: { width: 17, height: 17, accentColor: "var(--accent)", flexShrink: 0 } }),
-                    React.createElement("span", { className: "text-sm font-medium" }, tr("Повторювати"))),
+                    React.createElement(Field, { label: tr("Коментар") },
+                React.createElement(Textarea, { rows: 2, value: comment, onChange: (e) => setComment(e.target.value), placeholder: tr("Необов'язково") })),
+            React.createElement("span", { className: "text-sm font-medium" }, tr("Повторювати"))),
                 recOn && (React.createElement("div", { className: "mt-2 rounded-xl p-3", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
                     React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
                         React.createElement("button", { type: "button", onClick: () => setRecMode("fixed"), className: "py-2 rounded-lg text-xs font-medium", style: { background: recMode === "fixed" ? "var(--accent)" : "var(--surface)", color: recMode === "fixed" ? "var(--accent-ink)" : "var(--text)" } }, tr("Фіксована сума")),
@@ -9657,5 +9671,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.1");</script></body>
+<script>console.log("K³ build: 2026-08-06.3");</script></body>
 </html>
