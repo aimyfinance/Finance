@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.6"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1888,6 +1888,10 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Курсова різниця": "FX difference",
+        "Курсові різниці": "FX differences",
+        "вигідніше ринку": "better than market",
+        "гірше ринку": "worse than market",
         "Шаблони звітів": "Report templates",
         "Зберегти як шаблон": "Save as template",
         "Назва шаблону": "Template name",
@@ -4915,6 +4919,13 @@ window.__K3_START = function () {
                 !dual && React.createElement(Row, { k: tr("Рахунок"), v: tx.coinId && !tx.pocketId ? tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "") : (tx.loanId && !tx.pocketId && (tx.type === "loan_return" || tx.type === "debt_repay")) ? tr("Без рахунку") : pocketLabel(tx.pocketId) }),
                 tx.projectId && (() => { const pj = (projects || []).find((x) => x.id === tx.projectId); return pj ? React.createElement(Row, { k: tr("Проєкт"), v: tr(pj.name) }) : null; })(),
                 tx.comment && React.createElement(Row, { k: tr("Коментар"), v: tr(tx.comment) }),
+                tx.fxGainBase != null && Math.abs(tx.fxGainBase) >= 0.005 && React.createElement("div", { className: "flex items-center justify-between gap-3 py-2", style: { borderBottom: "1px solid var(--border)" } },
+                    React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Курсова різниця")),
+                    React.createElement("span", { className: "text-sm font-semibold tabular", style: { color: tx.fxGainBase > 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
+                        tx.fxGainBase > 0 ? "+" : "\u2212",
+                        fmtMoney(Math.abs(tx.fxGainBase), tx.fxGainBaseCur || baseCurrency),
+                        " \u00B7 ",
+                        tx.fxGainBase > 0 ? tr("вигідніше ринку") : tr("гірше ринку"))),
                 dual && React.createElement(Row, { k: tr("З рахунку"), v: pocketLabel(tx.fromPocketId) }),
                 dual && React.createElement(Row, { k: tr("На рахунок"), v: pocketLabel(tx.toPocketId) }),
                 (tx.type === "income" || tx.type === "expense") && tx.fx != null && tx.currency !== "UAH" ? React.createElement(Row, { k: tr("Зафіксований курс"), v: `1 ${tx.currency} = ${tx.fx} UAH` }) : null,
@@ -5615,11 +5626,14 @@ window.__K3_START = function () {
                     " ",
                     tr("Згорнути")))),
             (filterType.length > 0 || filterPocket.length > 0 || filterCategory.length > 0 || filterCurrency.length > 0 || filterProject.length > 0 || dateFrom || dateTo || search.trim()) && (() => {
-                let inc = 0, exp = 0;
+                let inc = 0, exp = 0, fxSum = 0, fxCnt = 0;
                 filtered.forEach((t) => { const v = txToBase(t, baseCurrency, rates); if (t.type === "income")
                     inc += v;
                 else if (t.type === "expense")
-                    exp += v; });
+                    exp += v; if (t.fxGainBase != null && Math.abs(t.fxGainBase) >= 0.005) {
+                    fxSum += t.fxGainBase;
+                    fxCnt += 1;
+                } });
                 const net = inc - exp;
                 const prj = filterProject.length === 1 && filterProject[0] !== "__none__" ? (projects || []).find((x) => x.id === filterProject[0]) : null;
                 return (React.createElement(Card, { className: "animate-in overflow-hidden" },
@@ -5647,6 +5661,12 @@ window.__K3_START = function () {
                                 React.createElement("span", { className: "tabular font-medium", style: { color: "var(--danger)" } },
                                     "\u2212",
                                     fmtMoney(exp, baseCurrency))),
+                            fxCnt > 0 && React.createElement("div", { "data-fxrow": "1", className: "flex items-center justify-between text-xs" },
+                                React.createElement("span", { style: { color: "var(--text-dim)" } },
+                                    tr("Курсові різниці"), " (", fxCnt, ")"),
+                                React.createElement("span", { className: "tabular font-medium", style: { color: fxSum >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
+                                    fxSum >= 0 ? "+" : "\u2212",
+                                    fmtMoney(Math.abs(fxSum), baseCurrency))),
                             React.createElement("div", { className: "pt-1.5 flex items-center justify-between", style: { borderTop: "1px solid var(--border)" } },
                                 React.createElement("span", { className: "text-xs font-semibold flex items-center gap-1.5" },
                                     tr("Разом"),
@@ -8025,9 +8045,9 @@ window.__K3_START = function () {
             if (modal.type === "transaction")
                 return React.createElement(TransactionModal, { onClose: close, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, markPlannedDone: markPlannedDone });
             if (modal.type === "transfer")
-                return React.createElement(TransferExchangeModal, { onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, preset: modal.payload?.planned || null, plannedDone: modal.payload?.plannedDone || null, markPlannedDone: markPlannedDone, accounts: accounts, pockets: pockets, rates: rates, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
+                return React.createElement(TransferExchangeModal, { onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, preset: modal.payload?.planned || null, plannedDone: modal.payload?.plannedDone || null, markPlannedDone: markPlannedDone, accounts: accounts, pockets: pockets, rates: rates, baseCurrency: baseCurrency, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
             if (modal.type === "exchange")
-                return React.createElement(TransferExchangeModal, { onClose: close, mode: "exchange", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, preset: modal.payload?.planned || null, plannedDone: modal.payload?.plannedDone || null, markPlannedDone: markPlannedDone, accounts: accounts, pockets: pockets, rates: rates, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
+                return React.createElement(TransferExchangeModal, { onClose: close, mode: "exchange", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, preset: modal.payload?.planned || null, plannedDone: modal.payload?.plannedDone || null, markPlannedDone: markPlannedDone, accounts: accounts, pockets: pockets, rates: rates, baseCurrency: baseCurrency, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
             if (modal.type === "loan")
                 return React.createElement(LoanModal, { onClose: close, accounts: accounts, pockets: pockets, addLoan: addLoan, direction: (modal.payload && modal.payload.direction) || "out", pocketBalance: pocketBalance });
             if (modal.type === "loanReturn")
@@ -8767,6 +8787,17 @@ window.__K3_START = function () {
                 const bvv = natural ? amt * rr : (rr ? amt / rr : amt);
                 data.bv = Math.round(bvv * 100) / 100;
                 data.bvBase = baseCurrency;
+                // FX variance: only when the user typed a manual rate this session.
+                if (String(rateStr).trim()) {
+                    const rr0 = natural ? rCur / rBase : rBase / rCur;
+                    const bvMarket = natural ? amt * rr0 : (rr0 ? amt / rr0 : amt);
+                    const gain = (kind === "income" ? 1 : -1) * (bvv - bvMarket);
+                    const g2 = Math.round(gain * 100) / 100;
+                    if (Math.abs(g2) >= 0.005) {
+                        data.fxGainBase = g2;
+                        data.fxGainBaseCur = baseCurrency;
+                    }
+                }
             }
             const buildRecData = () => {
                 const rd = recDay != null ? recDay : (+date.slice(8, 10) || 1);
@@ -8946,7 +8977,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, editing ? tr("Зберегти зміни") : tr("Зберегти"))));
     }
     /* ---------- Transfer / Exchange Modal ---------- */
-    function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, pockets, rates, addTransaction, editTransaction, editing, preset, plannedDone, markPlannedDone, pocketBalance }) {
+    function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, pockets, rates, baseCurrency, addTransaction, editTransaction, editing, preset, plannedDone, markPlannedDone, pocketBalance }) {
         const isExchange = mode === "exchange";
         const active = pockets.filter((p) => !p.archived);
         const src = editing || preset || null;
@@ -8968,6 +8999,7 @@ window.__K3_START = function () {
         const [note, setNote] = useState(src?.note || "");
         const [error, setError] = useState("");
         const [manualTo, setManualTo] = useState(!!editing); // keep the stored toAmount until the user touches inputs
+        const [rateTouched, setRateTouched] = useState(false);
         const pickCur = (side, v) => {
             const setCur = side === "from" ? setFromCur : setToCur;
             const setPk = side === "from" ? setFromPocketId : setToPocketId;
@@ -9069,6 +9101,17 @@ window.__K3_START = function () {
             if (!to || to <= 0)
                 return setError(tr("Сума зарахування має бути додатною"));
             const data = { type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? (quoteFrom ? rateNum : (rateNum > 0 ? Math.round((1 / rateNum) * 1e6) / 1e6 : 0)) : 1, fee: 0, note };
+            // FX variance vs the market cross-rate; stamped for new saves or after a conscious rate/amount edit.
+            if (crossCurrency && rates && rates[fromCurrency] && rates[toCurrency] && (!editing || rateTouched || (preset ? false : manualTo))) {
+                const toMarket = amt * (rates[toCurrency] / rates[fromCurrency]);
+                const gainTo = to - toMarket;
+                const gainBase = gainTo / (rates[toCurrency] || 1) * (rates[baseCurrency] != null ? rates[baseCurrency] : 1);
+                const g2 = Math.round(gainBase * 100) / 100;
+                if (Math.abs(g2) >= 0.005) {
+                    data.fxGainBase = g2;
+                    data.fxGainBaseCur = baseCurrency;
+                }
+            }
             if (editing && editTransaction)
                 editTransaction(editing.id, data);
             else
@@ -9086,7 +9129,7 @@ window.__K3_START = function () {
                     React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }),
                     React.createElement("select", { value: fromCur, onChange: (e) => pickTrCur(e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))),
             crossCurrency && (React.createElement(Field, { label: `Курс обміну (1 ${quoteCur} = X ${otherCur})` },
-                React.createElement(Input, { type: "number", value: rate, onChange: (e) => { setRate(e.target.value); setManualTo(false); } }),
+                React.createElement(Input, { type: "number", value: rate, onChange: (e) => { setRate(e.target.value); setManualTo(false); setRateTouched(true); } }),
                 Math.abs(rateNum - onlineRate) > 1e-9 ? (React.createElement("button", { type: "button", onClick: () => { setRate(String(onlineRate)); setManualTo(false); }, className: "text-[0.6875rem] mt-1", style: { color: "var(--accent)" } },
                     tr("Онлайн-курс"),
                     ": 1 ",
@@ -9761,5 +9804,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.5");</script></body>
+<script>console.log("K³ build: 2026-08-06.6");</script></body>
 </html>
