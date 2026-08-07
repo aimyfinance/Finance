@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.7"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.8"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2669,7 +2669,7 @@ window.__K3_START = function () {
         return (React.createElement("div", { className: `relative overflow-hidden ${rounded ? "rounded-2xl" : ""}`, onTouchStart: onTouchStart, onTouchMove: onTouchMove, onTouchEnd: onTouchEnd },
             React.createElement("div", { className: "absolute inset-y-0 right-0 flex", style: { background: "var(--surface2)" } }, actions.map((a, i) => {
                 const Ic = a.icon;
-                return (React.createElement("button", { key: i, onClick: () => { a.onClick(); setOpen(false); }, className: "flex flex-col items-center justify-center gap-0.5 text-[0.625rem] font-medium", style: { width: 66, background: a.bg, color: a.fg || "#fff" } },
+                return (React.createElement("button", { key: i, onClick: () => { a.onClick(); if (!a.keepOpen) setOpen(false); }, className: "flex flex-col items-center justify-center gap-0.5 text-[0.625rem] font-medium", style: { width: 66, background: a.bg, color: a.fg || "#fff" } },
                     React.createElement(Ic, { size: 16 }),
                     a.label));
             })),
@@ -5378,7 +5378,7 @@ window.__K3_START = function () {
     }
     function HistoryView({ transactions, pockets, accounts, categories, getPocket, pocketLabel, setView, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, rates, baseCurrency, projects, addProject, assignProjectBulk, deleteTransactionsBulk, moveTransactionsBulk, addReportTemplate }) {
         const [rowDelArm, setRowDelArm] = useState(null); // tx id awaiting the second delete tap
-        useEffect(() => { if (!rowDelArm) return; const t = setTimeout(() => setRowDelArm(null), 3500); return () => clearTimeout(t); }, [rowDelArm]);
+        useEffect(() => { if (!rowDelArm) return; const t = setTimeout(() => setRowDelArm(null), 6000); return () => clearTimeout(t); }, [rowDelArm]);
         const [tplSaving, setTplSaving] = useState(false);
         const [tplName, setTplName] = useState("");
         const [search, setSearch] = useState("");
@@ -5748,7 +5748,7 @@ window.__K3_START = function () {
                     if (tx.type === "income" || tx.type === "expense")
                         acts.push({ icon: Edit3, label: tr("Ред."), bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } }) });
                     acts.push({ icon: Plus, label: tr("Копія"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => { const p = txCopyPayload(tx); if (p) setModal(p); else duplicateTransaction(tx); } });
-                    acts.push({ icon: Trash2, label: rowDelArm === tx.id ? tr("Точно?") : tr("Видал."), bg: "var(--danger)", fg: "#fff", onClick: () => { if (rowDelArm === tx.id) { setRowDelArm(null); deleteTransaction(tx.id); } else setRowDelArm(tx.id); } });
+                    acts.push({ icon: Trash2, label: rowDelArm === tx.id ? tr("Точно?") : tr("Видал."), bg: "var(--danger)", fg: "#fff", keepOpen: rowDelArm !== tx.id, onClick: () => { if (rowDelArm === tx.id) { setRowDelArm(null); deleteTransaction(tx.id); } else setRowDelArm(tx.id); } });
                     const checked = !!selIds[tx.id];
                     const inner = (React.createElement("div", { className: "group flex items-center", style: { background: selMode && checked ? "rgba(201,163,98,0.10)" : "var(--surface)" }, ...lpHandlers(tx.id) },
                         selMode && (React.createElement("span", { className: "pl-4 shrink-0" },
@@ -8239,7 +8239,7 @@ window.__K3_START = function () {
     }
     function PocketDetailModal({ pocketId, onClose, setView, setHistoryPreset, getPocket, pocketBalance, pocketLabel, transactions, categories, pockets, accounts, setModal, editTransaction, deleteTransaction, duplicateTransaction, archivePocket, graceInfo }) {
         const [rowDelArm, setRowDelArm] = useState(null);
-        useEffect(() => { if (!rowDelArm) return; const t = setTimeout(() => setRowDelArm(null), 3500); return () => clearTimeout(t); }, [rowDelArm]);
+        useEffect(() => { if (!rowDelArm) return; const t = setTimeout(() => setRowDelArm(null), 6000); return () => clearTimeout(t); }, [rowDelArm]);
         useBodyScrollLock();
         const [pid, setPid] = useState(pocketId);
         const [confirmArc, setConfirmArc] = useState(false);
@@ -8356,7 +8356,7 @@ window.__K3_START = function () {
                     history.map((tx) => (React.createElement(SwipeRow, { key: tx.id, actions: [
                             ...((tx.type === "income" || tx.type === "expense") ? [{ icon: Edit3, label: tr("Ред."), bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx }, returnTo: { type: "pocketDetail", payload: pid } }) }] : []),
                             { icon: Plus, label: tr("Копія"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => duplicateTransaction(tx) },
-                            { icon: Trash2, label: rowDelArm === tx.id ? tr("Точно?") : tr("Видал."), bg: "var(--danger)", fg: "#fff", onClick: () => { if (rowDelArm === tx.id) { setRowDelArm(null); deleteTransaction(tx.id); } else setRowDelArm(tx.id); } },
+                            { icon: Trash2, label: rowDelArm === tx.id ? tr("Точно?") : tr("Видал."), bg: "var(--danger)", fg: "#fff", keepOpen: rowDelArm !== tx.id, onClick: () => { if (rowDelArm === tx.id) { setRowDelArm(null); deleteTransaction(tx.id); } else setRowDelArm(tx.id); } },
                         ] },
                         React.createElement("div", { className: "group flex items-center", style: { background: "var(--surface)" } },
                             React.createElement("div", { className: "flex-1 min-w-0" },
@@ -9809,5 +9809,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.7");</script></body>
+<script>console.log("K³ build: 2026-08-06.8");</script></body>
 </html>
