@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.8"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.9"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -8766,14 +8766,14 @@ window.__K3_START = function () {
                             React.createElement(Button, { variant: "secondary", onClick: createCat }, "OK"),
                             React.createElement("button", { type: "button", onClick: () => { setNewCatMode(false); setNewCatEditId(null); }, className: "p-1.5 shrink-0", style: { color: "var(--text-dim)" } },
                                 React.createElement(X, { size: 14 }))),
+                        React.createElement("div", { className: "mt-2 p-2 rounded-xl", style: { background: "var(--surface)", border: "1px solid var(--border)" } },
+                            React.createElement(IconPickerField, { icon: newCatIcon, setIcon: setNewCatIcon, customEmojis: customEmojis, onCustomEmoji: addCustomEmoji })),
                         React.createElement("div", { className: "mt-2 flex items-center gap-2" },
                             React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Батьківська")),
                             React.createElement("span", { className: "flex-1" },
                                 React.createElement(Select, { value: newCatParent, onChange: (e) => setNewCatParent(e.target.value) },
                                     React.createElement("option", { value: "" }, tr("— без батьківської —")),
-                                    cats.map((pc) => React.createElement("option", { key: pc.id, value: pc.id }, tr(pc.name)))))),
-                        React.createElement("div", { className: "mt-2 p-2 rounded-xl", style: { background: "var(--surface)", border: "1px solid var(--border)" } },
-                            React.createElement(IconPickerField, { icon: newCatIcon, setIcon: setNewCatIcon, customEmojis: customEmojis, onCustomEmoji: addCustomEmoji })))));
+                                    cats.map((pc) => React.createElement("option", { key: pc.id, value: pc.id }, tr(pc.name)))))))));
         const submit = () => {
             const amt = parseFloat(String(amount).replace(",", "."));
             if (!amt || amt <= 0)
@@ -9809,5 +9809,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.8");</script></body>
+<script>console.log("K³ build: 2026-08-06.9");</script></body>
 </html>
