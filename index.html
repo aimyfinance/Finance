@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.9"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.10"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -5993,7 +5993,7 @@ window.__K3_START = function () {
         if (rule.kind === "transfer" || rule.kind === "exchange") {
             return { type: rule.kind, payload: { planned: { fromPocketId: rule.fromPocketId, toPocketId: rule.toPocketId, fromAmount: rule.amount, fromCurrency: rule.currency || undefined, note: rule.note || rule.title, date: date }, plannedDone: { id: rule.id, key: date } } };
         }
-        return { type: "transaction", payload: { kind: rule.kind, presetPocketId: rule.pocketId, presetCategoryId: rule.categoryId, presetAmount: rule.amount, presetCurrency: rule.currency || null, presetNote: rule.note || rule.title, presetDate: date, presetProjectId: rule.projectId || null, focusAmount: true, plannedDone: { id: rule.id, key: date } } };
+        return { type: "transaction", payload: { kind: rule.kind, presetPocketId: rule.pocketId, presetCategoryId: rule.categoryId, presetAmount: rule.amount, presetCurrency: rule.currency || null, presetNote: rule.note || rule.title, presetDate: date, presetProjectId: rule.projectId || null, plannedDone: { id: rule.id, key: date } } };
     }
     /* "Copy" opens a prefilled NEW form (today's date) instead of instantly cloning. */
     function txCopyPayload(tx) {
@@ -9809,5 +9809,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.9");</script></body>
+<script>console.log("K³ build: 2026-08-06.10");</script></body>
 </html>
