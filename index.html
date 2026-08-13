@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.10"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.11"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -9108,9 +9108,10 @@ window.__K3_START = function () {
             const data = { type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? (quoteFrom ? rateNum : (rateNum > 0 ? Math.round((1 / rateNum) * 1e6) / 1e6 : 0)) : 1, fee: 0, note };
             // FX variance vs the market cross-rate; stamped for new saves or after a conscious rate/amount edit.
             if (crossCurrency && rates && rates[fromCurrency] && rates[toCurrency] && (!editing || rateTouched || (preset ? false : manualTo))) {
-                const toMarket = amt * (rates[toCurrency] / rates[fromCurrency]);
+                // rates[X] = вартість 1 X у гривнях (опорна валюта таблиці), тож:
+                const toMarket = amt * (rates[fromCurrency] / rates[toCurrency]);
                 const gainTo = to - toMarket;
-                const gainBase = gainTo / (rates[toCurrency] || 1) * (rates[baseCurrency] != null ? rates[baseCurrency] : 1);
+                const gainBase = gainTo * (rates[toCurrency] || 1) / (rates[baseCurrency] != null && rates[baseCurrency] ? rates[baseCurrency] : 1);
                 const g2 = Math.round(gainBase * 100) / 100;
                 if (Math.abs(g2) >= 0.005) {
                     data.fxGainBase = g2;
@@ -9809,5 +9810,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.10");</script></body>
+<script>console.log("K³ build: 2026-08-06.11");</script></body>
 </html>
