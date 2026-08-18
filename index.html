@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.11"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.12"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -8036,7 +8036,7 @@ window.__K3_START = function () {
         const close = () => setModal(modal && modal.returnTo ? modal.returnTo : null);
         const body = (() => {
             if (modal.type === "account")
-                return React.createElement(AccountModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload && modal.payload.id ? modal.payload : null, presetBank: modal.payload && !modal.payload.id ? (modal.payload.bank || "") : "", addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, currencies: currencies });
+                return React.createElement(AccountModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload && modal.payload.id ? modal.payload : null, presetBank: modal.payload && !modal.payload.id ? (modal.payload.bank || "") : "", addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, currencies: currencies, accounts: accounts });
             if (modal.type === "pocket")
                 return React.createElement(PocketModal, { onClose: close, onBack: modal.returnTo ? close : undefined, accountId: modal.payload.accountId, existing: modal.payload.existing, accounts: accounts, pockets: pockets, addPocket: addPocket, editPocket: editPocket, currencies: currencies });
             if (modal.type === "diag")
@@ -8431,9 +8431,10 @@ window.__K3_START = function () {
             React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Нова назва застосується до всіх рахунків цього банку.")),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, tr("Зберегти"))));
     }
-    function AccountModal({ onClose, onBack, existing, presetBank, addAccountWithPocket, editAccount, currencies }) {
+    function AccountModal({ onClose, onBack, existing, presetBank, addAccountWithPocket, editAccount, currencies, accounts }) {
         const [name, setName] = useState(existing?.name || "");
         const [bank, setBank] = useState(existing?.bank || presetBank || "");
+        const [bankFocus, setBankFocus] = useState(false);
         const [type, setType] = useState(existing?.type || (presetBank ? "card" : "cash"));
         const [color, setColor] = useState(existing?.color || ACCOUNT_COLORS[0]);
         const [currency, setCurrency] = useState("UAH");
@@ -8459,7 +8460,18 @@ window.__K3_START = function () {
             React.createElement(Field, { label: tr("Назва"), error: error },
                 React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); }, placeholder: tr("Напр. Чорна картка") })),
             React.createElement(Field, { label: bankRequired ? tr("Банк") : tr("Банк (необовʼязково) — для групування"), error: bankError },
-                React.createElement(Input, { value: bank, onChange: (e) => { setBank(e.target.value); setBankError(""); }, placeholder: tr("Напр. Монобанк, ПриватБанк") })),
+                React.createElement(Input, { value: bank, onChange: (e) => { setBank(e.target.value); setBankError(""); }, onFocus: () => setBankFocus(true), onBlur: () => setTimeout(() => setBankFocus(false), 150), placeholder: tr("Напр. Монобанк, ПриватБанк") }),
+                (() => {
+                    if (!bankFocus)
+                        return null;
+                    const seen = [];
+                    (accounts || []).forEach((a) => { const b = (a.bank || "").trim(); if (b && !seen.includes(b)) seen.push(b); });
+                    const q = bank.trim().toLowerCase();
+                    const opts = seen.filter((b) => b.toLowerCase() !== q && (!q || b.toLowerCase().includes(q))).slice(0, 6);
+                    if (!opts.length)
+                        return null;
+                    return React.createElement("div", { className: "flex flex-wrap gap-1.5 mt-1.5" }, opts.map((b) => (React.createElement("button", { type: "button", key: b, "data-banksugg": b, onMouseDown: (e) => e.preventDefault(), onClick: () => { setBank(b); setBankError(""); setBankFocus(false); }, className: "px-2.5 py-1 rounded-full text-xs font-medium", style: { background: "var(--surface2)", color: "var(--text)" } }, b))));
+                })()),
             React.createElement(Field, { label: tr("Тип рахунку") },
                 React.createElement(Select, { value: type, onChange: (e) => { setType(e.target.value); setBankError(""); } }, ACCOUNT_TYPES.map((t) => React.createElement("option", { key: t.id, value: t.id }, tr(t.label))))),
             React.createElement(Field, { label: tr("Колір") },
@@ -9810,5 +9822,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.11");</script></body>
+<script>console.log("K³ build: 2026-08-06.12");</script></body>
 </html>
