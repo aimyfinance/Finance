@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.14"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.15"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1890,6 +1890,7 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Купівля": "Trade",
         "Перенести крипту": "Move crypto",
         "Кількість": "Amount",
         "У цьому гаманці немає монет.": "No coins in this wallet.",
@@ -6595,27 +6596,28 @@ window.__K3_START = function () {
         };
         const fmtUpd = cryptoUpdatedAt ? new Date(cryptoUpdatedAt).toLocaleString(locale(), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : tr("ще не оновлювались");
         return (React.createElement("div", { className: "space-y-5 animate-in max-w-2xl" },
-            React.createElement("div", { className: "flex items-center justify-between gap-2 flex-wrap" },
+            React.createElement("div", { className: "flex items-center justify-between gap-2" },
                 React.createElement("h1", { className: "font-display font-bold text-2xl" }, tr("Крипто-портфель")),
-                React.createElement("div", { className: "flex items-center gap-2" },
+                React.createElement("div", { className: "flex items-center gap-2 shrink-0" },
                     React.createElement("button", { onClick: toggleCryptoFav, className: "p-2 rounded-lg", style: { color: cryptoFav ? "var(--accent)" : "var(--text-dim)" }, "aria-label": tr("Показувати на головній") },
                         React.createElement(Star, { size: 18, fill: cryptoFav ? "currentColor" : "none" })),
-                    React.createElement(Button, { variant: "secondary", onClick: () => setModal({ type: "cryptoTrade" }) },
-                        React.createElement(ArrowLeftRight, { size: 15 }),
-                        " ",
-                        tr("Купити / Продати")),
                     React.createElement(Button, { onClick: () => setModal({ type: "crypto", payload: null }) },
                         React.createElement(Plus, { size: 16 }),
                         " ",
-                        tr("Додати актив")),
-                    React.createElement(Button, { variant: "secondary", "data-cmove": "1", onClick: () => setModal({ type: "cryptoMove" }) },
-                        React.createElement(ArrowLeftRight, { size: 15 }),
-                        " ",
-                        tr("Перенести")),
-                    React.createElement(Button, { variant: "secondary", "data-cswap": "1", onClick: () => setModal({ type: "cryptoSwap" }) },
-                        React.createElement(RefreshCw, { size: 15 }),
-                        " ",
-                        tr("Своп")))),
+                        tr("Додати актив")))),
+            React.createElement("div", { className: "grid grid-cols-3 gap-2" },
+                React.createElement(Button, { variant: "secondary", className: "w-full", onClick: () => setModal({ type: "cryptoTrade" }) },
+                    React.createElement(ArrowLeftRight, { size: 15 }),
+                    " ",
+                    tr("Купівля")),
+                React.createElement(Button, { variant: "secondary", className: "w-full", "data-cmove": "1", onClick: () => setModal({ type: "cryptoMove" }) },
+                    React.createElement(ArrowLeftRight, { size: 15 }),
+                    " ",
+                    tr("Перенести")),
+                React.createElement(Button, { variant: "secondary", className: "w-full", "data-cswap": "1", onClick: () => setModal({ type: "cryptoSwap" }) },
+                    React.createElement(RefreshCw, { size: 15 }),
+                    " ",
+                    tr("Своп"))),
             React.createElement(Card, { className: "p-5", style: { background: "linear-gradient(135deg, #1A2338 0%, #10192B 100%)" } },
                 React.createElement("p", { className: "text-xs mb-1", style: { color: "#A7B0C4" } }, tr("Загальна вартість портфелю")),
                 React.createElement("p", { className: "font-display font-extrabold text-3xl tabular", style: { color: "#F3F0E8" } }, fmtMoney(total, baseCurrency)),
@@ -10007,5 +10009,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.14");</script></body>
+<script>console.log("K³ build: 2026-08-06.15");</script></body>
 </html>
