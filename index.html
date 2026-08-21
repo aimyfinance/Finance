@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-06.12"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-06.13"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -879,6 +879,8 @@ window.__K3_START = function () {
         }
     }
     function txToBase(t, base, ratesToUAH) {
+        if (!t || t.amount == null)
+            return 0;
         // 1) Однакова валюта = тотожність: $600 лишається $600 у доларовій базі.
         if (t.currency === base)
             return t.amount;
@@ -1888,6 +1890,16 @@ window.__K3_START = function () {
         "Частково повернена": "Partly returned",
         "Частково погашена": "Partly repaid",
         "Часті запитання": "FAQ",
+        "Переказ крипти": "Crypto transfer",
+        "Своп крипти": "Crypto swap",
+        "Своп": "Swap",
+        "Своп виконано": "Swap done",
+        "Монета": "Coin",
+        "Віддано": "Given",
+        "Отримано": "Received",
+        "Гаманець": "Wallet",
+        "Запис видалено, монети повернуто в гаманець": "Record deleted, coins returned to the wallet",
+        "Запис видалено, своп скасовано": "Record deleted, the swap was reverted",
         "Точно?": "Sure?",
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
@@ -3454,6 +3466,37 @@ window.__K3_START = function () {
                         patch.crypto = crypto.map((h) => (h.id === hit.id ? { ...h, amount: Math.round(((h.amount || 0) + dir * tx.coinAmount) * 1e8) / 1e8 } : h));
                 }
             }
+            if (tx && tx.type === "crypto_transfer" && tx.coinId && tx.coinAmount > 0) {
+                // move the coins back so history and balances stay in sync
+                let list = patch.crypto || crypto;
+                const toW = tx.toWalletId || null, fromW = tx.fromWalletId || null;
+                const dst = list.find((h) => h.coinId === tx.coinId && (h.walletId || null) === toW);
+                if (dst)
+                    list = list.map((h) => (h.id === dst.id ? { ...h, amount: Math.max(0, Math.round(((h.amount || 0) - tx.coinAmount) * 1e8) / 1e8) } : h));
+                const back = list.find((h) => h.coinId === tx.coinId && (h.walletId || null) === fromW);
+                if (back)
+                    list = list.map((h) => (h.id === back.id ? { ...h, amount: Math.round(((h.amount || 0) + tx.coinAmount) * 1e8) / 1e8 } : h));
+                else
+                    list = [{ id: uid("cx"), note: "", coinId: tx.coinId, symbol: tx.coinSymbol, name: tx.coinSymbol, walletId: fromW, amount: tx.coinAmount }, ...list];
+                list = list.filter((h) => !((h.amount || 0) <= 1e-9 && !(h.note || "").trim()));
+                patch.crypto = list;
+                msg = tr("Запис видалено, монети повернуто в гаманець");
+            }
+            if (tx && tx.type === "crypto_swap" && tx.coinId && tx.coinAmount > 0) {
+                let list = patch.crypto || crypto;
+                const wid = tx.walletId || null;
+                const got = list.find((h) => h.coinId === tx.coinId && (h.walletId || null) === wid);
+                if (got)
+                    list = list.map((h) => (h.id === got.id ? { ...h, amount: Math.max(0, Math.round(((h.amount || 0) - tx.coinAmount) * 1e8) / 1e8) } : h));
+                const gave = list.find((h) => h.coinId === tx.fromCoinId && (h.walletId || null) === wid);
+                if (gave)
+                    list = list.map((h) => (h.id === gave.id ? { ...h, amount: Math.round(((h.amount || 0) + tx.fromCoinAmount) * 1e8) / 1e8 } : h));
+                else if (tx.fromCoinId)
+                    list = [{ id: uid("cx"), note: "", coinId: tx.fromCoinId, symbol: tx.fromCoinSymbol, name: tx.fromCoinSymbol, walletId: wid, amount: tx.fromCoinAmount }, ...list];
+                list = list.filter((h) => !((h.amount || 0) <= 1e-9 && !(h.note || "").trim()));
+                patch.crypto = list;
+                msg = tr("Запис видалено, своп скасовано");
+            }
             update(patch);
             notify(msg);
         };
@@ -3590,6 +3633,28 @@ window.__K3_START = function () {
             notify(tr("Гаманець додано"));
             return w;
         };
+        // Coin-to-coin swap inside one wallet: exchange fees are baked into the received amount.
+        const swapCrypto = (walletId, fromCoinId, fromAmount, toCoin, toAmount) => {
+            if (!(fromAmount > 0) || !(toAmount > 0) || !toCoin || !toCoin.id || toCoin.id === fromCoinId)
+                return;
+            const wid = walletId || null;
+            const src = crypto.find((cc) => cc.coinId === fromCoinId && (cc.walletId || null) === wid);
+            if (!src || (src.amount || 0) < fromAmount - 1e-9) {
+                notify(tr("Недостатньо монет у гаманці"));
+                return;
+            }
+            let list = crypto.map((cc) => (cc.id === src.id ? { ...cc, amount: Math.round(((cc.amount || 0) - fromAmount) * 1e8) / 1e8 } : cc));
+            const dst = list.find((cc) => cc.coinId === toCoin.id && (cc.walletId || null) === wid);
+            if (dst)
+                list = list.map((cc) => (cc.id === dst.id ? { ...cc, amount: Math.round(((cc.amount || 0) + toAmount) * 1e8) / 1e8 } : cc));
+            else
+                list = [{ id: uid("cx"), note: "", coinId: toCoin.id, symbol: toCoin.symbol, name: toCoin.name, walletId: wid, amount: Math.round(toAmount * 1e8) / 1e8 }, ...list];
+            list = list.filter((cc) => !(cc.id === src.id && cc.amount <= 1e-9 && !(cc.note || "").trim()));
+            const wName = wid ? ((cryptoWallets.find((w) => w.id === wid) || {}).name || "?") : tr("Основний");
+            const txRec = { id: uid("tx"), createdAt: new Date().toISOString(), type: "crypto_swap", date: new Date().toISOString().slice(0, 10), coinId: toCoin.id, coinSymbol: toCoin.symbol, coinAmount: Math.round(toAmount * 1e8) / 1e8, fromCoinId: fromCoinId, fromCoinSymbol: src.symbol, fromCoinAmount: Math.round(fromAmount * 1e8) / 1e8, walletId: wid, walletName: wName, note: "" };
+            update({ crypto: list, transactions: [txRec, ...transactions] });
+            notify(tr("Своп виконано"));
+        };
         const transferCrypto = (coinId, fromWalletId, toWalletId, amount) => {
             if (!(amount > 0) || (fromWalletId || null) === (toWalletId || null))
                 return;
@@ -3605,7 +3670,9 @@ window.__K3_START = function () {
             else
                 list = [{ id: uid("cx"), note: "", coinId, symbol: src.symbol, name: src.name, walletId: toWalletId || null, amount: Math.round(amount * 1e8) / 1e8 }, ...list];
             list = list.filter((cc) => !(cc.id === src.id && cc.amount <= 1e-9 && !(cc.note || "").trim()));
-            update({ crypto: list });
+            const wName = (wid) => wid ? ((cryptoWallets.find((w) => w.id === wid) || {}).name || "?") : tr("Основний");
+            const txRec = { id: uid("tx"), createdAt: new Date().toISOString(), type: "crypto_transfer", date: new Date().toISOString().slice(0, 10), coinId, coinSymbol: src.symbol, coinAmount: Math.round(amount * 1e8) / 1e8, fromWalletId: fromWalletId || null, toWalletId: toWalletId || null, fromWalletName: wName(fromWalletId || null), toWalletName: wName(toWalletId || null), note: "" };
+            update({ crypto: list, transactions: [txRec, ...transactions] });
             notify(tr("Перенесено між гаманцями"));
         };
         const renameCryptoWallet = (id, name) => {
@@ -3973,7 +4040,7 @@ window.__K3_START = function () {
         const exportCSV = async () => {
             try {
                 const catName = (id) => (categories.find((c) => c.id === id) || {}).name || "";
-                const typeLbl = { income: tr("Дохід"), expense: tr("Витрата"), transfer: tr("Переказ"), exchange: tr("Обмін валют"), loan_out: tr("Позика видана"), loan_return: tr("Повернення позики") };
+                const typeLbl = { income: tr("Дохід"), expense: tr("Витрата"), transfer: tr("Переказ"), exchange: tr("Обмін валют"), loan_out: tr("Позика видана"), loan_return: tr("Повернення позики"), crypto_buy: tr("Купівля крипто"), crypto_sell: tr("Продаж крипто"), crypto_transfer: tr("Переказ крипти"), crypto_swap: tr("Своп крипти") };
                 const rows = [[tr("Дата"), tr("Тип"), tr("Сума"), tr("Валюта"), tr("Категорія"), tr("Рахунок"), tr("Нотатка")]];
                 transactions.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).forEach((t) => {
                     const amt = t.amount != null ? t.amount : (t.fromAmount != null ? t.fromAmount : "");
@@ -4107,7 +4174,7 @@ window.__K3_START = function () {
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory, reorderCategories: reorderCategories, deleteSubcategory: deleteSubcategory })),
                 view === "projects" && (React.createElement(ProjectsView, { projects: projects, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects })),
                         view === "goals" && (React.createElement(GoalsView, { goals: goals, setModal: setModal, baseCurrency: baseCurrency, rates: rates })),
-                        view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort, cryptoWallets: cryptoWallets, addCryptoWallet: addCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, transferCrypto: transferCrypto })),
+                        view === "crypto" && (React.createElement(CryptoView, { crypto: crypto, cryptoPrices: cryptoPrices, cryptoUpdatedAt: state.cryptoUpdatedAt, baseCurrency: baseCurrency, rates: rates, setModal: setModal, refreshCryptoPrices: refreshCryptoPrices, setToast: setToast, cryptoFav: cryptoFav, toggleCryptoFav: toggleCryptoFav, cryptoSort: cryptoSort, setCryptoSort: setCryptoSort, cryptoWallets: cryptoWallets, addCryptoWallet: addCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, transferCrypto: transferCrypto, swapCrypto: swapCrypto })),
                         view === "settings" && (React.createElement(SettingsView, { baseCurrency: baseCurrency, rates: rates, rateMode: state.rateMode || {}, includeLoansInTotal: includeLoansInTotal, uiScale: state.uiScale || "m", update: update, session: session, setToast: setToast, pin: pin, applyPin: applyPin, pinDelay: pinDelay, applyPinDelay: applyPinDelay, exportBackup: exportBackup, importBackup: importBackup, exportCSV: exportCSV, setView: setView, setModal: setModal, autoRefresh: state.autoRefresh || "open" }))))),
             React.createElement("div", { "data-tour": "nav", className: "md:hidden fixed bottom-0 left-0 right-0 z-30 border-t flex items-stretch", style: { background: "var(--surface)", borderColor: "var(--border)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 MOBILE_NAV.map((item) => {
@@ -4865,13 +4932,25 @@ window.__K3_START = function () {
             amountStr = `−${fmtMoney(tx.amount, tx.currency)}`;
             amountColor = "var(--warn)";
         }
+        else if (tx.type === "crypto_transfer") {
+            label = tr("Переказ крипти");
+            sub = (tx.fromWalletName || "?") + " \u2192 " + (tx.toWalletName || "?");
+            amountStr = `${tx.coinAmount || ""} ${tx.coinSymbol || ""}`;
+            amountColor = "var(--text-dim)";
+        }
+        else if (tx.type === "crypto_swap") {
+            label = tr("Своп крипти");
+            sub = tr(tx.note) || (tx.walletName || "");
+            amountStr = `${tx.fromCoinAmount || ""} ${tx.fromCoinSymbol || ""} \u2192 ${tx.coinAmount || ""} ${tx.coinSymbol || ""}`;
+            amountColor = "var(--accent)";
+        }
         else if (tx.type === "crypto_sell") {
             label = tr("Продаж крипто");
             sub = tr(tx.note) || `${tx.coinAmount || ""} ${tx.coinSymbol || ""}`;
             amountStr = `+${fmtMoney(tx.amount, tx.currency)}`;
             amountColor = "var(--income, #2F8F5B)";
         }
-        const specialIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : null;
+        const specialIcon = tx.type === "crypto_buy" || tx.type === "crypto_sell" || tx.type === "crypto_transfer" || tx.type === "crypto_swap" ? Coins : tx.type === "transfer" ? ArrowLeftRight : tx.type === "exchange" ? RefreshCw : tx.type === "loan_out" || tx.type === "debt_repay" ? ArrowUpRight : tx.type === "loan_return" || tx.type === "debt_take" ? ArrowDownRight : null;
         // plain income/expense rows go through the emoji-aware Icon component
         const TypeIcon = specialIcon || ((p) => React.createElement(Icon, Object.assign({ name: cat?.icon || "MoreHorizontal" }, p)));
         if (tx.coinId && !tx.pocketId)
@@ -4908,6 +4987,14 @@ window.__K3_START = function () {
             React.createElement("div", { className: "mb-4" },
                 React.createElement(Row, { k: tr("Тип"), v: tr(typeLbl[tx.type] || tx.type) }),
                 React.createElement(Row, { k: tr("Дата"), v: fmtDate(tx.date) }),
+                tx.type === "crypto_transfer" && React.createElement(React.Fragment, null,
+                    React.createElement(Row, { k: tr("Монета"), v: `${tx.coinAmount} ${tx.coinSymbol}`, strong: true }),
+                    React.createElement(Row, { k: tr("З гаманця"), v: tx.fromWalletName || "?" }),
+                    React.createElement(Row, { k: tr("На гаманець"), v: tx.toWalletName || "?" })),
+                tx.type === "crypto_swap" && React.createElement(React.Fragment, null,
+                    React.createElement(Row, { k: tr("Віддано"), v: `${tx.fromCoinAmount} ${tx.fromCoinSymbol}`, strong: true }),
+                    React.createElement(Row, { k: tr("Отримано"), v: `${tx.coinAmount} ${tx.coinSymbol}`, strong: true }),
+                    React.createElement(Row, { k: tr("Гаманець"), v: tx.walletName || tr("Основний") })),
                 !dual && React.createElement(Row, { k: tr("Сума"), v: fmtMoney(tx.amount, tx.currency), strong: true }),
                 !dual && baseCurrency && tx.currency !== baseCurrency && (() => { const bvv = tx.bv != null && tx.bvBase === baseCurrency ? tx.bv : txToBase(tx, baseCurrency, rates || {}); const rr = tx.amount ? bvv / tx.amount : 0; const shown = rr >= 1 ? rr : (rr ? 1 / rr : 0); return React.createElement(Row, { k: tr("У базовій"), v: fmtMoney(Math.round(bvv * 100) / 100, baseCurrency) + " · " + tr("курс") + " " + (Math.round(shown * 10000) / 10000) }); })(),
                 dual && React.createElement(Row, { k: tr("Списано"), v: fmtMoney(tx.fromAmount, tx.fromCurrency), strong: true }),
@@ -5464,7 +5551,7 @@ window.__K3_START = function () {
         const filtered = useMemo(() => {
             return transactions.filter((t) => {
                 if (filterType.length) {
-                    const okT = filterType.some((v) => v === "crypto_ops" ? (t.type === "crypto_buy" || t.type === "crypto_sell")
+                    const okT = filterType.some((v) => v === "crypto_ops" ? (t.type === "crypto_buy" || t.type === "crypto_sell" || t.type === "crypto_transfer" || t.type === "crypto_swap")
                         : v === "loan_ops" ? (t.type === "loan_out" || t.type === "loan_return")
                             : v === "debt_ops" ? (t.type === "debt_take" || t.type === "debt_repay")
                                 : t.type === v);
@@ -6370,7 +6457,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, mode === "add" ? tr("Поповнити ціль") : tr("Зняти кошти"))));
     }
     /* ============================== CRYPTO PORTFOLIO ============================== */
-    function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates, setModal, refreshCryptoPrices, setToast, cryptoFav, toggleCryptoFav, cryptoSort, setCryptoSort, cryptoWallets, addCryptoWallet, deleteCryptoWallet, transferCrypto }) {
+    function CryptoView({ crypto, cryptoPrices, cryptoUpdatedAt, baseCurrency, rates, setModal, refreshCryptoPrices, setToast, cryptoFav, toggleCryptoFav, cryptoSort, setCryptoSort, cryptoWallets, addCryptoWallet, deleteCryptoWallet, transferCrypto, swapCrypto }) {
         const [busy, setBusy] = useState(false);
         // Auto-load live prices on open if some are missing or the cache is stale (>10 min),
         // so the portfolio value (and the total capital) reflect the market without a manual tap.
@@ -6394,6 +6481,10 @@ window.__K3_START = function () {
         const [trF, setTrF] = useState("");
         const [trT, setTrT] = useState("");
         const [trA, setTrA] = useState("");
+        const [swW, setSwW] = useState("");
+        const [swAmtF, setSwAmtF] = useState("");
+        const [swCoinTo, setSwCoinTo] = useState("");
+        const [swAmtT, setSwAmtT] = useState("");
         const walletName = (wid) => { if (!wid)
             return tr("Основний"); const w = (cryptoWallets || []).find((x) => x.id === wid); return w ? w.name : tr("Основний"); };
         const groups = (() => { const m = {}; visible.forEach((cc) => { const g = m[cc.coinId] || (m[cc.coinId] = { coinId: cc.coinId, symbol: cc.symbol, name: cc.name, amount: 0, rows: [] }); g.amount += (cc.amount || 0); if (!g.symbol)
@@ -6503,7 +6594,23 @@ window.__K3_START = function () {
                                 React.createElement("input", { value: trA, onChange: (e) => setTrA(e.target.value), inputMode: "decimal", placeholder: "0", className: "px-2 py-1 rounded-lg text-[0.6875rem] tabular outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", width: 72, color: "var(--text)" } }),
                                 React.createElement("button", { onClick: () => { const av = parseFloat(String(trA).replace(",", ".")); if (!(av > 0))
                                         return; transferCrypto(g.coinId, trF || null, trT || null, av); setTrA(""); }, className: "p-1 rounded-lg", style: { color: "var(--accent)" } },
-                                    React.createElement(Check, { size: 14 }))))))));
+                                    React.createElement(Check, { size: 14 })))),
+                            React.createElement("div", { className: "flex flex-wrap items-center gap-1.5 pt-1.5", style: { borderTop: "1px dashed var(--border)" } },
+                                React.createElement("span", { className: "text-[0.625rem] shrink-0", style: { color: "var(--text-dim)" } },
+                                    tr("Своп"),
+                                    ":"),
+                                (cryptoWallets || []).length > 0 && React.createElement("select", { value: swW, onChange: (e) => setSwW(e.target.value), className: "px-1.5 py-1 rounded-lg text-[0.6875rem] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", maxWidth: 88 } },
+                                    React.createElement("option", { value: "" }, tr("Основний")),
+                                    (cryptoWallets || []).map((w) => React.createElement("option", { key: w.id, value: w.id }, w.name))),
+                                React.createElement("input", { "data-swamtf": g.coinId, value: swAmtF, onChange: (e) => setSwAmtF(e.target.value), inputMode: "decimal", placeholder: "0 " + (g.symbol || ""), className: "px-2 py-1 rounded-lg text-[0.6875rem] tabular outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", width: 76, color: "var(--text)" } }),
+                                React.createElement(ArrowLeftRight, { size: 11, style: { color: "var(--text-dim)" } }),
+                                React.createElement("select", { "data-swcoin": g.coinId, value: swCoinTo, onChange: (e) => setSwCoinTo(e.target.value), className: "px-1.5 py-1 rounded-lg text-[0.6875rem] outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", maxWidth: 88 } },
+                                    React.createElement("option", { value: "" }, "\u2014"),
+                                    CRYPTO_COINS.filter((c) => c.id !== g.coinId).map((c) => React.createElement("option", { key: c.id, value: c.id }, c.symbol))),
+                                React.createElement("input", { "data-swamtt": g.coinId, value: swAmtT, onChange: (e) => setSwAmtT(e.target.value), inputMode: "decimal", placeholder: "0", className: "px-2 py-1 rounded-lg text-[0.6875rem] tabular outline-none", style: { background: "var(--surface2)", border: "1px solid var(--border)", width: 76, color: "var(--text)" } }),
+                                React.createElement("button", { "data-swgo": g.coinId, onClick: () => { const fa = parseFloat(String(swAmtF).replace(",", ".")); const ta = parseFloat(String(swAmtT).replace(",", ".")); const tc = CRYPTO_COINS.find((c) => c.id === swCoinTo); if (!(fa > 0) || !(ta > 0) || !tc)
+                                        return; swapCrypto(swW || null, g.coinId, fa, tc, ta); setSwAmtF(""); setSwAmtT(""); setSwCoinTo(""); }, className: "p-1 rounded-lg", style: { color: "var(--accent)" } },
+                                    React.createElement(Check, { size: 14 })))))));
                 }),
                 crypto.length === 0 && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("Портфель порожній. Додайте перший актив — і бачте його вартість за живими цінами.")),
                 crypto.length > 0 && visible.length === 0 && React.createElement("p", { className: "text-sm text-center py-10", style: { color: "var(--text-dim)" } }, tr("У цьому гаманці поки немає монет."))),
@@ -9822,5 +9929,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-06.12");</script></body>
+<script>console.log("K³ build: 2026-08-06.13");</script></body>
 </html>
