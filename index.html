@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-21.7"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-21.8"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1963,6 +1963,9 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Вигода свопу": "Swap gain",
+        "Редагувати своп": "Edit swap",
+        "Своп оновлено": "Swap updated",
         "Продаж крипти": "Crypto sales",
         "без собівартості": "no cost basis",
         "Реалізований результат": "Realised result",
@@ -3548,18 +3551,7 @@ window.__K3_START = function () {
                 msg = tr("Запис видалено, монети повернуто в гаманець");
             }
             if (tx && tx.type === "crypto_swap" && tx.coinId && tx.coinAmount > 0) {
-                let list = patch.crypto || crypto;
-                const wid = tx.walletId || null;
-                const got = list.find((h) => h.coinId === tx.coinId && (h.walletId || null) === wid);
-                if (got)
-                    list = list.map((h) => (h.id === got.id ? { ...h, amount: Math.max(0, Math.round(((h.amount || 0) - tx.coinAmount) * 1e8) / 1e8) } : h));
-                const gave = list.find((h) => h.coinId === tx.fromCoinId && (h.walletId || null) === wid);
-                if (gave)
-                    list = list.map((h) => (h.id === gave.id ? { ...h, amount: Math.round(((h.amount || 0) + tx.fromCoinAmount) * 1e8) / 1e8 } : h));
-                else if (tx.fromCoinId)
-                    list = [{ id: uid("cx"), note: "", coinId: tx.fromCoinId, symbol: tx.fromCoinSymbol, name: tx.fromCoinSymbol, walletId: wid, amount: tx.fromCoinAmount }, ...list];
-                list = list.filter((h) => !((h.amount || 0) <= 1e-9 && !(h.note || "").trim()));
-                patch.crypto = list;
+                patch.crypto = revertSwapOnList(patch.crypto || crypto, tx);
                 msg = tr("Запис видалено, своп скасовано");
             }
             update(patch);
@@ -3700,30 +3692,51 @@ window.__K3_START = function () {
             return w;
         };
         // Coin-to-coin swap inside one wallet: exchange fees are baked into the received amount.
-        const swapCrypto = (walletId, fromCoinId, fromAmount, toCoin, toAmount, fxGainBase) => {
-            if (!(fromAmount > 0) || !(toAmount > 0) || !toCoin || !toCoin.id || toCoin.id === fromCoinId)
-                return;
-            const wid = walletId || null;
-            const src = crypto.find((cc) => cc.coinId === fromCoinId && (cc.walletId || null) === wid);
-            if (!src || (src.amount || 0) < fromAmount - 1e-9) {
-                notify(tr("Недостатньо монет у гаманці"));
-                return;
-            }
-            let list = crypto.map((cc) => (cc.id === src.id ? { ...cc, amount: Math.round(((cc.amount || 0) - fromAmount) * 1e8) / 1e8 } : cc));
+        // Pure holding-list transforms for a swap; used by create, edit and delete.
+        const revertSwapOnList = (list0, tx) => {
+            let list = list0;
+            const wid = tx.walletId || null;
+            const got = list.find((h) => h.coinId === tx.coinId && (h.walletId || null) === wid);
+            if (got)
+                list = list.map((h) => (h.id === got.id ? { ...h, amount: Math.max(0, Math.round(((h.amount || 0) - tx.coinAmount) * 1e8) / 1e8) } : h));
+            const gave = list.find((h) => h.coinId === tx.fromCoinId && (h.walletId || null) === wid);
+            if (gave)
+                list = list.map((h) => (h.id === gave.id ? { ...h, amount: Math.round(((h.amount || 0) + tx.fromCoinAmount) * 1e8) / 1e8 } : h));
+            else if (tx.fromCoinId)
+                list = [{ id: uid("cx"), note: "", coinId: tx.fromCoinId, symbol: tx.fromCoinSymbol, name: tx.fromCoinSymbol, walletId: wid, amount: tx.fromCoinAmount }, ...list];
+            return list.filter((h) => !((h.amount || 0) <= 1e-9 && !(h.note || "").trim()));
+        };
+        const applySwapOnList = (list0, wid, fromCoinId, fromAmount, toCoin, toAmount) => {
+            const src = list0.find((cc) => cc.coinId === fromCoinId && (cc.walletId || null) === wid);
+            if (!src || (src.amount || 0) < fromAmount - 1e-9)
+                return null;
+            let list = list0.map((cc) => (cc.id === src.id ? { ...cc, amount: Math.round(((cc.amount || 0) - fromAmount) * 1e8) / 1e8 } : cc));
             const dst = list.find((cc) => cc.coinId === toCoin.id && (cc.walletId || null) === wid);
             if (dst)
                 list = list.map((cc) => (cc.id === dst.id ? { ...cc, amount: Math.round(((cc.amount || 0) + toAmount) * 1e8) / 1e8 } : cc));
             else
                 list = [{ id: uid("cx"), note: "", coinId: toCoin.id, symbol: toCoin.symbol, name: toCoin.name, walletId: wid, amount: Math.round(toAmount * 1e8) / 1e8 }, ...list];
-            list = list.filter((cc) => !(cc.id === src.id && cc.amount <= 1e-9 && !(cc.note || "").trim()));
+            return { list: list.filter((cc) => !(cc.id === src.id && cc.amount <= 1e-9 && !(cc.note || "").trim())), src };
+        };
+        const swapCrypto = (walletId, fromCoinId, fromAmount, toCoin, toAmount, fxGainBase, date, editingId) => {
+            if (!(fromAmount > 0) || !(toAmount > 0) || !toCoin || !toCoin.id || toCoin.id === fromCoinId)
+                return;
+            const wid = walletId || null;
+            const prev = editingId ? transactions.find((t) => t.id === editingId && t.type === "crypto_swap") : null;
+            const base = prev ? revertSwapOnList(crypto, prev) : crypto;
+            const res = applySwapOnList(base, wid, fromCoinId, fromAmount, toCoin, toAmount);
+            if (!res) {
+                notify(tr("Недостатньо монет у гаманці"));
+                return;
+            }
             const wName = wid ? ((cryptoWallets.find((w) => w.id === wid) || {}).name || "?") : tr("Основний");
-            const txRec = { id: uid("tx"), createdAt: new Date().toISOString(), type: "crypto_swap", date: new Date().toISOString().slice(0, 10), coinId: toCoin.id, coinSymbol: toCoin.symbol, coinAmount: Math.round(toAmount * 1e8) / 1e8, fromCoinId: fromCoinId, fromCoinSymbol: src.symbol, fromCoinAmount: Math.round(fromAmount * 1e8) / 1e8, walletId: wid, walletName: wName, note: "" };
+            const txRec = { id: prev ? prev.id : uid("tx"), createdAt: prev ? prev.createdAt : new Date().toISOString(), type: "crypto_swap", date: date || new Date().toISOString().slice(0, 10), coinId: toCoin.id, coinSymbol: toCoin.symbol, coinAmount: Math.round(toAmount * 1e8) / 1e8, fromCoinId: fromCoinId, fromCoinSymbol: res.src.symbol, fromCoinAmount: Math.round(fromAmount * 1e8) / 1e8, walletId: wid, walletName: wName, note: prev ? (prev.note || "") : "" };
             if (fxGainBase != null && Math.abs(fxGainBase) >= 0.005) {
                 txRec.fxGainBase = Math.round(fxGainBase * 100) / 100;
                 txRec.fxGainBaseCur = baseCurrency;
             }
-            update({ crypto: list, transactions: [txRec, ...transactions] });
-            notify(tr("Своп виконано"));
+            update({ crypto: res.list, transactions: prev ? transactions.map((t) => (t.id === prev.id ? txRec : t)) : [txRec, ...transactions] });
+            notify(prev ? tr("Своп оновлено") : tr("Своп виконано"));
         };
         const transferCrypto = (coinId, fromWalletId, toWalletId, amount) => {
             if (!(amount > 0) || (fromWalletId || null) === (toWalletId || null))
@@ -5048,8 +5061,9 @@ window.__K3_START = function () {
         const [receiptOpen, setReceiptOpen] = useState(null); // index of the expanded photo
         const [repayAmt, setRepayAmt] = useState("");
         const cat = categories.find((x) => x.id === tx.categoryId);
-        const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу", crypto_buy: "Купівля крипто", crypto_sell: "Продаж крипто" };
+        const typeLbl = { income: "Дохід", expense: "Витрата", transfer: "Переказ", exchange: "Обмін валют", loan_out: "Позика видана", loan_return: "Повернення позики", debt_take: "Отримання боргу", debt_repay: "Погашення боргу", crypto_buy: "Купівля крипто", crypto_sell: "Продаж крипто", crypto_transfer: "Переказ крипти", crypto_swap: "Своп крипти" };
         const dual = tx.type === "transfer" || tx.type === "exchange";
+        const coinOnly = tx.type === "crypto_swap" || tx.type === "crypto_transfer";
         const Row = ({ k, v, strong }) => ((v == null || v === "") ? null : (React.createElement("div", { className: "flex items-start justify-between gap-3 py-2.5", style: { borderBottom: "1px solid var(--border)" } },
             React.createElement("span", { className: "text-xs shrink-0 pt-0.5", style: { color: "var(--text-dim)" } }, k),
             React.createElement("span", { className: "text-sm text-right min-w-0 " + (strong ? "font-display font-bold tabular" : "font-medium"), style: { wordBreak: "break-word" } }, v))));
@@ -5065,8 +5079,8 @@ window.__K3_START = function () {
                     React.createElement(Row, { k: tr("Віддано"), v: `${tx.fromCoinAmount} ${tx.fromCoinSymbol}`, strong: true }),
                     React.createElement(Row, { k: tr("Отримано"), v: `${tx.coinAmount} ${tx.coinSymbol}`, strong: true }),
                     React.createElement(Row, { k: tr("Гаманець"), v: tx.walletName || tr("Основний") })),
-                !dual && React.createElement(Row, { k: tr("Сума"), v: fmtMoney(tx.amount, tx.currency), strong: true }),
-                !dual && baseCurrency && tx.currency !== baseCurrency && (() => { const bvv = tx.bv != null && tx.bvBase === baseCurrency ? tx.bv : txToBase(tx, baseCurrency, rates || {}); const rr = tx.amount ? bvv / tx.amount : 0; const shown = rr >= 1 ? rr : (rr ? 1 / rr : 0); return React.createElement(Row, { k: tr("У базовій"), v: fmtMoney(Math.round(bvv * 100) / 100, baseCurrency) + " · " + tr("курс") + " " + (Math.round(shown * 10000) / 10000) }); })(),
+                !dual && !coinOnly && React.createElement(Row, { k: tr("Сума"), v: fmtMoney(tx.amount, tx.currency), strong: true }),
+                !dual && !coinOnly && baseCurrency && tx.currency !== baseCurrency && (() => { const bvv = tx.bv != null && tx.bvBase === baseCurrency ? tx.bv : txToBase(tx, baseCurrency, rates || {}); const rr = tx.amount ? bvv / tx.amount : 0; const shown = rr >= 1 ? rr : (rr ? 1 / rr : 0); return React.createElement(Row, { k: tr("У базовій"), v: fmtMoney(Math.round(bvv * 100) / 100, baseCurrency) + " · " + tr("курс") + " " + (Math.round(shown * 10000) / 10000) }); })(),
                 dual && React.createElement(Row, { k: tr("Списано"), v: fmtMoney(tx.fromAmount, tx.fromCurrency), strong: true }),
                 dual && React.createElement(Row, { k: tr("Зараховано"), v: fmtMoney(tx.toAmount, tx.toCurrency), strong: true }),
                 dual && tx.fromCurrency !== tx.toCurrency && tx.rate ? React.createElement(Row, { k: tr("Курс"), v: `1 ${tx.fromCurrency} = ${tx.rate} ${tx.toCurrency}` }) : null,
@@ -5074,7 +5088,7 @@ window.__K3_START = function () {
                 cat ? React.createElement(Row, { k: tr("Категорія"), v: tr(cat.name) }) : null,
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount ? React.createElement(Row, { k: tr("Монета"), v: `${tx.coinAmount} ${tx.coinSymbol || ""}` }) : null,
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount > 0 ? React.createElement(Row, { k: tr("Курс"), v: `1 ${tx.coinSymbol || ""} = ${(tx.amount / tx.coinAmount).toFixed(4)} ${tx.currency}` }) : null,
-                !dual && React.createElement(Row, { k: tr("Рахунок"), v: tx.coinId && !tx.pocketId ? tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "") : (tx.loanId && !tx.pocketId && (tx.type === "loan_return" || tx.type === "debt_repay")) ? tr("Без рахунку") : pocketLabel(tx.pocketId) }),
+                !dual && !coinOnly && React.createElement(Row, { k: tr("Рахунок"), v: tx.coinId && !tx.pocketId ? tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "") : (tx.loanId && !tx.pocketId && (tx.type === "loan_return" || tx.type === "debt_repay")) ? tr("Без рахунку") : pocketLabel(tx.pocketId) }),
                 tx.projectId && (() => { const pj = (projects || []).find((x) => x.id === tx.projectId); return pj ? React.createElement(Row, { k: tr("Проєкт"), v: tr(pj.name) }) : null; })(),
                 tx.comment && React.createElement(Row, { k: tr("Коментар"), v: tr(tx.comment) }),
                 tx.type === "crypto_sell" && React.createElement("div", { "data-rzrow": "1", className: "flex items-center justify-between gap-3 py-2", style: { borderBottom: "1px solid var(--border)" } },
@@ -5085,7 +5099,7 @@ window.__K3_START = function () {
                         " \u00B7 ",
                         tr("до середньої ціни купівлі"))),
                 tx.fxGainBase != null && Math.abs(tx.fxGainBase) >= 0.005 && React.createElement("div", { className: "flex items-center justify-between gap-3 py-2", style: { borderBottom: "1px solid var(--border)" } },
-                    React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Курсова різниця")),
+                    React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tx.type === "crypto_swap" ? tr("Вигода свопу") : tr("Курсова різниця")),
                     React.createElement("span", { className: "text-sm font-semibold tabular", style: { color: tx.fxGainBase > 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
                         tx.fxGainBase > 0 ? "+" : "\u2212",
                         fmtMoney(Math.abs(tx.fxGainBase), tx.fxGainBaseCur || baseCurrency),
@@ -5115,6 +5129,10 @@ window.__K3_START = function () {
                         fmtMoney(tx.amount, tx.currency),
                         ")"));
                 })(),
+                tx.type === "crypto_swap" && (React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => setModal({ type: "cryptoSwap", payload: { editing: tx } }) },
+                    React.createElement(Edit3, { size: 14 }),
+                    " ",
+                    tr("Редагувати"))),
                 (tx.type === "income" || tx.type === "expense") && (React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx } }) },
                     React.createElement(Edit3, { size: 14 }),
                     " ",
@@ -5127,7 +5145,7 @@ window.__K3_START = function () {
                     React.createElement(Edit3, { size: 14 }),
                     " ",
                     tr("Сума"))),
-                tx.type !== "crypto_buy" && tx.type !== "crypto_sell" && React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { const p = txCopyPayload(tx); if (p) setModal(p); else { duplicateTransaction(tx); onClose(); } } },
+                tx.type !== "crypto_buy" && tx.type !== "crypto_sell" && tx.type !== "crypto_transfer" && React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => { if (tx.type === "crypto_swap") { setModal({ type: "cryptoSwap", payload: { copyOf: tx } }); return; } const p = txCopyPayload(tx); if (p) setModal(p); else { duplicateTransaction(tx); onClose(); } } },
                     React.createElement(Plus, { size: 14 }),
                     " ",
                     tr("Дублювати"))),
@@ -6247,18 +6265,31 @@ window.__K3_START = function () {
                 React.createElement(Input, { type: "text", inputMode: "decimal", value: amt, onChange: (e) => { setAmt(e.target.value); setError(""); }, placeholder: sel ? String(sel.amount) : "0" })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, tr("Перенести"))));
     }
-    function CryptoSwapModal({ onClose, crypto, cryptoWallets, cryptoPrices, rates, baseCurrency, swapCrypto }) {
+    function CryptoSwapModal({ onClose, crypto, cryptoWallets, cryptoPrices, rates, baseCurrency, swapCrypto, payload }) {
+        const editing = payload && payload.editing ? payload.editing : null;
+        const seed = editing || (payload && payload.copyOf) || null;
         const wallets = [{ id: "", name: tr("Основний") }, ...(cryptoWallets || [])];
-        const [wal, setWal] = useState("");
-        const inWal = crypto.filter((c) => (c.walletId || null) === (wal || null) && (c.amount || 0) > 0);
-        const [fromCoinId, setFromCoinId] = useState("");
+        const [wal, setWal] = useState(seed ? (seed.walletId || "") : "");
+        // While editing, the coins given in the original swap are still "available" for the new version.
+        const inWal = (() => {
+            const wid = wal || null;
+            let list = crypto.filter((c) => (c.walletId || null) === wid).map((c) => ({ ...c }));
+            if (editing && (editing.walletId || null) === wid && editing.fromCoinId) {
+                const ex = list.find((c) => c.coinId === editing.fromCoinId);
+                if (ex) ex.amount = Math.round(((ex.amount || 0) + editing.fromCoinAmount) * 1e8) / 1e8;
+                else list = [{ id: "virt", coinId: editing.fromCoinId, symbol: editing.fromCoinSymbol, name: editing.fromCoinSymbol, walletId: editing.walletId || null, amount: editing.fromCoinAmount }, ...list];
+            }
+            return list.filter((c) => (c.amount || 0) > 0);
+        })();
+        const [fromCoinId, setFromCoinId] = useState(seed ? (seed.fromCoinId || "") : "");
         const src = inWal.find((c) => c.coinId === (fromCoinId || inWal[0]?.coinId));
-        const [fromAmt, setFromAmt] = useState("");
-        const [toCoinSel, setToCoinSel] = useState(null);
+        const [fromAmt, setFromAmt] = useState(seed ? String(seed.fromCoinAmount) : "");
+        const [toCoinSel, setToCoinSel] = useState(seed ? { id: seed.coinId, symbol: seed.coinSymbol, name: seed.coinSymbol } : null);
         const [picker, setPicker] = useState(false);
         const [extraPrices, setExtraPrices] = useState({});
-        const [toAmt, setToAmt] = useState("");
-        const [toTouched, setToTouched] = useState(false);
+        const [toAmt, setToAmt] = useState(seed ? String(seed.coinAmount) : "");
+        const [date, setDate] = useState(seed && seed.date ? seed.date : new Date().toISOString().slice(0, 10));
+        const [toTouched, setToTouched] = useState(!!seed);
         const [error, setError] = useState("");
         const toCoin = toCoinSel;
         const priceOf = (cid) => (cryptoPrices[cid] > 0 ? cryptoPrices[cid] : (extraPrices[cid] || 0));
@@ -6300,10 +6331,10 @@ window.__K3_START = function () {
                 return setError(tr("Введіть коректну суму"));
             if (!(ta > 0))
                 return setError(tr("Вкажіть отриману кількість"));
-            swapCrypto(wal || null, src.coinId, fa, toCoin, ta, gainBase);
+            swapCrypto(wal || null, src.coinId, fa, toCoin, ta, gainBase, date, editing ? editing.id : null);
             onClose();
         };
-        return (React.createElement(Modal, { title: tr("Своп крипти"), onClose: onClose },
+        return (React.createElement(Modal, { title: editing ? tr("Редагувати своп") : tr("Своп крипти"), onClose: onClose },
             React.createElement(Field, { label: tr("Гаманець"), error: error },
                 React.createElement(Select, { value: wal, onChange: (e) => { setWal(e.target.value); setFromCoinId(""); setError(""); } }, wallets.map((w) => React.createElement("option", { key: w.id || "main", value: w.id }, w.name)))),
             React.createElement(Field, { label: tr("Віддаю") },
@@ -6323,7 +6354,9 @@ window.__K3_START = function () {
                 tr("Ринком"), ": ", marketTo, " ", toCoin ? toCoin.symbol : "",
                 gainBase != null && Math.abs(gainBase) >= 0.005 ? React.createElement("span", { style: { color: gainBase > 0 ? "var(--income, #2F8F5B)" : "var(--danger)", fontWeight: 600 } }, " \u00B7 ", gainBase > 0 ? "+" : "\u2212", fmtMoney(Math.abs(gainBase), baseCurrency)) : null),
             React.createElement("p", { className: "text-[0.6875rem] mb-3", style: { color: "var(--text-dim)" } }, tr("Отримана кількість підтягується за ринковим курсом. Відредагуйте її під фактичну — різниця запишеться як профіт/лос свопу.")),
-            React.createElement(Button, { className: "w-full", onClick: submit }, tr("Виконати своп")),
+            React.createElement(Field, { label: tr("Дата") },
+                React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
+            React.createElement(Button, { className: "w-full", onClick: submit }, editing ? tr("Зберегти") : tr("Виконати своп")),
             picker && React.createElement(CoinPicker, { selected: toCoin, onPick: (c) => { if (src && c.id === src.coinId) { setError(tr("Оберіть монету-ціль")); setPicker(false); return; } setToCoinSel(c); setToTouched(false); setError(""); setPicker(false); }, onClose: () => setPicker(false) })));
     }
     function PlannedListModal({ onClose, plannedOverdue, plannedUpcomingFor, planned, pockets, baseCurrency, setModal, markPlannedDone }) {
@@ -8344,7 +8377,7 @@ window.__K3_START = function () {
             if (modal.type === "cryptoMove")
                 return React.createElement(CryptoMoveModal, { onClose: close, crypto: crypto, cryptoWallets: cryptoWallets, transferCrypto: transferCrypto });
             if (modal.type === "cryptoSwap")
-                return React.createElement(CryptoSwapModal, { onClose: close, crypto: crypto, cryptoWallets: cryptoWallets, cryptoPrices: cryptoPrices, rates: rates, baseCurrency: baseCurrency, swapCrypto: swapCrypto });
+                return React.createElement(CryptoSwapModal, { onClose: close, payload: modal.payload, crypto: crypto, cryptoWallets: cryptoWallets, cryptoPrices: cryptoPrices, rates: rates, baseCurrency: baseCurrency, swapCrypto: swapCrypto });
             if (modal.type === "cryptoTrade")
                 return React.createElement(CryptoTradeModal, { onClose: close, payload: modal.payload, accounts: accounts, pockets: pockets, crypto: crypto, cryptoPrices: cryptoPrices, rates: rates, tradeCrypto: tradeCrypto, pocketBalance: pocketBalance });
             if (modal.type === "catBudgets")
@@ -10106,5 +10139,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-21.7");</script></body>
+<script>console.log("K³ build: 2026-08-21.8");</script></body>
 </html>
