@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-21.8"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-26.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -5083,7 +5083,7 @@ window.__K3_START = function () {
                 !dual && !coinOnly && baseCurrency && tx.currency !== baseCurrency && (() => { const bvv = tx.bv != null && tx.bvBase === baseCurrency ? tx.bv : txToBase(tx, baseCurrency, rates || {}); const rr = tx.amount ? bvv / tx.amount : 0; const shown = rr >= 1 ? rr : (rr ? 1 / rr : 0); return React.createElement(Row, { k: tr("У базовій"), v: fmtMoney(Math.round(bvv * 100) / 100, baseCurrency) + " · " + tr("курс") + " " + (Math.round(shown * 10000) / 10000) }); })(),
                 dual && React.createElement(Row, { k: tr("Списано"), v: fmtMoney(tx.fromAmount, tx.fromCurrency), strong: true }),
                 dual && React.createElement(Row, { k: tr("Зараховано"), v: fmtMoney(tx.toAmount, tx.toCurrency), strong: true }),
-                dual && tx.fromCurrency !== tx.toCurrency && tx.rate ? React.createElement(Row, { k: tr("Курс"), v: `1 ${tx.fromCurrency} = ${tx.rate} ${tx.toCurrency}` }) : null,
+                dual && tx.fromCurrency !== tx.toCurrency && tx.fromAmount > 0 && tx.toAmount > 0 ? (() => { const rr = tx.toAmount / tx.fromAmount; const flip = rr < 1; const shown = Math.round((flip ? 1 / rr : rr) * 10000) / 10000; return React.createElement(Row, { k: tr("Курс"), v: flip ? `1 ${tx.toCurrency} = ${shown} ${tx.fromCurrency}` : `1 ${tx.fromCurrency} = ${shown} ${tx.toCurrency}` }); })() : null,
                 tx.fee > 0 ? React.createElement(Row, { k: tr("Комісія"), v: fmtMoney(tx.fee, tx.fromCurrency || tx.currency) }) : null,
                 cat ? React.createElement(Row, { k: tr("Категорія"), v: tr(cat.name) }) : null,
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount ? React.createElement(Row, { k: tr("Монета"), v: `${tx.coinAmount} ${tx.coinSymbol || ""}` }) : null,
@@ -9458,7 +9458,7 @@ window.__K3_START = function () {
         return (React.createElement(Modal, { title: isExchange ? tr("Обмін валюти") : tr("Переказ між рахунками"), onClose: onClose },
             isExchange ? (React.createElement(Field, { label: tr("Сума обміну"), error: error },
                 React.createElement("div", { className: "flex gap-2" },
-                    React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }),
+                    React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setManualTo(false); setError(""); } }),
                     React.createElement("select", { value: fromCur, onChange: (e) => pickCur("from", e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))) : (React.createElement(Field, { label: tr("Сума переказу"), error: error },
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }),
@@ -9477,7 +9477,7 @@ window.__K3_START = function () {
                     tr("застосувати"))) : (React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Онлайн-курс. Зміни його вручну, якщо реальний курс інший — у цій операції він зафіксується назавжди."))))),
             crossCurrency && (isExchange ? (React.createElement(Field, { label: tr("Сума зарахування") },
                 React.createElement("div", { className: "flex gap-2" },
-                    React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: toAmount, onChange: (e) => { setToAmount(e.target.value); setManualTo(true); } }),
+                    React.createElement(Input, { className: "flex-1", type: "number", step: "0.01", value: toAmount, onChange: (e) => { setToAmount(e.target.value); setManualTo(true); const ta = parseFloat(e.target.value) || 0; const fa = parseFloat(fromAmount) || 0; if (ta > 0 && fa > 0) { const implied = quoteFrom ? ta / fa : fa / ta; setRate(String(Math.round(implied * 10000) / 10000)); setRateTouched(true); } } }),
                     React.createElement("select", { value: toCur, onChange: (e) => pickCur("to", e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))) : (React.createElement(Field, { label: `Сума зарахування (${toCurrency})` },
                 React.createElement(Input, { type: "number", step: "0.01", value: toAmount, onChange: (e) => { setToAmount(e.target.value); setManualTo(true); } })))),
             React.createElement(Field, { label: tr("Рахунок списання") },
@@ -10139,5 +10139,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-21.8");</script></body>
+<script>console.log("K³ build: 2026-08-26.1");</script></body>
 </html>
