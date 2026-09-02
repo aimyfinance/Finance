@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-08-26.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-08-26.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -8432,7 +8432,7 @@ window.__K3_START = function () {
             if (modal.type === "category")
                 return React.createElement(CategoryModal, { onClose: close, existing: modal.payload, addCategory: addCategory, editCategory: editCategory, categories: categories, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji });
             if (modal.type === "transaction")
-                return React.createElement(TransactionModal, { onClose: close, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, markPlannedDone: markPlannedDone });
+                return React.createElement(TransactionModal, { key: "tx-" + modal.payload.kind, onClose: close, switchType: (t) => { const ed = modal.payload.editing; if (!ed) return; if (t === "transfer") setModal({ type: "convertTransfer", payload: ed }); else setModal({ type: "transaction", payload: { kind: t, editing: { ...ed, categoryId: null } } }); }, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, markPlannedDone: markPlannedDone });
             if (modal.type === "transfer")
                 return React.createElement(TransferExchangeModal, { onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, preset: modal.payload?.planned || null, plannedDone: modal.payload?.plannedDone || null, markPlannedDone: markPlannedDone, accounts: accounts, pockets: pockets, rates: rates, baseCurrency: baseCurrency, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
             if (modal.type === "exchange")
@@ -9031,7 +9031,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти зміни") : tr("Створити категорію"))));
     }
     /* ---------- Transaction (income/expense) Modal ---------- */
-    function TransactionModal({ onClose, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, customEmojis, addCustomEmoji, markPlannedDone, }) {
+    function TransactionModal({ onClose, switchType, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, customEmojis, addCustomEmoji, markPlannedDone, }) {
         const P = payload || {};
         const isIncome = kind === "income";
         const cats = categories.filter((c) => c.type === kind && !c.archived && !c.parentId);
@@ -9236,6 +9236,11 @@ window.__K3_START = function () {
             onClose();
         };
         return (React.createElement(Modal, { title: editing ? tr("Редагувати операцію") : isIncome ? tr("Додати дохід") : tr("Додати витрату"), onClose: onClose },
+            editing && switchType && React.createElement(Field, { label: tr("Тип операції") },
+                React.createElement(Select, { value: kind, onChange: (e) => { const v = e.target.value; if (v !== kind) switchType(v); } },
+                    React.createElement("option", { value: "income" }, tr("Дохід")),
+                    React.createElement("option", { value: "expense" }, tr("Витрата")),
+                    React.createElement("option", { value: "transfer" }, tr("Переказ між рахунками")))),
             React.createElement(Field, { label: tr("Сума"), error: error },
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement("div", { className: "flex-1" },
@@ -10292,5 +10297,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-08-26.3");</script></body>
+<script>console.log("K³ build: 2026-08-26.4");</script></body>
 </html>
