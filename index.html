@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-02.7"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-03.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1963,6 +1963,7 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Однакові суми одного типу в один день. Торкнись картки, щоб відкрити деталі; видали зайву або познач, що це різні операції.": "Equal amounts of the same type on the same day. Tap a card to open details; delete the extra one or mark them as different operations.",
         "Показані перші 30 пар": "First 30 pairs shown",
         "Це різні операції — не показувати": "These are different — hide this pair",
         "Точно видалити?": "Really delete?",
@@ -7187,11 +7188,10 @@ window.__K3_START = function () {
     }
     // History hygiene: pairs of records that look like the same real-world payment entered
     // twice (by hand and again via a statement import). Same type, currency and amount, dates
-    // within `windowDays`. Groups where the amount recurs more than 3 times in the window are
-    // treated as a regular pattern (daily coffee, weekly parking) and skipped. Pairs a month
-    // apart on the same account+category look like a monthly bill and are marked as such.
+    // on the same day by default (windowDays=0) — wider windows drowned real pairs in
+    // look-alikes. Amounts recurring >3 times in the window are a pattern and are skipped.
     function findDuplicatePairs(transactions, dismissed, windowDays) {
-        const win = (windowDays || 31) * 86400000;
+        const win = (windowDays || 0) * 86400000;
         const skip = new Set(dismissed || []);
         const groups = {};
         (transactions || []).forEach((t) => {
@@ -7217,14 +7217,13 @@ window.__K3_START = function () {
                 for (let j = i + 1; j < list.length; j++) {
                     const a = list[i], b = list[j];
                     const gap = Math.round(Math.abs(new Date(b.date) - new Date(a.date)) / 86400000);
-                    if (gap > (windowDays || 31))
+                    if (gap * 86400000 > win)
                         continue;
                     if (skip.has([a.id, b.id].sort().join("|")))
                         continue;
                     if (a.recurringId && b.recurringId && a.recurringId === b.recurringId)
                         continue;
-                    const monthly = gap >= 25 && a.pocketId === b.pocketId && a.categoryId === b.categoryId;
-                    pairs.push({ a, b, gap, monthly });
+                    pairs.push({ a, b, gap });
                 }
         });
         pairs.sort((x, y) => x.gap - y.gap || (y.a.amount - x.a.amount));
@@ -8557,7 +8556,7 @@ window.__K3_START = function () {
             if (modal.type === "cryptoMove")
                 return React.createElement(CryptoMoveModal, { onClose: close, crypto: crypto, cryptoWallets: cryptoWallets, transferCrypto: transferCrypto });
             if (modal.type === "dupScan")
-                return React.createElement(DupScanModal, { onClose: close, transactions: transactions, dupDismissed: dupDismissed, dismissDupPair: dismissDupPair, deleteTransaction: deleteTransaction, categories: categories, pocketLabel: pocketLabel, baseCurrency: baseCurrency });
+                return React.createElement(DupScanModal, { onClose: close, setModal: setModal, transactions: transactions, dupDismissed: dupDismissed, dismissDupPair: dismissDupPair, deleteTransaction: deleteTransaction, categories: categories, pocketLabel: pocketLabel, baseCurrency: baseCurrency, setModal: setModal });
             if (modal.type === "convertTransfer")
                 return React.createElement(ConvertToTransferModal, { onClose: close, tx: modal.payload, accounts: accounts, pockets: pockets, rates: rates, baseCurrency: baseCurrency, replaceTransaction: replaceTransaction, createPocketQuick: createPocketQuick, pocketBalance: pocketBalance });
             if (modal.type === "cryptoSwap")
@@ -9582,23 +9581,22 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full", onClick: submit }, tr("Зберегти"))));
     }
     // History duplicate scan: same amount twice within a month — pick which record to drop.
-    function DupScanModal({ onClose, transactions, dupDismissed, dismissDupPair, deleteTransaction, categories, pocketLabel, baseCurrency }) {
+    function DupScanModal({ onClose, transactions, dupDismissed, dismissDupPair, deleteTransaction, categories, pocketLabel, baseCurrency, setModal }) {
         const [arm, setArm] = useState(""); // txId armed for delete confirm
-        const pairs = useMemo(() => findDuplicatePairs(transactions, dupDismissed, 31), [transactions, dupDismissed]);
+        const pairs = useMemo(() => findDuplicatePairs(transactions, dupDismissed, 0), [transactions, dupDismissed]);
         const catName = (cid) => { const c = categories.find((x) => x.id === cid); return c ? tr(c.name) : "\u2014"; };
-        const Card = ({ t, pairKeyOther }) => (React.createElement("div", { className: "flex-1 min-w-0 rounded-xl p-2.5", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+        const Card = ({ t }) => (React.createElement("div", { "data-dupcard": t.id, onClick: () => setModal({ type: "txDetail", payload: t, returnTo: { type: "dupScan" } }), className: "flex-1 min-w-0 rounded-xl p-2.5 cursor-pointer active:opacity-70 transition", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
             React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, fmtDate(t.date), " \u00B7 ", catName(t.categoryId)),
             React.createElement("p", { className: "text-xs truncate", style: { color: "var(--text-dim)" } }, pocketLabel(t.pocketId)),
             (t.note || "").trim() && React.createElement("p", { className: "text-xs truncate" }, t.note),
-            React.createElement("button", { type: "button", "data-dupdel": t.id, onClick: () => { if (arm === t.id) { deleteTransaction(t.id); setArm(""); } else setArm(t.id); }, className: "mt-1.5 text-xs font-semibold", style: { color: "var(--danger)" } }, arm === t.id ? tr("Точно видалити?") : tr("Видалити цю"))));
+            React.createElement("button", { type: "button", "data-dupdel": t.id, onClick: (e) => { e.stopPropagation(); if (arm === t.id) { deleteTransaction(t.id); setArm(""); } else setArm(t.id); }, className: "mt-1.5 text-xs font-semibold", style: { color: "var(--danger)" } }, arm === t.id ? tr("Точно видалити?") : tr("Видалити цю"))));
         return (React.createElement(Modal, { title: tr("Пошук дублікатів"), onClose: onClose },
-            React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Однакові суми одного типу з різницею до місяця. Видали зайву або познач, що це різні операції.")),
+            React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Однакові суми одного типу в один день. Торкнись картки, щоб відкрити деталі; видали зайву або познач, що це різні операції.")),
             pairs.length === 0 && React.createElement("p", { className: "text-sm py-6 text-center", style: { color: "var(--text-dim)" } }, tr("Підозрілих пар не знайдено")),
             pairs.slice(0, 30).map((p) => (React.createElement("div", { key: p.a.id + p.b.id, "data-duppair": "1", className: "rounded-2xl p-3 mb-3", style: { border: "1px solid var(--border)" } },
                 React.createElement("div", { className: "flex items-center justify-between mb-2" },
                     React.createElement("span", { className: "font-semibold tabular text-sm" }, (p.a.type === "expense" ? "\u2212" : "+"), fmtMoney(p.a.amount, p.a.currency)),
                     React.createElement("span", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, p.gap === 0 ? tr("той самий день") : tr("різниця днів") + ": " + p.gap)),
-                p.monthly && React.createElement("p", { className: "text-[0.6875rem] mb-2", style: { color: "var(--text-dim)" } }, tr("Може бути регулярним щомісячним платежем")),
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement(Card, { t: p.a }),
                     React.createElement(Card, { t: p.b })),
@@ -10452,5 +10450,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-02.7");</script></body>
+<script>console.log("K³ build: 2026-09-03.1");</script></body>
 </html>
