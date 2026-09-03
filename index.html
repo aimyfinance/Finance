@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-02.6"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-02.7"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -5772,9 +5772,9 @@ window.__K3_START = function () {
         }, [transactions, categories, filterType, filterPocket, filterCategory, filterCurrency, filterProject, dateFrom, dateTo, search, pocketLabel]);
         const typeLabel = { all: tr("Усі типи"), income: tr("Доходи"), expense: tr("Витрати"), transfer: tr("Перекази"), exchange: tr("Обмін валют"), loan_out: tr("Позики надані"), loan_return: tr("Повернення позик"), crypto_ops: tr("Крипто-операції"), loan_ops: tr("Операції позик"), debt_ops: tr("Операції боргів") };
         return (React.createElement("div", { className: "space-y-4 animate-in" },
-            React.createElement("div", { className: "flex items-center justify-between" },
+            React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-y-2" },
                 React.createElement("h1", { className: "font-display font-bold text-2xl" }, tr("Історія операцій")),
-                React.createElement("div", { className: "flex items-center gap-2" },
+                React.createElement("div", { className: "flex items-center gap-2 flex-wrap justify-end ml-auto" },
                     React.createElement("button", { onClick: () => setModal({ type: "statementImport" }), className: "px-3 py-2 rounded-lg border text-xs font-medium flex items-center gap-1.5", style: { borderColor: "var(--border)", color: "var(--text-dim)" } },
                         React.createElement(ArrowDownRight, { size: 14 }),
                         " ",
@@ -10452,5 +10452,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-02.6");</script></body>
+<script>console.log("K³ build: 2026-09-02.7");</script></body>
 </html>
