@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-02.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-02.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -7453,7 +7453,12 @@ window.__K3_START = function () {
                 if (!dISO || amt === null || amt === 0)
                     return;
                 const date = dISO > today ? today : dISO;
-                const dup = transactions.some((t) => t.date === date && t.pocketId === pocketId && t.amount != null && Math.abs(t.amount - Math.abs(amt)) < 0.005 && t.type === (amt < 0 ? "expense" : "income"));
+                const amtA = Math.abs(amt);
+                // Duplicate check covers plain records AND transfers/exchanges where this pocket
+                // is already one side (e.g. an imported income later converted to a transfer).
+                const dup = transactions.some((t) => t.date === date && ((t.pocketId === pocketId && t.amount != null && Math.abs(t.amount - amtA) < 0.005 && t.type === (amt < 0 ? "expense" : "income"))
+                    || (amt > 0 && t.toPocketId === pocketId && t.toAmount != null && Math.abs(t.toAmount - amtA) < 0.005)
+                    || (amt < 0 && t.fromPocketId === pocketId && t.fromAmount != null && Math.abs(t.fromAmount - amtA) < 0.005)));
                 const viaBank = bankCat ? matchCategoryByName(bankCat, amt < 0 ? "expense" : "income", categories) : "";
                 // Mirror record: the opposite side of this row already lives on another
                 // account (typical when both banks' statements are imported one by one).
@@ -7469,6 +7474,11 @@ window.__K3_START = function () {
             setStage("preview");
         };
         const setRow = (key, patch) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+        // Preselect the counterparty account so the visible select and the state agree.
+        const defaultOtherPk = () => {
+            const same = activePockets.find((p) => p.id !== pocketId && p.currency === (pkCur || "UAH"));
+            return (same || activePockets.find((p) => p.id !== pocketId) || {}).id || "";
+        };
         const CAT_COLORS = ["#6FA98C", "#6683B4", "#D8A24A", "#C77F6E", "#5FA8B8", "#9B87C4", "#C77FA0", "#818CF8"];
         const createCategoryInline = (r) => {
             const name = (r.newName || "").trim();
@@ -7618,10 +7628,10 @@ window.__K3_START = function () {
                             r.amount < 0 ? "−" : "+",
                             fmtMoney(Math.abs(r.amount), pkCur))),
                     r.include && (React.createElement("div", { className: "mt-2 pl-7 space-y-2" },
-                        r.trHint && !r.asTransfer && React.createElement("button", { type: "button", "data-trhint": r.key, onClick: () => setRow(r.key, { asTransfer: true, otherPocketId: r.mirrorPocketId || "" }), className: "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg", style: { background: "var(--surface2)", border: "1px dashed var(--accent)", color: "var(--accent-text, var(--accent))" } },
+                        r.trHint && !r.asTransfer && React.createElement("button", { type: "button", "data-trhint": r.key, onClick: () => setRow(r.key, { asTransfer: true, otherPocketId: r.mirrorPocketId || r.otherPocketId || defaultOtherPk() }), className: "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg", style: { background: "var(--surface2)", border: "1px dashed var(--accent)", color: "var(--accent-text, var(--accent))" } },
                             React.createElement(ArrowLeftRight, { size: 12 }),
                             r.mirrorPocketId ? tr("Схоже на переказ — знайдено дзеркальну операцію") : tr("Схоже на переказ між своїми")),
-                        React.createElement(Select, { value: r.asTransfer ? "transfer" : "auto", onChange: (e) => setRow(r.key, { asTransfer: e.target.value === "transfer" }) },
+                        React.createElement(Select, { value: r.asTransfer ? "transfer" : "auto", onChange: (e) => { const on = e.target.value === "transfer"; setRow(r.key, { asTransfer: on, otherPocketId: on ? (r.otherPocketId || r.mirrorPocketId || defaultOtherPk()) : r.otherPocketId }); } },
                             React.createElement("option", { value: "auto" }, r.amount < 0 ? tr("Витрата") : tr("Дохід")),
                             React.createElement("option", { value: "transfer" }, tr("Переказ між рахунками"))),
                         r.asTransfer && React.createElement(PocketSelect, { accounts: accounts, pockets: activePockets.filter((p) => p.id !== pocketId), value: r.otherPocketId || "", onChange: (v) => { const oth = pockets.find((p) => p.id === v); const cr = oth && oth.currency !== (pkCur || "UAH"); setRow(r.key, { otherPocketId: v, otherAmt: cr ? String(Math.round(convert(Math.abs(r.amount), pkCur || "UAH", oth.currency, rates) * 100) / 100) : "" }); }, tint: r.amount >= 0 ? "out" : "in", pocketBalance: pocketBalance }),
@@ -10357,5 +10367,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-02.3");</script></body>
+<script>console.log("K³ build: 2026-09-02.5");</script></body>
 </html>
