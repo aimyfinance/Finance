@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-03.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-03.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1963,6 +1963,8 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Пошук": "Search",
+        "Пошук: нотатка, категорія, сума…": "Search: note, category, amount…",
         "Однакові суми одного типу в один день. Торкнись картки, щоб відкрити деталі; видали зайву або познач, що це різні операції.": "Equal amounts of the same type on the same day. Tap a card to open details; delete the extra one or mark them as different operations.",
         "Показані перші 30 пар": "First 30 pairs shown",
         "Це різні операції — не показувати": "These are different — hide this pair",
@@ -3084,6 +3086,15 @@ window.__K3_START = function () {
         };
         useEffect(() => { if (view !== "history") historyOriginRef.current = null; }, [view]);
         const goBackView = () => {
+            // History opened from a pocket card: bring the card back instead of the parent screen
+            if (view === "history" && typeof historyOriginRef.current === "string" && historyOriginRef.current.indexOf("pocket:") === 0) {
+                const pid = historyOriginRef.current.slice(7);
+                historyOriginRef.current = null;
+                const prev = navStackRef.current.pop();
+                setViewRaw(prev && prev !== "history" ? prev : "accounts");
+                setModal({ type: "pocketDetail", payload: pid });
+                return;
+            }
             // History opened from the Projects list: reopen the list on top of its parent view
             if (view === "history" && historyOriginRef.current === "projects") {
                 historyOriginRef.current = null;
@@ -8783,9 +8794,20 @@ window.__K3_START = function () {
             if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 2)
                 goSwipe(dx < 0 ? 1 : -1);
         };
-        const history = useMemo(() => transactions
-            .filter((t) => t.pocketId === pid || t.fromPocketId === pid || t.toPocketId === pid)
-            .sort(byRecent), [transactions, pid]);
+        const [opsOpen, setOpsOpen] = useState(false);
+        const [opsQ, setOpsQ] = useState("");
+        const history = useMemo(() => {
+            const base = transactions
+                .filter((t) => t.pocketId === pid || t.fromPocketId === pid || t.toPocketId === pid)
+                .sort(byRecent);
+            const q = opsQ.trim().toLowerCase();
+            if (!q)
+                return base;
+            const catName = (cid) => { const c = categories.find((x) => x.id === cid); return c ? tr(c.name).toLowerCase() : ""; };
+            return base.filter((t) => ((t.note || "") + " " + (t.comment || "")).toLowerCase().includes(q)
+                || catName(t.categoryId).includes(q)
+                || String(t.amount != null ? t.amount : (t.toAmount != null ? t.toAmount : "")).includes(q.replace(",", ".")));
+        }, [transactions, pid, opsQ, categories]);
         return (React.createElement("div", { className: "fixed inset-0 z-50 overflow-y-auto animate-in", style: { background: "var(--bg)" } },
             React.createElement("div", { className: "relative px-5 pb-6 overflow-hidden", onTouchStart: onSwipeStart, onTouchEnd: onSwipeEnd, style: { background: "linear-gradient(160deg, #2B3757 0%, #1A2742 55%, #0E1626 100%)", paddingTop: "calc(1rem + env(safe-area-inset-top))", borderBottom: "3px solid #C9A362", borderRadius: 28, margin: "10px 10px 0", boxShadow: "0 14px 34px rgba(14,22,38,0.35)" } },
                 React.createElement("div", { className: "absolute pointer-events-none", style: { top: -70, right: -50, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,163,98,0.16), transparent 65%)" } }),
@@ -8849,10 +8871,17 @@ window.__K3_START = function () {
                     React.createElement("div", { className: "flex items-center justify-between px-4 py-3" },
                         React.createElement("h3", { className: "font-display font-semibold text-sm" }, tr("Операції по цьому рахунку")),
                         React.createElement("div", { className: "flex items-center gap-2" },
-                            React.createElement("button", { onClick: () => { onClose(); setHistoryPreset({ pocketId, select: true }); setView("history"); }, "aria-label": tr("Вибрати"), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)", background: "transparent" } },
+                            React.createElement("button", { "data-opsq-btn": "1", onClick: () => { setOpsOpen((v) => { if (v) setOpsQ(""); return !v; }); }, "aria-label": tr("Пошук"), className: "p-2 rounded-lg border", style: { borderColor: opsOpen ? "var(--accent)" : "var(--border)", color: opsOpen ? "var(--accent-text, var(--accent))" : "var(--text-dim)", background: "transparent" } },
+                                React.createElement(Search, { size: 16 })),
+                            React.createElement("button", { onClick: () => { onClose(); setHistoryPreset({ pocketId, select: true, origin: "pocket:" + pid }); setView("history"); }, "aria-label": tr("Вибрати"), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)", background: "transparent" } },
                                 React.createElement(Check, { size: 16 })),
-                            React.createElement("button", { onClick: () => { onClose(); setHistoryPreset({ pocketId }); setView("history"); }, "aria-label": tr("Налаштувати звіт"), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)", background: "transparent" } },
+                            React.createElement("button", { onClick: () => { onClose(); setHistoryPreset({ pocketId, origin: "pocket:" + pid }); setView("history"); }, "aria-label": tr("Налаштувати звіт"), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)", background: "transparent" } },
                                 React.createElement(Filter, { size: 16 })))),
+                    opsOpen && React.createElement("div", { className: "flex items-center gap-2 px-4 py-2.5" },
+                        React.createElement(Search, { size: 15, style: { color: "var(--text-dim)", flexShrink: 0 } }),
+                        React.createElement("input", { "data-opsq": "1", autoFocus: true, value: opsQ, onChange: (e) => setOpsQ(e.target.value), placeholder: tr("Пошук: нотатка, категорія, сума…"), autoComplete: "off", className: "flex-1 min-w-0 bg-transparent outline-none text-sm", style: { color: "var(--text)" } }),
+                        opsQ && React.createElement("button", { type: "button", onClick: () => setOpsQ(""), className: "p-1 rounded-full", style: { color: "var(--text-dim)" } }, React.createElement(X, { size: 14 }))),
+                    opsOpen && opsQ.trim() && history.length === 0 && React.createElement("p", { className: "px-4 py-4 text-sm", style: { color: "var(--text-dim)" } }, tr("Нічого не знайдено")),
                     history.map((tx) => (React.createElement(SwipeRow, { key: tx.id, actions: [
                             ...((tx.type === "income" || tx.type === "expense") ? [{ icon: Edit3, label: tr("Ред."), bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx }, returnTo: { type: "pocketDetail", payload: pid } }) }] : []),
                             { icon: Plus, label: tr("Копія"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => duplicateTransaction(tx) },
@@ -10450,5 +10479,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-03.1");</script></body>
+<script>console.log("K³ build: 2026-09-03.2");</script></body>
 </html>
