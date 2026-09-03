@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-02.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-02.6"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1963,6 +1963,16 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Показані перші 30 пар": "First 30 pairs shown",
+        "Це різні операції — не показувати": "These are different — hide this pair",
+        "Точно видалити?": "Really delete?",
+        "Видалити цю": "Delete this one",
+        "Може бути регулярним щомісячним платежем": "Might be a regular monthly bill",
+        "різниця днів": "days apart",
+        "той самий день": "same day",
+        "Підозрілих пар не знайдено": "No suspicious pairs found",
+        "Однакові суми одного типу з різницею до місяця. Видали зайву або познач, що це різні операції.": "Equal amounts of the same type within a month of each other. Delete the extra one or mark them as different operations.",
+        "Пошук дублікатів": "Duplicate scan",
         "Схоже на переказ — знайдено дзеркальну операцію": "Looks like a transfer — mirror record found",
         "Схоже на переказ між своїми": "Looks like an own transfer",
         "Тип операції змінено": "Transaction type changed",
@@ -3220,6 +3230,8 @@ window.__K3_START = function () {
             return () => clearTimeout(t);
         }, [toast]);
         const { accounts, pockets, categories, transactions, loans, rates, baseCurrency } = state;
+        const dupDismissed = state.dupDismissed || [];
+        const dismissDupPair = (a, b) => update({ dupDismissed: [...dupDismissed, [a, b].sort().join("|")] });
         const currencyList = ["UAH"].concat(Object.keys(rates).filter((c) => c !== "UAH"));
         const reminders = state.reminders || [];
         const goals = state.goals || [];
@@ -4330,7 +4342,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, state: state, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, planned: planned, addPlanned: addPlanned, editPlanned: editPlanned, deletePlanned: deletePlanned, markPlannedDone: markPlannedDone, plannedOverdue: plannedOverdue, plannedUpcomingFor: plannedUpcomingFor, reportTemplates: reportTemplates, applyReportTemplate: applyReportTemplate, renameReportTemplate: renameReportTemplate, deleteReportTemplate: deleteReportTemplate, transferCrypto: transferCrypto, swapCrypto: swapCrypto, cryptoRealized: cryptoRealized, replaceTransaction: replaceTransaction, createPocketQuick: createPocketQuick })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, state: state, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, planned: planned, addPlanned: addPlanned, editPlanned: editPlanned, deletePlanned: deletePlanned, markPlannedDone: markPlannedDone, plannedOverdue: plannedOverdue, plannedUpcomingFor: plannedUpcomingFor, reportTemplates: reportTemplates, applyReportTemplate: applyReportTemplate, renameReportTemplate: renameReportTemplate, deleteReportTemplate: deleteReportTemplate, transferCrypto: transferCrypto, swapCrypto: swapCrypto, cryptoRealized: cryptoRealized, replaceTransaction: replaceTransaction, createPocketQuick: createPocketQuick, dupDismissed: dupDismissed, dismissDupPair: dismissDupPair })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -5773,6 +5785,8 @@ window.__K3_START = function () {
                         else
                             setSelMode(true); }, "aria-label": tr("Вибрати"), className: "p-2 rounded-lg border", style: { borderColor: selMode ? "var(--accent)" : "var(--border)", color: selMode ? "var(--accent)" : "var(--text-dim)", background: selMode ? "rgba(201,163,98,0.12)" : "transparent" } },
                         React.createElement(Check, { size: 16 })),
+                    React.createElement("button", { "data-dupbtn": "1", "aria-label": tr("Пошук дублікатів"), onClick: () => setModal({ type: "dupScan" }), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)" } },
+                        React.createElement(AlertTriangle, { size: 16 })),
                     React.createElement("button", { "data-tplbtn": "1", "aria-label": tr("Шаблони звітів"), onClick: () => setModal({ type: "reportTemplates" }), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)" } },
                         React.createElement(Bookmark, { size: 16 })),
                     React.createElement("button", { onClick: () => setShowFilters(!showFilters), className: "p-2 rounded-lg border", style: { borderColor: "var(--border)", color: "var(--text-dim)" } },
@@ -7171,6 +7185,51 @@ window.__K3_START = function () {
         const d = String(desc || "");
         return OWN_TRANSFER_HINTS.some((rx) => rx.test(d));
     }
+    // History hygiene: pairs of records that look like the same real-world payment entered
+    // twice (by hand and again via a statement import). Same type, currency and amount, dates
+    // within `windowDays`. Groups where the amount recurs more than 3 times in the window are
+    // treated as a regular pattern (daily coffee, weekly parking) and skipped. Pairs a month
+    // apart on the same account+category look like a monthly bill and are marked as such.
+    function findDuplicatePairs(transactions, dismissed, windowDays) {
+        const win = (windowDays || 31) * 86400000;
+        const skip = new Set(dismissed || []);
+        const groups = {};
+        (transactions || []).forEach((t) => {
+            if ((t.type !== "income" && t.type !== "expense") || !(t.amount > 0) || !t.date)
+                return;
+            const k = t.type + "|" + t.currency + "|" + Math.round(t.amount * 100);
+            (groups[k] = groups[k] || []).push(t);
+        });
+        const pairs = [];
+        Object.values(groups).forEach((list) => {
+            if (list.length < 2)
+                return;
+            list.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+            for (let i = 0; i < list.length; i++) {
+                let inWin = 0;
+                for (let j = 0; j < list.length; j++)
+                    if (j !== i && Math.abs(new Date(list[j].date) - new Date(list[i].date)) <= win)
+                        inWin++;
+                if (inWin > 3)
+                    return; // частий однаковий платіж — не шум, а патерн
+            }
+            for (let i = 0; i < list.length - 1; i++)
+                for (let j = i + 1; j < list.length; j++) {
+                    const a = list[i], b = list[j];
+                    const gap = Math.round(Math.abs(new Date(b.date) - new Date(a.date)) / 86400000);
+                    if (gap > (windowDays || 31))
+                        continue;
+                    if (skip.has([a.id, b.id].sort().join("|")))
+                        continue;
+                    if (a.recurringId && b.recurringId && a.recurringId === b.recurringId)
+                        continue;
+                    const monthly = gap >= 25 && a.pocketId === b.pocketId && a.categoryId === b.categoryId;
+                    pairs.push({ a, b, gap, monthly });
+                }
+        });
+        pairs.sort((x, y) => x.gap - y.gap || (y.a.amount - x.a.amount));
+        return pairs;
+    }
     function guessCategory(desc, amount, categories, noteIdx) {
         const hay = searchFold(desc || "");
         const wantType = amount < 0 ? "expense" : "income";
@@ -8458,7 +8517,7 @@ window.__K3_START = function () {
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, state, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings, customEmojis, addCustomEmoji, planned, addPlanned, editPlanned, deletePlanned, markPlannedDone, plannedOverdue, plannedUpcomingFor, reportTemplates, applyReportTemplate, renameReportTemplate, deleteReportTemplate, transferCrypto, swapCrypto, cryptoRealized, replaceTransaction, createPocketQuick }) {
+    function ModalRouter({ modal, setModal, restoreLoanOrigin, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, state, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings, customEmojis, addCustomEmoji, planned, addPlanned, editPlanned, deletePlanned, markPlannedDone, plannedOverdue, plannedUpcomingFor, reportTemplates, applyReportTemplate, renameReportTemplate, deleteReportTemplate, transferCrypto, swapCrypto, cryptoRealized, replaceTransaction, createPocketQuick, dupDismissed, dismissDupPair }) {
             const txToKind = (t) => {
                 const ed = modal.payload && modal.payload.editing;
                 if (!ed)
@@ -8497,6 +8556,8 @@ window.__K3_START = function () {
                 return React.createElement(StatementImportModal, { onClose: close, onBack: modal.returnTo ? close : undefined, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject, payload: modal.payload , rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "cryptoMove")
                 return React.createElement(CryptoMoveModal, { onClose: close, crypto: crypto, cryptoWallets: cryptoWallets, transferCrypto: transferCrypto });
+            if (modal.type === "dupScan")
+                return React.createElement(DupScanModal, { onClose: close, transactions: transactions, dupDismissed: dupDismissed, dismissDupPair: dismissDupPair, deleteTransaction: deleteTransaction, categories: categories, pocketLabel: pocketLabel, baseCurrency: baseCurrency });
             if (modal.type === "convertTransfer")
                 return React.createElement(ConvertToTransferModal, { onClose: close, tx: modal.payload, accounts: accounts, pockets: pockets, rates: rates, baseCurrency: baseCurrency, replaceTransaction: replaceTransaction, createPocketQuick: createPocketQuick, pocketBalance: pocketBalance });
             if (modal.type === "cryptoSwap")
@@ -9520,6 +9581,30 @@ window.__K3_START = function () {
                 React.createElement(Input, { value: note, onChange: (e) => setNote(e.target.value) })),
             React.createElement(Button, { className: "w-full", onClick: submit }, tr("Зберегти"))));
     }
+    // History duplicate scan: same amount twice within a month — pick which record to drop.
+    function DupScanModal({ onClose, transactions, dupDismissed, dismissDupPair, deleteTransaction, categories, pocketLabel, baseCurrency }) {
+        const [arm, setArm] = useState(""); // txId armed for delete confirm
+        const pairs = useMemo(() => findDuplicatePairs(transactions, dupDismissed, 31), [transactions, dupDismissed]);
+        const catName = (cid) => { const c = categories.find((x) => x.id === cid); return c ? tr(c.name) : "\u2014"; };
+        const Card = ({ t, pairKeyOther }) => (React.createElement("div", { className: "flex-1 min-w-0 rounded-xl p-2.5", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+            React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, fmtDate(t.date), " \u00B7 ", catName(t.categoryId)),
+            React.createElement("p", { className: "text-xs truncate", style: { color: "var(--text-dim)" } }, pocketLabel(t.pocketId)),
+            (t.note || "").trim() && React.createElement("p", { className: "text-xs truncate" }, t.note),
+            React.createElement("button", { type: "button", "data-dupdel": t.id, onClick: () => { if (arm === t.id) { deleteTransaction(t.id); setArm(""); } else setArm(t.id); }, className: "mt-1.5 text-xs font-semibold", style: { color: "var(--danger)" } }, arm === t.id ? tr("Точно видалити?") : tr("Видалити цю"))));
+        return (React.createElement(Modal, { title: tr("Пошук дублікатів"), onClose: onClose },
+            React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Однакові суми одного типу з різницею до місяця. Видали зайву або познач, що це різні операції.")),
+            pairs.length === 0 && React.createElement("p", { className: "text-sm py-6 text-center", style: { color: "var(--text-dim)" } }, tr("Підозрілих пар не знайдено")),
+            pairs.slice(0, 30).map((p) => (React.createElement("div", { key: p.a.id + p.b.id, "data-duppair": "1", className: "rounded-2xl p-3 mb-3", style: { border: "1px solid var(--border)" } },
+                React.createElement("div", { className: "flex items-center justify-between mb-2" },
+                    React.createElement("span", { className: "font-semibold tabular text-sm" }, (p.a.type === "expense" ? "\u2212" : "+"), fmtMoney(p.a.amount, p.a.currency)),
+                    React.createElement("span", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, p.gap === 0 ? tr("той самий день") : tr("різниця днів") + ": " + p.gap)),
+                p.monthly && React.createElement("p", { className: "text-[0.6875rem] mb-2", style: { color: "var(--text-dim)" } }, tr("Може бути регулярним щомісячним платежем")),
+                React.createElement("div", { className: "flex gap-2" },
+                    React.createElement(Card, { t: p.a }),
+                    React.createElement(Card, { t: p.b })),
+                React.createElement("button", { type: "button", "data-dupskip": "1", onClick: () => dismissDupPair(p.a.id, p.b.id), className: "mt-2 text-xs font-medium", style: { color: "var(--text-dim)" } }, tr("Це різні операції — не показувати"))))),
+            pairs.length > 30 && React.createElement("p", { className: "text-xs text-center", style: { color: "var(--text-dim)" } }, tr("Показані перші 30 пар"))));
+    }
     function TransferExchangeModal({ onClose, mode, presetFromPocketId, accounts, pockets, rates, baseCurrency, addTransaction, editTransaction, editing, preset, plannedDone, markPlannedDone, pocketBalance, switchType }) {
         const isExchange = mode === "exchange";
         const active = pockets.filter((p) => !p.archived);
@@ -10367,5 +10452,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-02.5");</script></body>
+<script>console.log("K³ build: 2026-09-02.6");</script></body>
 </html>
