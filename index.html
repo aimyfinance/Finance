@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-03.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-03.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -9220,6 +9220,7 @@ window.__K3_START = function () {
             }
         }, [txCur, pocketId]);
         const [categoryId, setCategoryId] = useState(editing?.categoryId || P.presetCategoryId || cats[0]?.id || "");
+        const [flagged, setFlagged] = useState(!!(editing && editing.flagged));
         const [catOpen, setCatOpen] = useState(false);
         const [newCatMode, setNewCatMode] = useState(false);
         const [newCatName, setNewCatName] = useState("");
@@ -9348,7 +9349,7 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть рахунок"));
             if (!categoryId)
                 return setError(tr("Оберіть категорію"));
-            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, comment: comment.trim() || null, receipts, receipt: null };
+            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, comment: comment.trim() || null, receipts, receipt: null, flagged: flagged || undefined };
             if (baseCurrency && currency !== baseCurrency && rates) {
                 const rBase = rates[baseCurrency] || 1;
                 const rCur = rates[currency] != null ? rates[currency] : (editing && editing.fx != null ? editing.fx : 1);
@@ -9553,6 +9554,11 @@ window.__K3_START = function () {
                     React.createElement("img", { src: r, alt: tr("чек"), className: "h-24 w-24 rounded-lg object-cover", style: { border: "1px solid var(--border)" } }),
                     React.createElement("button", { type: "button", "aria-label": tr("Видалити фото"), onClick: () => removeReceipt(i), className: "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center", style: { background: "var(--danger)", color: "#fff" } },
                         React.createElement(X, { size: 12 }))))))),
+            React.createElement("button", { type: "button", "data-flagtoggle": "1", onClick: () => setFlagged((v) => !v), className: "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium mb-3", style: { background: flagged ? "color-mix(in srgb, var(--danger) 10%, transparent)" : "var(--surface2)", border: "1px solid " + (flagged ? "var(--danger)" : "var(--border)"), color: flagged ? "var(--danger)" : "var(--text-dim)" } },
+                "\u2757",
+                " ",
+                tr("Потребує уваги"),
+                flagged && React.createElement(Check, { size: 14, style: { marginLeft: "auto" } })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, editing ? tr("Зберегти зміни") : tr("Зберегти"))));
     }
     /* ---------- Transfer / Exchange Modal ---------- */
@@ -9683,6 +9689,7 @@ window.__K3_START = function () {
             return src && src.rate ? String(src.rate) : "1";
         });
         const keepStoredRate = React.useRef(!!(editing && editing.fromCurrency !== editing.toCurrency));
+        const [flagged, setFlagged] = useState(!!(editing && editing.flagged));
         const rateNum = parseFloat(String(rate).replace(",", ".")) || 0;
         const [toAmount, setToAmount] = useState(src && src.toAmount != null ? String(src.toAmount) : "");
         const [date, setDate] = useState(src?.date || new Date().toISOString().slice(0, 10));
@@ -9794,7 +9801,7 @@ window.__K3_START = function () {
             const to = parseFloat(toAmount);
             if (!to || to <= 0)
                 return setError(tr("Сума зарахування має бути додатною"));
-            const data = { type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? (quoteFrom ? rateNum : (rateNum > 0 ? Math.round((1 / rateNum) * 1e6) / 1e6 : 0)) : 1, fee: 0, note };
+            const data = { type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? (quoteFrom ? rateNum : (rateNum > 0 ? Math.round((1 / rateNum) * 1e6) / 1e6 : 0)) : 1, fee: 0, note, flagged: flagged || undefined };
             // FX variance vs the market cross-rate; stamped for new saves or after a conscious rate/amount edit.
             if (crossCurrency && rates && rates[fromCurrency] && rates[toCurrency] && (!editing || rateTouched || (preset ? false : manualTo))) {
                 // rates[X] = вартість 1 X у гривнях (опорна валюта таблиці), тож:
@@ -9858,6 +9865,11 @@ window.__K3_START = function () {
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Field, { label: tr("Коментар") },
                 React.createElement(Textarea, { rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково") })),
+            React.createElement("button", { type: "button", "data-flagtoggle": "1", onClick: () => setFlagged((v) => !v), className: "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium mb-3", style: { background: flagged ? "color-mix(in srgb, var(--danger) 10%, transparent)" : "var(--surface2)", border: "1px solid " + (flagged ? "var(--danger)" : "var(--border)"), color: flagged ? "var(--danger)" : "var(--text-dim)" } },
+                "\u2757",
+                " ",
+                tr("Потребує уваги"),
+                flagged && React.createElement(Check, { size: 14, style: { marginLeft: "auto" } })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, editing ? tr("Зберегти зміни") : (isExchange ? tr("Обміняти") : tr("Переказати")))));
     }
     /* ---------- Loan Modal ---------- */
@@ -10504,5 +10516,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-03.3");</script></body>
+<script>console.log("K³ build: 2026-09-03.4");</script></body>
 </html>
