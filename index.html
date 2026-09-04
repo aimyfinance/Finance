@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-03.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-03.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1963,6 +1963,12 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Налаштувати": "Configure",
+        "Повторюється": "Repeats",
+        "Сховати пізніші": "Hide later ones",
+        "Показати пізніші": "Show later ones",
+        "через": "in",
+        "завтра": "tomorrow",
         "Лише з позначкою": "Flagged only",
         "Потребує уваги": "Needs attention",
         "Зняти позначку": "Unmark",
@@ -4009,6 +4015,45 @@ window.__K3_START = function () {
         const pendingRecurring = [];
         recurring.forEach((r) => { if (r.mode !== "ask")
             return; const rcur = (pockets.find((pp) => pp.id === r.pocketId) || {}).currency || baseCurrency; recurringDueList(r, todayISO).forEach((o) => pendingRecurring.push({ rule: r, month: o.month, date: o.date, currency: rcur })); });
+        // One card per rule: the oldest due occurrence + a counter, so identical daily
+        // cards don't stack and «Пропустити» always means the visible (oldest) one.
+        const pendingByRule = (() => {
+            const seen = {};
+            const out = [];
+            pendingRecurring.forEach((o) => {
+                const g = seen[o.rule.id];
+                if (g)
+                    g.count++;
+                else {
+                    const ng = { ...o, count: 1 };
+                    seen[o.rule.id] = ng;
+                    out.push(ng);
+                }
+            });
+            return out;
+        })();
+        // Next future occurrence per ask-rule within 30 days — lets the user post early
+        // (pension due on the 6th that lands on the 4th) without waiting for the due date.
+        const upcomingRecurring = (() => {
+            const h = new Date(todayISO + "T12:00:00");
+            h.setDate(h.getDate() + 30);
+            const toISO = localISODate(h);
+            const out = [];
+            recurring.forEach((r) => {
+                if (r.mode !== "ask" || r.paused || r.archived)
+                    return;
+                if (pendingRecurring.some((p) => p.rule.id === r.id))
+                    return; // спершу закрий прострочені — майбутнє не дублюємо
+                const last = ruleLastDoneNorm(r);
+                const dates = freqDates(r, r.startDate || todayISO, toISO).filter((dt) => dt > todayISO && (!last || dt > last));
+                if (!dates.length)
+                    return;
+                const rcur = (pockets.find((pp) => pp.id === r.pocketId) || {}).currency || baseCurrency;
+                out.push({ rule: r, date: dates[0], currency: rcur });
+            });
+            out.sort((a, b) => (a.date < b.date ? -1 : 1));
+            return out;
+        })();
         const plannedOverdue = [];
         planned.forEach((r) => { plannedDue(r, todayISO).forEach((o) => plannedOverdue.push({ rule: r, date: o.date, days: o.days })); });
         plannedOverdue.sort((a, b) => b.days - a.days);
@@ -4336,7 +4381,7 @@ window.__K3_START = function () {
                                 React.createElement("div", { className: "flex gap-2 mt-2" },
                                     React.createElement(Button, { variant: "secondary", onClick: exportBackup }, tr("Зберегти копію")),
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[0.6875rem] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
-                        view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, projectsPeriod: state.projectsPeriod || null, update: update, plannedOverdue: plannedOverdue, markPlannedDone: markPlannedDone })),
+                        view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, pendingByRule: pendingByRule, upcomingRecurring: upcomingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, projectsPeriod: state.projectsPeriod || null, update: update, plannedOverdue: plannedOverdue, markPlannedDone: markPlannedDone })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { setView: setView, cryptoRealized: cryptoRealized, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk, addReportTemplate: addReportTemplate })),
                         view === "loans" && (React.createElement(LoansView, { transactions: transactions, rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
@@ -4521,7 +4566,8 @@ window.__K3_START = function () {
             React.createElement(Button, { variant: "secondary", onClick: save }, "OK")));
     }
     /* ============================== DASHBOARD ============================== */
-    function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, carouselOrder, projectsPeriod, update, plannedOverdue, markPlannedDone }) {
+    function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, pendingByRule, upcomingRecurring, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, carouselOrder, projectsPeriod, update, plannedOverdue, markPlannedDone }) {
+        const [recMoreOpen, setRecMoreOpen] = useState(false);
         const net = monthIncome - monthExpense;
         const recent = [...transactions].sort(byRecent).slice(0, 6);
         const activeAccounts = accounts.filter((a) => !a.archived);
@@ -4700,28 +4746,54 @@ window.__K3_START = function () {
                     React.createElement("span", { className: "px-2 py-0.5 rounded-full text-[0.6875rem] font-bold shrink-0", style: { background: o.days > 0 ? "var(--danger)" : "var(--accent)", color: "#fff" } }, o.days > 0 ? o.days + " " + tr("дн") : tr("сьогодні")),
                     React.createElement("button", { onClick: () => { const p = plannedPostPayload(o.rule, o.date); setModal(p); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Провести")),
                     React.createElement("button", { onClick: () => markPlannedDone(o.rule.id, o.date), className: "px-2 py-1.5 rounded-lg text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Пропустити"))))))))),
-            pendingRecurring && pendingRecurring.length > 0 && (React.createElement("div", { className: "space-y-2" },
-                pendingRecurring.slice(0, 4).map((o) => (React.createElement("div", { key: o.rule.id + o.month, className: "flex items-center gap-2.5 rounded-2xl p-3.5 animate-in", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
+            ((pendingByRule && pendingByRule.length > 0) || (upcomingRecurring && upcomingRecurring.length > 0)) && (React.createElement("div", { className: "space-y-2" },
+                pendingByRule.slice(0, 4).map((o) => (React.createElement("div", { key: o.rule.id + o.date, className: "flex items-center gap-2.5 rounded-2xl p-3.5 animate-in", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
                     React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } },
                         React.createElement(RefreshCw, { size: 15 })),
                     React.createElement("div", { className: "flex-1 min-w-0" },
                         React.createElement("p", { className: "text-sm font-medium truncate" },
                             tr(o.rule.title),
                             " \u00B7 ",
-                            tr("за"),
-                            " ",
-                            MONTHS_FULL[+o.month.slice(5, 7) - 1]),
+                            fmtDate(o.date),
+                            o.count > 1 ? " \u00B7 \u00D7" + o.count : ""),
                         React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                             tr("орієнтир"),
                             " ",
                             fmtMoney(o.rule.amount, o.currency))),
                     React.createElement("button", { onClick: () => setModal({ type: "transaction", payload: { kind: o.rule.kind, presetPocketId: o.rule.pocketId, presetCategoryId: o.rule.categoryId, presetAmount: o.rule.amount, presetNote: o.rule.title, presetDate: o.date, presetProjectId: o.rule.projectId || null, focusAmount: true, recurringDone: { id: o.rule.id, month: o.date } } }), className: "px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Внести")),
                     React.createElement("button", { onClick: () => markRecurringDone(o.rule.id, o.date), className: "px-2.5 py-1.5 rounded-lg text-xs font-medium shrink-0", style: { background: "var(--surface2)", color: "var(--text-dim)" } }, tr("Пропустити"))))),
-                pendingRecurring.length > 4 && React.createElement("p", { className: "text-[0.6875rem] text-center", style: { color: "var(--text-dim)" } },
+                pendingByRule.length > 4 && React.createElement("p", { className: "text-[0.6875rem] text-center", style: { color: "var(--text-dim)" } },
                     "+",
-                    pendingRecurring.length - 4,
+                    pendingByRule.length - 4,
                     " ",
-                    tr("ще очікують")))),
+                    tr("ще очікують")),
+                (() => {
+                    const soonLimit = (() => { const d = new Date(); d.setDate(d.getDate() + 3); return localISODate(d); })();
+                    const soon = upcomingRecurring.filter((o) => o.date <= soonLimit);
+                    const later = upcomingRecurring.filter((o) => o.date > soonLimit);
+                    const daysTo = (iso) => Math.round((new Date(iso + "T12:00:00") - new Date(localISODate(new Date()) + "T12:00:00")) / 86400000);
+                    const UpCard = (o) => (React.createElement("div", { key: "up" + o.rule.id + o.date, "data-recup": o.rule.id, className: "flex items-center gap-2.5 rounded-2xl p-3 animate-in", style: { background: "var(--surface)", border: "1px dashed var(--border)" } },
+                        React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
+                            React.createElement(RefreshCw, { size: 15 })),
+                        React.createElement("div", { className: "flex-1 min-w-0" },
+                            React.createElement("p", { className: "text-sm font-medium truncate" },
+                                tr(o.rule.title),
+                                " \u00B7 ",
+                                fmtDate(o.date)),
+                            React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
+                                daysTo(o.date) === 1 ? tr("завтра") : tr("через") + " " + daysTo(o.date) + " " + tr("дн") ,
+                                " \u00B7 ",
+                                tr("орієнтир"),
+                                " ",
+                                fmtMoney(o.rule.amount, o.currency))),
+                        React.createElement("button", { onClick: () => setModal({ type: "transaction", payload: { kind: o.rule.kind, presetPocketId: o.rule.pocketId, presetCategoryId: o.rule.categoryId, presetAmount: o.rule.amount, presetNote: o.rule.title, presetDate: o.date, presetProjectId: o.rule.projectId || null, focusAmount: true, recurringDone: { id: o.rule.id, month: o.date } } }), className: "px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--surface2)", color: "var(--text)" } }, tr("Внести")),
+                        React.createElement("button", { onClick: () => markRecurringDone(o.rule.id, o.date), className: "px-2.5 py-1.5 rounded-lg text-xs font-medium shrink-0", style: { color: "var(--text-dim)" } }, tr("Пропустити"))));
+                    return React.createElement(React.Fragment, null,
+                        soon.map(UpCard),
+                        later.length > 0 && React.createElement("button", { "data-recmore": "1", type: "button", onClick: () => setRecMoreOpen((v) => !v), className: "w-full text-center text-[0.6875rem] font-medium py-1", style: { color: "var(--text-dim)" } },
+                            recMoreOpen ? tr("Сховати пізніші") : tr("Показати пізніші") + " (" + later.length + ")"),
+                        recMoreOpen && later.map(UpCard));
+                })())),
             React.createElement("div", null,
                 React.createElement("h2", { className: "font-display font-semibold text-lg mb-3" }, tr("Здійснити транзакцію")),
                 React.createElement("div", { "data-tour": "actions", className: "grid grid-cols-2 sm:grid-cols-4 gap-3" },
@@ -8574,7 +8646,7 @@ window.__K3_START = function () {
             if (modal.type === "category")
                 return React.createElement(CategoryModal, { onClose: close, existing: modal.payload, addCategory: addCategory, editCategory: editCategory, categories: categories, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji });
             if (modal.type === "transaction")
-                return React.createElement(TransactionModal, { key: "tx-" + modal.payload.kind, onClose: close, replaceTransaction: replaceTransaction, switchType: (t) => { const ed = modal.payload.editing; if (!ed) return; if (t === "transfer") { if (!ed.__replace) setModal({ type: "convertTransfer", payload: ed }); } else setModal({ type: "transaction", payload: { kind: t, editing: { ...ed, categoryId: null } } }); }, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, markPlannedDone: markPlannedDone });
+                return React.createElement(TransactionModal, { key: "tx-" + modal.payload.kind, onClose: close, recurringList: recurring, openRecurringEdit: (rr) => setModal({ type: "recurringEdit", payload: rr }), replaceTransaction: replaceTransaction, switchType: (t) => { const ed = modal.payload.editing; if (!ed) return; if (t === "transfer") { if (!ed.__replace) setModal({ type: "convertTransfer", payload: ed }); } else setModal({ type: "transaction", payload: { kind: t, editing: { ...ed, categoryId: null } } }); }, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, markPlannedDone: markPlannedDone });
             if (modal.type === "transfer")
                 return React.createElement(TransferExchangeModal, { switchType: txToKind, onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, preset: modal.payload?.planned || null, plannedDone: modal.payload?.plannedDone || null, markPlannedDone: markPlannedDone, accounts: accounts, pockets: pockets, rates: rates, baseCurrency: baseCurrency, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
             if (modal.type === "exchange")
@@ -9193,7 +9265,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти зміни") : tr("Створити категорію"))));
     }
     /* ---------- Transaction (income/expense) Modal ---------- */
-    function TransactionModal({ onClose, switchType, replaceTransaction, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, customEmojis, addCustomEmoji, markPlannedDone, }) {
+    function TransactionModal({ onClose, switchType, replaceTransaction, recurringList, openRecurringEdit, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, customEmojis, addCustomEmoji, markPlannedDone, }) {
         const P = payload || {};
         const isIncome = kind === "income";
         const cats = categories.filter((c) => c.type === kind && !c.archived && !c.parentId);
@@ -9349,7 +9421,7 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть рахунок"));
             if (!categoryId)
                 return setError(tr("Оберіть категорію"));
-            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, comment: comment.trim() || null, receipts, receipt: null, flagged: flagged || undefined };
+            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, comment: comment.trim() || null, receipts, receipt: null, flagged: flagged || undefined, recurringId: (P.recurringDone && P.recurringDone.id) || (editing && editing.recurringId) || undefined };
             if (baseCurrency && currency !== baseCurrency && rates) {
                 const rBase = rates[baseCurrency] || 1;
                 const rCur = rates[currency] != null ? rates[currency] : (editing && editing.fx != null ? editing.fx : 1);
@@ -9507,6 +9579,15 @@ window.__K3_START = function () {
                         ": ",
                         fmtMoney(Math.round(bvPrev * 100) / 100, baseCurrency),
                         exRate && !rateStr ? " · " + tr("зафіксований курс") : "")));
+            })(),
+            (editing && editing.recurringId) && (() => {
+                const rr = (recurringList || []).find((x) => x.id === editing.recurringId);
+                if (!rr)
+                    return null;
+                return React.createElement("div", { className: "flex items-center gap-2 px-3 py-2.5 rounded-xl mb-3 text-sm", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+                    React.createElement(RefreshCw, { size: 14, style: { color: "var(--accent)", flexShrink: 0 } }),
+                    React.createElement("span", { className: "flex-1 min-w-0 truncate" }, tr("Повторюється"), ": ", tr(rr.title || "")),
+                    openRecurringEdit && React.createElement("button", { type: "button", onClick: () => openRecurringEdit(rr), className: "text-xs font-semibold shrink-0", style: { color: "var(--accent-text, var(--accent))" } }, tr("Налаштувати")));
             })(),
             !(editing && editing.recurringId) && (React.createElement("div", { className: "mb-3" },
                 React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
@@ -10516,5 +10597,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-03.4");</script></body>
+<script>console.log("K³ build: 2026-09-03.5");</script></body>
 </html>
