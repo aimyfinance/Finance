@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-03.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-05.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -818,6 +818,16 @@ window.__K3_START = function () {
             .map((dt) => ({ date: dt }));
     }
     // Human-readable frequency of a rule, e.g. "Щотижня, Пн" / "Двічі на місяць: 1 і 15"
+    // Next occurrence still waiting for this rule (due or future), for sorting.
+    function nextRuleDate(rule, todayISO) {
+        if (!rule || rule.paused || rule.archived)
+            return "9999-99-99";
+        const last = ruleLastDoneNorm(rule);
+        const h = new Date(todayISO + "T12:00:00");
+        h.setDate(h.getDate() + 400);
+        const dates = freqDates(rule, rule.startDate || todayISO, localISODate(h)).filter((dt) => !last || dt > last);
+        return dates[0] || "9999-99-99";
+    }
     function recurFreqLabel(rule) {
         const freq = (rule && rule.frequency) || "monthly";
         const WD = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
@@ -1963,6 +1973,12 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Перетворити на запланований": "Convert to a planned payment",
+        "Операція не буде проведена: у день платежу на головному екрані з'явиться картка «Провести».": "Nothing is posted now: on the due date a «Post» card appears on the overview.",
+        "Запланувати на цю дату (не проводити зараз)": "Schedule for this date (don't post now)",
+        "Сортувати: за частотою": "Sort: by frequency",
+        "Сортувати: за датою виконання": "Sort: by due date",
+        "Сортувати: за створенням": "Sort: by creation",
         "Налаштувати": "Configure",
         "Повторюється": "Repeats",
         "Сховати пізніші": "Hide later ones",
@@ -8447,10 +8463,24 @@ window.__K3_START = function () {
     // ---------- Recurring payments: manager + editor ----------
     function RecurringListModal({ onClose, recurring, pockets, categories, pocketLabel, setModal, editRecurring, deleteRecurring }) {
         const [confirmDel, setConfirmDel] = useState(null);
-        const list = (recurring || []).filter((r) => !r.archived);
+        const [sortBy, setSortBy] = useState("created");
+        const FREQ_ORDER = { daily: 0, weekly: 1, semimonthly: 2, monthly: 3, quarterly: 4, yearly: 5, once: 6 };
+        const todayISO = localISODate(new Date());
+        const list = (recurring || []).filter((r) => !r.archived).slice().sort((a, b) => {
+            if (sortBy === "due")
+                return nextRuleDate(a, todayISO).localeCompare(nextRuleDate(b, todayISO));
+            if (sortBy === "freq")
+                return (FREQ_ORDER[a.frequency || "monthly"] - FREQ_ORDER[b.frequency || "monthly"]) || nextRuleDate(a, todayISO).localeCompare(nextRuleDate(b, todayISO));
+            return (a.createdAt || "").localeCompare(b.createdAt || "");
+        });
         const openEdit = (r) => setModal({ type: "recurringEdit", payload: r || null, returnTo: { type: "recurring" } });
         return (React.createElement(Modal, { title: tr("Регулярні платежі"), onClose: onClose },
             list.length === 0 && React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Поки що порожньо. Найшвидше — галочка «Повторювати щомісяця» при створенні операції; або додайте платіж тут.")),
+            (recurring || []).filter((r) => !r.archived).length > 1 && React.createElement("div", { className: "mb-3" },
+                React.createElement(Select, { "data-recsort": "1", value: sortBy, onChange: (e) => setSortBy(e.target.value) },
+                    React.createElement("option", { value: "created" }, tr("Сортувати: за створенням")),
+                    React.createElement("option", { value: "due" }, tr("Сортувати: за датою виконання")),
+                    React.createElement("option", { value: "freq" }, tr("Сортувати: за частотою")))),
             React.createElement("div", { className: "space-y-2.5 mb-3" }, list.map((r) => {
                 const cat = categories.find((x) => x.id === r.categoryId);
                 const cur = (pockets.find((pp) => pp.id === r.pocketId) || {}).currency || "UAH";
@@ -8486,7 +8516,7 @@ window.__K3_START = function () {
                 " ",
                 tr("Додати платіж"))));
     }
-    function RecurringEditModal({ onClose, onBack, existing, accounts, pockets, categories, addRecurring, editRecurring, pocketBalance, projects }) {
+    function RecurringEditModal({ onClose, onBack, existing, accounts, pockets, categories, addRecurring, editRecurring, pocketBalance, projects, addPlanned, deleteRecurring }) {
         const [kind, setKind] = useState(existing?.kind || "expense");
         const cats = categories.filter((x) => x.type === kind && !x.archived);
         const firstPocket = pockets.find((pp) => !pp.archived);
@@ -8568,7 +8598,17 @@ window.__K3_START = function () {
                 React.createElement(Field, { label: tr("Початок") },
                     React.createElement(Input, { type: "date", value: startDate, onChange: (e) => setStartDate(e.target.value) }))),
             React.createElement("p", { className: "text-[0.6875rem] mb-3", style: { color: "var(--text-dim)" } }, frequency === "quarterly" ? tr("Кожні 3 місяці від дати початку.") : tr("29–31 у коротких місяцях = останній день місяця.")),
-            React.createElement(Button, { className: "w-full", onClick: submit }, tr("Зберегти"))));
+                        existing && existing.id && addPlanned && deleteRecurring && React.createElement("button", { type: "button", "data-toplanned": "1", onClick: () => {
+                const todayISO2 = localISODate(new Date());
+                const nd = nextRuleDate(existing, todayISO2);
+                addPlanned({ kind: existing.kind, title: existing.title, amount: existing.amount, startDate: nd !== "9999-99-99" ? nd : (existing.startDate || todayISO2), frequency: existing.frequency || "monthly", currency: (pockets.find((pp) => pp.id === existing.pocketId) || {}).currency || null, note: null, pocketId: existing.pocketId || null, categoryId: existing.categoryId || null, projectId: existing.projectId || null, fromPocketId: null, toPocketId: null, weekday: existing.weekday != null ? existing.weekday : null, day1: existing.day1 || null, day2: existing.day2 || null, dayOfMonth: existing.dayOfMonth || 1, month: existing.month || null, lastDone: "" });
+                deleteRecurring(existing.id);
+                onClose();
+            }, className: "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium mb-2", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text-dim)" } },
+                React.createElement(RefreshCw, { size: 14 }),
+                " ",
+                tr("Перетворити на запланований")),
+React.createElement(Button, { className: "w-full", onClick: submit }, tr("Зберегти"))));
     }
     // Which expense categories take part in the period comparison (donut + list)
     function CategoryReportModal({ onClose, breakdown, periodLabel, categories, baseCurrency, openCat }) {
@@ -8646,7 +8686,7 @@ window.__K3_START = function () {
             if (modal.type === "category")
                 return React.createElement(CategoryModal, { onClose: close, existing: modal.payload, addCategory: addCategory, editCategory: editCategory, categories: categories, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji });
             if (modal.type === "transaction")
-                return React.createElement(TransactionModal, { key: "tx-" + modal.payload.kind, onClose: close, recurringList: recurring, openRecurringEdit: (rr) => setModal({ type: "recurringEdit", payload: rr }), replaceTransaction: replaceTransaction, switchType: (t) => { const ed = modal.payload.editing; if (!ed) return; if (t === "transfer") { if (!ed.__replace) setModal({ type: "convertTransfer", payload: ed }); } else setModal({ type: "transaction", payload: { kind: t, editing: { ...ed, categoryId: null } } }); }, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, markPlannedDone: markPlannedDone });
+                return React.createElement(TransactionModal, { key: "tx-" + modal.payload.kind, onClose: close, addPlanned: addPlanned, recurringList: recurring, openRecurringEdit: (rr) => setModal({ type: "recurringEdit", payload: rr }), replaceTransaction: replaceTransaction, switchType: (t) => { const ed = modal.payload.editing; if (!ed) return; if (t === "transfer") { if (!ed.__replace) setModal({ type: "convertTransfer", payload: ed }); } else setModal({ type: "transaction", payload: { kind: t, editing: { ...ed, categoryId: null } } }); }, kind: modal.payload.kind, editing: modal.payload.editing, presetPocketId: modal.payload.presetPocketId, accounts: accounts, pockets: pockets, categories: categories, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance, addCategory: addCategory, payload: modal.payload, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, transactions: transactions, rates: rates, baseCurrency: baseCurrency, addRecurring: addRecurring, editCategory: editCategory, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, markPlannedDone: markPlannedDone });
             if (modal.type === "transfer")
                 return React.createElement(TransferExchangeModal, { switchType: txToKind, onClose: close, mode: "transfer", presetFromPocketId: modal.payload?.presetPocketId, editing: modal.payload?.editing || null, preset: modal.payload?.planned || null, plannedDone: modal.payload?.plannedDone || null, markPlannedDone: markPlannedDone, accounts: accounts, pockets: pockets, rates: rates, baseCurrency: baseCurrency, addTransaction: addTransaction, editTransaction: editTransaction, pocketBalance: pocketBalance });
             if (modal.type === "exchange")
@@ -8693,7 +8733,7 @@ window.__K3_START = function () {
             if (modal.type === "recurring")
                 return React.createElement(RecurringListModal, { onClose: close, recurring: recurring, pockets: pockets, categories: categories, pocketLabel: pocketLabel, setModal: setModal, editRecurring: editRecurring, deleteRecurring: deleteRecurring });
             if (modal.type === "recurringEdit")
-                return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects });
+                return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects, addPlanned: addPlanned, deleteRecurring: deleteRecurring });
             if (modal.type === "projects")
                 return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, origin: modal.origin, showArrows: modal.origin !== "dashboard", setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency, periodFrom: (modal.payload || {}).from || null, periodTo: (modal.payload || {}).to || null });
             if (modal.type === "projectEdit")
@@ -9265,7 +9305,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти зміни") : tr("Створити категорію"))));
     }
     /* ---------- Transaction (income/expense) Modal ---------- */
-    function TransactionModal({ onClose, switchType, replaceTransaction, recurringList, openRecurringEdit, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, customEmojis, addCustomEmoji, markPlannedDone, }) {
+    function TransactionModal({ onClose, switchType, replaceTransaction, recurringList, openRecurringEdit, addPlanned, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, customEmojis, addCustomEmoji, markPlannedDone, }) {
         const P = payload || {};
         const isIncome = kind === "income";
         const cats = categories.filter((c) => c.type === kind && !c.archived && !c.parentId);
@@ -9293,6 +9333,7 @@ window.__K3_START = function () {
         }, [txCur, pocketId]);
         const [categoryId, setCategoryId] = useState(editing?.categoryId || P.presetCategoryId || cats[0]?.id || "");
         const [flagged, setFlagged] = useState(!!(editing && editing.flagged));
+        const [planOn, setPlanOn] = useState(false);
         const [catOpen, setCatOpen] = useState(false);
         const [newCatMode, setNewCatMode] = useState(false);
         const [newCatName, setNewCatName] = useState("");
@@ -9445,7 +9486,7 @@ window.__K3_START = function () {
             }
             const buildRecData = () => {
                 const rd = recDay != null ? recDay : (+date.slice(8, 10) || 1);
-                return { kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), mode: recMode, amount: amt, pocketId, categoryId, dayOfMonth: rd, startDate: date,
+                return { kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), mode: recMode, amount: amt, pocketId, categoryId, projectId: projectId || null, dayOfMonth: rd, startDate: date,
                     frequency: recFreq,
                     weekday: recFreq === "weekly" ? (recWeekday != null ? recWeekday : new Date(date + "T12:00:00").getDay()) : null,
                     day1: recFreq === "semimonthly" ? recDay1 : null,
@@ -9454,6 +9495,12 @@ window.__K3_START = function () {
                     // this transaction counts as the first occurrence — the next one is due strictly later
                     lastDone: date };
             };
+            if (!editing && planOn && addPlanned) {
+                const pcur = (pockets.find((pp) => pp.id === pocketId) || {}).currency || currency;
+                addPlanned({ kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), amount: amt, startDate: date, frequency: "once", currency: pcur, note: comment.trim() || null, pocketId, categoryId: categoryId || null, projectId: projectId || null, fromPocketId: null, toPocketId: null, weekday: null, day1: null, day2: null, dayOfMonth: +date.slice(8, 10) || 1, lastDone: "" });
+                onClose();
+                return;
+            }
             if (editing) {
                 if (editing.__replace && replaceTransaction)
                     replaceTransaction(editing.id, data, tr("Тип операції змінено"));
@@ -9589,7 +9636,12 @@ window.__K3_START = function () {
                     React.createElement("span", { className: "flex-1 min-w-0 truncate" }, tr("Повторюється"), ": ", tr(rr.title || "")),
                     openRecurringEdit && React.createElement("button", { type: "button", onClick: () => openRecurringEdit(rr), className: "text-xs font-semibold shrink-0", style: { color: "var(--accent-text, var(--accent))" } }, tr("Налаштувати")));
             })(),
-            !(editing && editing.recurringId) && (React.createElement("div", { className: "mb-3" },
+            !editing && !recOn && (React.createElement("div", { className: "mb-3" },
+                React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
+                    React.createElement("input", { type: "checkbox", "data-planchk": "1", checked: planOn, onChange: (e) => setPlanOn(e.target.checked), className: "w-4 h-4 rounded accent-current", style: { accentColor: "var(--accent)" } }),
+                    React.createElement("span", { className: "text-sm" }, tr("Запланувати на цю дату (не проводити зараз)"))),
+                planOn && React.createElement("p", { className: "text-[0.6875rem] mt-1.5", style: { color: "var(--text-dim)" } }, tr("Операція не буде проведена: у день платежу на головному екрані з'явиться картка «Провести».")))),
+            !(editing && editing.recurringId) && !planOn && (React.createElement("div", { className: "mb-3" },
                 React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
                     React.createElement("input", { type: "checkbox", checked: recOn, onChange: (e) => setRecOn(e.target.checked), style: { width: 17, height: 17, accentColor: "var(--accent)", flexShrink: 0 } }),
                     React.createElement("span", { className: "text-sm font-medium" }, tr("Повторювати"))),
@@ -10597,5 +10649,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-03.5");</script></body>
+<script>console.log("K³ build: 2026-09-05.1");</script></body>
 </html>
