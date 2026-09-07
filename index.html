@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-05.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-05.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2818,6 +2818,31 @@ window.__K3_START = function () {
                 } }, style: { transform: `translateX(${open ? -w : 0}px)`, transition: "transform .2s ease", position: "relative" } }, children)));
     }
     // PIN lock screen shown on app open when a PIN is set
+    // PIN keypad key: fires on pointerdown (no 300ms click lag, no double-fire from
+    // synthetic click) and flashes an accent highlight while pressed.
+    function PinKey({ label, onPress, dim }) {
+        const [down, setDown] = useState(false);
+        const firedRef = React.useRef(false);
+        const fire = () => {
+            if (firedRef.current)
+                return;
+            firedRef.current = true;
+            onPress();
+        };
+        return (React.createElement("button", { type: "button",
+            onPointerDown: (e) => { e.preventDefault(); setDown(true); firedRef.current = false; fire(); },
+            onPointerUp: () => setDown(false),
+            onPointerLeave: () => setDown(false),
+            onPointerCancel: () => setDown(false),
+            onClick: (e) => { e.preventDefault(); fire(); firedRef.current = false; },
+            className: "rounded-full font-semibold flex items-center justify-center select-none",
+            style: { width: 80, height: 80, fontSize: 25, touchAction: "manipulation", WebkitTapHighlightColor: "transparent", WebkitUserSelect: "none",
+                background: down ? "color-mix(in srgb, var(--accent) 22%, var(--surface2))" : (dim ? "transparent" : "var(--surface2)"),
+                color: down ? "var(--accent-text, var(--accent))" : (dim ? "var(--text-dim)" : "var(--text)"),
+                boxShadow: down ? "0 0 0 2px var(--accent) inset" : "none",
+                transform: down ? "scale(0.93)" : "scale(1)",
+                transition: "transform 70ms ease, background 90ms ease, box-shadow 90ms ease" } }, label));
+    }
     function LockScreen({ pin, onUnlock }) {
         const [entry, setEntry] = useState("");
         const [err, setErr] = useState(false);
@@ -2850,11 +2875,10 @@ window.__K3_START = function () {
             React.createElement("p", { style: { fontSize: 17.5, marginBottom: 30, color: err ? "var(--danger)" : "var(--text-dim)" } }, err ? tr("Невірний код, спробуйте ще") : tr("Введіть PIN-код")),
             React.createElement("div", { className: "flex", style: { gap: 15, marginBottom: 45 } }, dots.map((i) => (React.createElement("div", { key: i, className: "rounded-full transition", style: { width: 15, height: 15, background: i < entry.length ? (err ? "var(--danger)" : "var(--accent)") : "var(--surface2)" } })))),
             React.createElement("div", { className: "grid grid-cols-3", style: { gap: 20 } },
-                [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (React.createElement("button", { key: n, onClick: () => press(String(n)), className: "rounded-full font-semibold active:scale-95 transition", style: { width: 80, height: 80, fontSize: 25, background: "var(--surface2)", color: "var(--text)" } }, n))),
+                [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (React.createElement(PinKey, { key: n, label: n, onPress: () => press(String(n)) }))),
                 React.createElement("span", null),
-                React.createElement("button", { onClick: () => press("0"), className: "rounded-full font-semibold active:scale-95 transition", style: { width: 80, height: 80, fontSize: 25, background: "var(--surface2)", color: "var(--text)" } }, "0"),
-                React.createElement("button", { onClick: del, className: "rounded-full flex items-center justify-center active:scale-95 transition", style: { width: 80, height: 80, color: "var(--text-dim)" } },
-                    React.createElement(X, { size: 22 })))));
+                React.createElement(PinKey, { label: "0", onPress: () => press("0") }),
+                React.createElement(PinKey, { label: React.createElement(X, { size: 22 }), dim: true, onPress: del }))));
     }
     /* Shared agreement copy (used in Settings and the first-run consent) */
     function AgreementText() {
@@ -10681,5 +10705,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-05.4");</script></body>
+<script>console.log("K³ build: 2026-09-05.5");</script></body>
 </html>
