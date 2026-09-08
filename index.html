@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-05.6"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-05.7"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2839,7 +2839,7 @@ window.__K3_START = function () {
             style: { width: 80, height: 80, fontSize: 25, touchAction: "manipulation", WebkitTapHighlightColor: "transparent", WebkitUserSelect: "none",
                 // м'яка золота заливка: радіальний перелив від центру, без жорсткої обвідки;
                 // спалахує миттєво, гасне повільніше — «тепле» післясвітіння
-                background: down ? "radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent) 38%, var(--surface2)) 0%, color-mix(in srgb, var(--accent) 16%, var(--surface2)) 100%)" : (dim ? "transparent" : "var(--surface2)"),
+                background: down ? "radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent) 45%, var(--surface2)) 0%, color-mix(in srgb, var(--accent) 25%, var(--surface2)) 100%)" : (dim ? "transparent" : "var(--surface2)"),
                 color: down ? "var(--accent-text, var(--accent))" : (dim ? "var(--text-dim)" : "var(--text)"),
                 boxShadow: down ? "0 2px 14px color-mix(in srgb, var(--accent) 35%, transparent)" : "none",
                 transform: down ? "scale(0.94)" : "scale(1)",
@@ -10707,5 +10707,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-05.6");</script></body>
+<script>console.log("K³ build: 2026-09-05.7");</script></body>
 </html>
