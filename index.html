@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-08.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-08.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -8628,7 +8628,10 @@ window.__K3_START = function () {
             React.createElement(Field, { label: tr("Рахунок") },
                 React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: pocketId, onChange: setPocketId, tint: kind === "income" ? "in" : "out", pocketBalance: pocketBalance })),
             React.createElement(Field, { label: tr("Категорія") },
-                React.createElement(Select, { value: categoryId, onChange: (e) => { setCategoryId(e.target.value); setError(""); } }, cats.map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))))),
+                React.createElement(Select, { value: categoryId, onChange: (e) => { setCategoryId(e.target.value); setError(""); } }, cats.filter((x) => !x.parentId).flatMap((x) => [
+                    React.createElement("option", { key: x.id, value: x.id }, tr(x.name)),
+                    ...cats.filter((kk) => kk.parentId === x.id).map((kk) => React.createElement("option", { key: kk.id, value: kk.id }, "\u00A0\u00A0\u2014 " + tr(kk.name)))
+                ]))),
             React.createElement(Field, { label: tr("Проєкт (необовʼязково)") },
                 React.createElement(Select, { value: projectId, onChange: (e) => setProjectId(e.target.value) },
                     React.createElement("option", { value: "" }, tr("— без проєкту —")),
@@ -10726,5 +10729,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-08.1");</script></body>
+<script>console.log("K³ build: 2026-09-08.2");</script></body>
 </html>
