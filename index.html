@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-11.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-14.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2779,6 +2779,27 @@ window.__K3_START = function () {
     }
     // Свайп вліво відкриває дії рядка. Строгий замок осі: жест мусить початися
     // і лишатися горизонтальним, тож вертикальний скрол його ніколи не тригерить.
+    // Fine-pointer device (mouse/trackpad with hover) — swipe gestures get a hover fallback.
+    // Desktop/tablet layout & hover CSS — injected from the bundle so it ships with the app
+    (function injectDeskCss() {
+        try {
+            if (document.getElementById("k3-desk"))
+                return;
+            const st = document.createElement("style");
+            st.id = "k3-desk";
+            st.textContent = '@media (min-width:768px){\n  .k3-scrim-center{display:flex;align-items:flex-start;justify-content:center;padding:2.5rem 1.5rem;background:rgba(0,0,0,0.55)!important;}\n  .k3-hist-col{max-width:48rem;margin-left:auto;margin-right:auto;}\n}\n@media (min-width:1024px){\n  .k3-dash-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:2.5rem;align-items:flex-start;}\n  .k3-dash-grid>.k3-dash-col{margin-top:0!important;}\n}\n@media (hover:hover) and (pointer:fine){\n  button:not(:disabled):hover{filter:brightness(1.05);}\n  div.cursor-pointer:hover{filter:brightness(1.02);}\n}';
+            document.head.appendChild(st);
+        }
+        catch (e) { }
+    })();
+    function hasFinePointer() {
+        try {
+            return !!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches);
+        }
+        catch (e) {
+            return false;
+        }
+    }
     function SwipeRow({ children, actions, rounded = false }) {
         const [open, setOpen] = useState(false);
         const sx = React.useRef(0), sy = React.useRef(0);
@@ -2807,9 +2828,16 @@ window.__K3_START = function () {
                 return;
             setOpen(dx < 0);
         };
+        const [hov, setHov] = useState(false);
+        const fine = hasFinePointer();
         if (!actions || !actions.length)
             return React.createElement(React.Fragment, null, children);
-        return (React.createElement("div", { className: `relative overflow-hidden ${rounded ? "rounded-2xl" : ""}`, onTouchStart: onTouchStart, onTouchMove: onTouchMove, onTouchEnd: onTouchEnd },
+        return (React.createElement("div", { className: `relative overflow-hidden ${rounded ? "rounded-2xl" : ""}`, onTouchStart: onTouchStart, onTouchMove: onTouchMove, onTouchEnd: onTouchEnd, onMouseEnter: fine ? () => setHov(true) : undefined, onMouseLeave: fine ? () => setHov(false) : undefined },
+            fine && hov && !open && React.createElement("div", { "data-hoveracts": "1", className: "absolute inset-y-0 right-2 z-10 flex items-center gap-1.5" }, actions.map((a, i) => {
+                const Ic = a.icon;
+                return (React.createElement("button", { key: "h" + i, title: a.label, "aria-label": a.label, onClick: (e) => { e.stopPropagation(); a.onClick(); }, className: "w-8 h-8 rounded-full flex items-center justify-center shadow-sm", style: { background: a.bg, color: a.fg || "#fff" } },
+                    React.createElement(Ic, { size: 14 })));
+            })),
             React.createElement("div", { className: "absolute inset-y-0 right-0 flex", style: { background: "var(--surface2)" } }, actions.map((a, i) => {
                 const Ic = a.icon;
                 return (React.createElement("button", { key: i, onClick: () => { a.onClick(); if (!a.keepOpen) setOpen(false); }, className: "flex flex-col items-center justify-center gap-0.5 text-[0.625rem] font-medium", style: { width: 66, background: a.bg, color: a.fg || "#fff" } },
@@ -2853,6 +2881,21 @@ window.__K3_START = function () {
     function LockScreen({ pin, onUnlock }) {
         const [entry, setEntry] = useState("");
         const [err, setErr] = useState(false);
+        // Фізична клавіатура на десктопі: цифри, Backspace
+        useEffect(() => {
+            const onKey = (e) => {
+                if (/^[0-9]$/.test(e.key)) {
+                    e.preventDefault();
+                    press(e.key);
+                }
+                else if (e.key === "Backspace") {
+                    e.preventDefault();
+                    del();
+                }
+            };
+            window.addEventListener("keydown", onKey);
+            return () => window.removeEventListener("keydown", onKey);
+        });
         const press = (d) => {
             if (entry.length >= pin.length)
                 return;
@@ -4777,7 +4820,8 @@ window.__K3_START = function () {
         const nwLast = nwLen ? netWorthSeries[nwLen - 1].value : 0;
         const nwPrev = nwLen > 1 ? netWorthSeries[nwLen - 2].value : nwLast;
         const nwDelta = nwLast - nwPrev;
-        return (React.createElement("div", { className: "space-y-6 animate-in" },
+        return (React.createElement("div", { className: "space-y-6 animate-in k3-dash-grid" },
+            React.createElement("div", { className: "space-y-6 min-w-0 k3-dash-col" },
             React.createElement("div", { "data-tour": "total" },
                 React.createElement("div", { className: "flex items-center gap-2" },
                     React.createElement("p", { className: "text-sm mb-1", style: { color: "var(--text-dim)" } }, tr("Загальний капітал")),
@@ -4893,6 +4937,8 @@ window.__K3_START = function () {
                         React.createElement(Plus, { size: 16 }),
                         " ",
                         tr("Новий рахунок")))),
+            ),
+            React.createElement("div", { className: "space-y-6 min-w-0 k3-dash-col" },
             React.createElement("div", null,
                 React.createElement("div", { className: "flex items-center justify-between mb-3" },
                     React.createElement("h2", { className: "font-display font-semibold text-lg" }, tr("Останні транзакції")),
@@ -5115,7 +5161,7 @@ window.__K3_START = function () {
                     React.createElement("span", { style: { color: "var(--text-dim)" } },
                         tr("до"),
                         " ",
-                        fmtDate(l.dueDate)))))))))));
+                        fmtDate(l.dueDate))))))))))));
     }
     function QuickAction({ icon: Ic, label, onClick }) {
         return (React.createElement("button", { onClick: onClick, className: "flex flex-col items-center gap-2" },
@@ -5946,7 +5992,7 @@ window.__K3_START = function () {
             }).sort(byRecent);
         }, [transactions, categories, filterFlag, filterType, filterPocket, filterCategory, filterCurrency, filterProject, dateFrom, dateTo, search, pocketLabel]);
         const typeLabel = { all: tr("Усі типи"), income: tr("Доходи"), expense: tr("Витрати"), transfer: tr("Перекази"), exchange: tr("Обмін валют"), loan_out: tr("Позики надані"), loan_return: tr("Повернення позик"), crypto_ops: tr("Крипто-операції"), loan_ops: tr("Операції позик"), debt_ops: tr("Операції боргів") };
-        return (React.createElement("div", { className: "space-y-4 animate-in" },
+        return (React.createElement("div", { className: "space-y-4 animate-in k3-hist-col" },
             React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-y-2" },
                 React.createElement("h1", { className: "font-display font-bold text-2xl" }, tr("Історія операцій")),
                 React.createElement("div", { className: "flex items-center gap-2 flex-wrap justify-end ml-auto" },
@@ -9065,7 +9111,9 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 || catName(t.categoryId).includes(q)
                 || String(t.amount != null ? t.amount : (t.toAmount != null ? t.toAmount : "")).includes(q.replace(",", ".")));
         }, [transactions, pid, opsQ, categories]);
-        return (React.createElement("div", { className: "fixed inset-0 z-50 overflow-y-auto animate-in", style: { background: "var(--bg)" } },
+        return (React.createElement("div", { "data-pocket-scrim": "1", className: "fixed inset-0 z-50 overflow-y-auto animate-in k3-scrim-center", style: { background: "var(--bg)" }, onMouseDown: (e) => { if (e.target === e.currentTarget) onClose(); } },
+            React.createElement("style", null, "@media (min-width: 768px){ .k3-pocket-panel{ max-width: 40rem; width: 100%; border-radius: 1.5rem; overflow: hidden; border: 1px solid var(--border); height: fit-content; } }"),
+            React.createElement("div", { className: "k3-pocket-panel min-h-full md:min-h-0", style: { background: "var(--bg)" } },
             React.createElement("div", { className: "relative px-5 pb-6 overflow-hidden", onTouchStart: onSwipeStart, onTouchEnd: onSwipeEnd, style: { background: "linear-gradient(160deg, #2B3757 0%, #1A2742 55%, #0E1626 100%)", paddingTop: "calc(1rem + env(safe-area-inset-top))", borderBottom: "3px solid #C9A362", borderRadius: 28, margin: "10px 10px 0", boxShadow: "0 14px 34px rgba(14,22,38,0.35)" } },
                 React.createElement("div", { className: "absolute pointer-events-none", style: { top: -70, right: -50, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,163,98,0.16), transparent 65%)" } }),
                 React.createElement("div", { className: "flex items-center justify-between mb-6" },
@@ -9165,7 +9213,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     } }, className: "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium mb-8", style: { borderColor: confirmArc ? "var(--danger)" : "var(--border)", color: confirmArc ? "var(--danger)" : "var(--text-dim)" } },
                     React.createElement(Archive, { size: 14 }),
                     " ",
-                    confirmArc ? tr("Підтвердити архівацію?") : tr("Архівувати субрахунок")))));
+                    confirmArc ? tr("Підтвердити архівацію?") : tr("Архівувати субрахунок"))))));
     }
     /* ---------- Card long-press menu ---------- */
     function CardMenuModal({ onClose, onBack, pocketId, returnTo, pockets, getPocket, setModal, archivePocket, deletePocket, movePocket }) {
@@ -10816,5 +10864,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-11.4");</script></body>
+<script>console.log("K³ build: 2026-09-14.2");</script></body>
 </html>
