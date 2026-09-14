@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-11.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-11.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -5801,6 +5801,15 @@ window.__K3_START = function () {
         const [filterCurrency, setFilterCurrency] = useState([]);
         const [filterProject, setFilterProject] = useState([]);
         const [filterFlag, setFilterFlag] = useState(false);
+        useEffect(() => {
+            const tSel = filterType.filter((t) => t === "income" || t === "expense");
+            if (!tSel.length)
+                return;
+            setFilterCategory((sel) => {
+                const keep = sel.filter((id) => { const c = categories.find((x) => x.id === id); return c && tSel.includes(c.type); });
+                return keep.length === sel.length ? sel : keep;
+            });
+        }, [filterType, categories]);
         const [selMode, setSelMode] = useState(false);
         const [selIds, setSelIds] = useState({});
         const [delArm, setDelArm] = useState(false);
@@ -6017,10 +6026,16 @@ window.__K3_START = function () {
                         });
                         return out;
                     })(), selected: filterPocket, onChange: setFilterPocket }),
-                React.createElement(MultiPickField, { label: tr("Категорія"), allLabel: tr("Усі категорії"), options: categories.filter((c) => !c.parentId).flatMap((c) => [
-                        { value: c.id, label: tr(c.name) },
-                        ...categories.filter((k) => k.parentId === c.id).map((k) => ({ value: k.id, label: tr(k.name), indent: true, parentValue: c.id }))
-                    ]), selected: filterCategory, onChange: setFilterCategory }),
+                React.createElement(MultiPickField, { label: tr("Категорія"), allLabel: tr("Усі категорії"), options: (() => {
+                        // Категорії звужуються до вибраних типів: обрано лише «Витрата» —
+                        // у списку тільки витратні (і навпаки). Перекази/обміни категорій не мають.
+                        const tSel = filterType.filter((t) => t === "income" || t === "expense");
+                        const pool = tSel.length ? categories.filter((c) => tSel.includes(c.type)) : categories;
+                        return pool.filter((c) => !c.parentId).flatMap((c) => [
+                            { value: c.id, label: tr(c.name) },
+                            ...pool.filter((k) => k.parentId === c.id).map((k) => ({ value: k.id, label: tr(k.name), indent: true, parentValue: c.id }))
+                        ]);
+                    })(), selected: filterCategory, onChange: setFilterCategory }),
                 React.createElement(MultiPickField, { label: tr("Проєкт"), allLabel: tr("Усі"), options: [{ value: "__none__", label: tr("Без проєкту") }, ...(projects || []).filter((xx) => !xx.archived).map((xx) => ({ value: xx.id, label: tr(xx.name) }))], selected: filterProject, onChange: setFilterProject }),
                 React.createElement(MultiPickField, { label: tr("Валюта"), allLabel: tr("Усі валюти"), options: (currencies || CURRENCIES).map((c) => ({ value: c, label: c })), selected: filterCurrency, onChange: setFilterCurrency }),
                 React.createElement(Field, { label: tr("Період") },
@@ -10801,5 +10816,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-11.3");</script></body>
+<script>console.log("K³ build: 2026-09-11.4");</script></body>
 </html>
