@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-14.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-14.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2788,7 +2788,7 @@ window.__K3_START = function () {
                 return;
             const st = document.createElement("style");
             st.id = "k3-desk";
-            st.textContent = '@media (min-width:768px){\n  .k3-scrim-center{display:flex;align-items:flex-start;justify-content:center;padding:2.5rem 1.5rem;background:rgba(0,0,0,0.55)!important;}\n  .k3-hist-col{max-width:48rem;margin-left:0;margin-right:auto;}\n}\n@media (min-width:1024px){\n  .k3-modal-panel{max-width:34rem!important;}\n  .k3-modal-panel.k3-wide{max-width:42rem!important;}\n  .k3-side-ov{align-items:stretch!important;justify-content:flex-end!important;padding:0!important;}\n  .k3-side-panel{max-width:30rem!important;width:30rem;height:100vh;max-height:100vh!important;border-radius:1.25rem 0 0 1.25rem!important;margin:0!important;}\n}\n@media (hover:hover) and (pointer:fine){\n  button:not(:disabled):hover{filter:brightness(1.05);}\n  div.cursor-pointer:hover{filter:brightness(1.02);}\n}';
+            st.textContent = '@media (min-width:768px){\n  .k3-scrim-center{display:flex;align-items:flex-start;justify-content:center;padding:2.5rem 1.5rem;background:rgba(0,0,0,0.55)!important;}\n  .k3-hist-col{max-width:48rem;margin-left:0;margin-right:auto;}\n}\n@media (min-width:1024px){\n  .k3-modal-panel{max-width:34rem!important;}\n  .k3-modal-panel.k3-wide{max-width:42rem!important;}\n  .k3-side-ov{align-items:stretch!important;justify-content:flex-end!important;padding:0!important;}\n  .k3-side-panel{max-width:30rem!important;width:30rem;height:100vh;max-height:100vh!important;border-radius:1.25rem 0 0 1.25rem!important;margin:0!important;animation:k3slide .22s ease;padding-bottom:1rem;}\n@keyframes k3slide{from{transform:translateX(24px);opacity:.6;}to{transform:translateX(0);opacity:1;}}\n}\n@media (hover:hover) and (pointer:fine){\n  button:not(:disabled):hover{filter:brightness(1.05);}\n  div.cursor-pointer:hover{filter:brightness(1.02);}\n}';
             document.head.appendChild(st);
         }
         catch (e) { }
@@ -4461,7 +4461,9 @@ window.__K3_START = function () {
                             bellCount > 0 && (React.createElement("span", { className: "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[0.625rem] font-bold leading-none", style: { background: "var(--danger)", color: "#fff" } }, bellCount))),
                         "\u041D\u0430\u0433\u0430\u0434\u0443\u0432\u0430\u043D\u043D\u044F"),
                     React.createElement("button", { onClick: () => setTheme(theme === "dark" ? "light" : "dark"), className: "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium", style: { color: "var(--text-dim)" } },
-                        theme === "dark" ? React.createElement(Sun, { size: 18 }) : React.createElement(Moon, { size: 18 }))),
+                        theme === "dark" ? React.createElement(Sun, { size: 18 }) : React.createElement(Moon, { size: 18 }),
+                        " ",
+                        theme === "dark" ? tr("Світла тема") : tr("Темна тема"))),
                 React.createElement("main", { className: "flex-1 min-w-0 pb-24 md:pb-8" },
                     React.createElement("div", { className: "md:hidden flex items-center justify-between px-4 py-4 border-b sticky top-0 z-30", style: { borderColor: "var(--border)", background: "var(--bg)", paddingTop: "calc(1rem + env(safe-area-inset-top))" } },
                         React.createElement("div", { className: "flex items-center" },
@@ -6467,7 +6469,7 @@ window.__K3_START = function () {
             React.createElement("div", { className: "flex gap-2 text-sm" },
                 React.createElement("button", { onClick: () => setTab("expense"), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: tab === "expense" ? "var(--surface2)" : "transparent", color: tab === "expense" ? "var(--text)" : "var(--text-dim)" } }, tr("Витрати")),
                 React.createElement("button", { onClick: () => setTab("income"), className: "px-3 py-1.5 rounded-lg font-medium", style: { background: tab === "income" ? "var(--surface2)" : "transparent", color: tab === "income" ? "var(--text)" : "var(--text-dim)" } }, tr("Доходи"))),
-            React.createElement("div", { ref: catHold.containerRef, className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-3" }, list.map((c, ci) => (React.createElement("div", Object.assign({ key: c.id, style: holdDragStyle(catHold.dragId === c.id, 16) }, catHold.itemProps(c.id)),
+            React.createElement("div", { ref: catHold.containerRef, className: "space-y-2.5" }, list.map((c, ci) => (React.createElement("div", Object.assign({ key: c.id, style: holdDragStyle(catHold.dragId === c.id, 16) }, catHold.itemProps(c.id)),
                 React.createElement(Card, { className: `p-4 ${c.archived ? "opacity-50" : ""}` },
                     React.createElement("div", { className: "flex items-center gap-3" },
                         React.createElement("div", { className: "w-12 h-12 rounded-xl flex items-center justify-center shrink-0", style: { background: `${c.color}22` } },
@@ -9692,7 +9694,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 markPlannedDone(P.plannedDone.id, P.plannedDone.key);
             onClose();
         };
-        return (React.createElement(Modal, { title: editing ? tr("Редагувати операцію") : isIncome ? tr("Додати дохід") : tr("Додати витрату"), onClose: onClose },
+        return (React.createElement(Modal, { title: editing ? tr("Редагувати операцію") : isIncome ? tr("Додати дохід") : tr("Додати витрату"), onClose: onClose, side: "right" },
             editing && switchType && React.createElement(Field, { label: tr("Тип операції") },
                 React.createElement(Select, { value: kind, onChange: (e) => { const v = e.target.value; if (v !== kind) switchType(v); } },
                     React.createElement("option", { value: "income" }, tr("Дохід")),
@@ -10138,7 +10140,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             }
             onClose();
         };
-        return (React.createElement(Modal, { title: isExchange ? tr("Обмін валюти") : tr("Переказ між рахунками"), onClose: onClose },
+        return (React.createElement(Modal, { title: isExchange ? tr("Обмін валюти") : tr("Переказ між рахунками"), onClose: onClose, side: "right" },
             editing && switchType && React.createElement(Field, { label: tr("Тип операції") },
                 React.createElement(Select, { value: "keep", onChange: (e) => { const v = e.target.value; if (v !== "keep") switchType(v); } },
                     React.createElement("option", { value: "keep" }, isExchange ? tr("Обмін валют") : tr("Переказ між рахунками")),
@@ -10868,5 +10870,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-14.4");</script></body>
+<script>console.log("K³ build: 2026-09-14.5");</script></body>
 </html>
