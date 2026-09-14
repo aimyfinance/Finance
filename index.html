@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-11.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-11.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2719,8 +2719,8 @@ window.__K3_START = function () {
         }
         return React.createElement("input", { ...props, style: st, className: cls });
     }
-    function Select({ children, ...props }) {
-        return React.createElement("select", { ...props, style: inputStyle(), className: `w-full min-w-0 max-w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${props.className || ""}` }, children);
+    function Select({ children, style, ...props }) {
+        return React.createElement("select", { ...props, style: { ...inputStyle(), ...(style || {}) }, className: `w-full min-w-0 max-w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${props.className || ""}` }, children);
     }
     function Textarea(props) {
         return React.createElement("textarea", { ...props, style: inputStyle(), className: "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition resize-none" });
@@ -6777,7 +6777,7 @@ window.__K3_START = function () {
                     React.createElement("option", { value: "transfer" }, tr("Переказ")),
                     React.createElement("option", { value: "exchange" }, tr("Обмін валют")))),
             React.createElement(Field, { label: tr("Назва") },
-                React.createElement(Input, { value: title, onChange: (e) => { setTitle(e.target.value); setError(""); }, placeholder: tr("напр. Оренда квартири"), autoFocus: !isEdit })),
+                React.createElement(Input, { value: title, onChange: (e) => { setTitle(e.target.value); setError(""); }, placeholder: tr("напр. Оренда квартири") })),
             React.createElement(Field, { label: tr("Очікувана сума") },
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement("div", { className: "flex-1" },
@@ -6787,7 +6787,7 @@ window.__K3_START = function () {
             React.createElement(Field, { label: tr("Коментар") },
                 React.createElement(Input, { value: ruleNote, onChange: (e) => setRuleNote(e.target.value), placeholder: tr("Необов'язково") })),
             !isMove && React.createElement(Field, { label: tr("Рахунок") },
-                React.createElement(Select, { value: pocketId, onChange: (e) => setPocketId(e.target.value) }, active.map(pocketOpt))),
+                React.createElement(Select, { value: pocketId, onChange: (e) => setPocketId(e.target.value), style: kind === "income" ? { border: "1px solid rgba(111,169,140,0.60)", background: "rgba(111,169,140,0.08)" } : { border: "1px solid rgba(192,86,79,0.55)", background: "rgba(192,86,79,0.07)" } }, active.map(pocketOpt))),
             !isMove && React.createElement(Field, { label: tr("Категорія") },
                 React.createElement(Select, { value: categoryId, onChange: (e) => setCategoryId(e.target.value) },
                     React.createElement("option", { value: "" }, tr("— без категорії —")),
@@ -6800,9 +6800,9 @@ window.__K3_START = function () {
                     React.createElement("option", { value: "" }, tr("— без проєкту —")),
                     (projects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))))),
             isMove && React.createElement(Field, { label: tr("Рахунок списання") },
-                React.createElement(Select, { value: fromPocketId, onChange: (e) => setFromPocketId(e.target.value) }, active.map(pocketOpt))),
+                React.createElement(Select, { style: { border: "1px solid rgba(192,86,79,0.55)", background: "rgba(192,86,79,0.07)" }, value: fromPocketId, onChange: (e) => setFromPocketId(e.target.value) }, active.map(pocketOpt))),
             isMove && React.createElement(Field, { label: tr("Рахунок зарахування") },
-                React.createElement(Select, { value: toPocketId, onChange: (e) => setToPocketId(e.target.value) }, active.map(pocketOpt))),
+                React.createElement(Select, { style: { border: "1px solid rgba(111,169,140,0.60)", background: "rgba(111,169,140,0.08)" }, value: toPocketId, onChange: (e) => setToPocketId(e.target.value) }, active.map(pocketOpt))),
             React.createElement(Field, { label: tr("Періодичність") },
                 React.createElement(Select, { value: frequency, onChange: (e) => setFrequency(e.target.value) },
                     React.createElement("option", { value: "once" }, tr("Одноразово")),
@@ -10801,5 +10801,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-11.2");</script></body>
+<script>console.log("K³ build: 2026-09-11.3");</script></body>
 </html>
