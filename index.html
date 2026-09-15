@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-16.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-16.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -9508,13 +9508,31 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [categoryId, setCategoryId] = useState(editing?.categoryId || P.presetCategoryId || cats[0]?.id || "");
         const [flagged, setFlagged] = useState(!!(editing && editing.flagged));
         const [planOn, setPlanOn] = useState(false);
-        const [planFreq, setPlanFreq] = useState("once");
+
         const [catOpen, setCatOpen] = useState(false);
         const [newCatMode, setNewCatMode] = useState(false);
         const [newCatName, setNewCatName] = useState("");
         const [newCatIcon, setNewCatIcon] = useState("MoreHorizontal");
         const [newCatParent, setNewCatParent] = useState(""); // "" = top-level
         const [date, setDate] = useState(editing?.date || P.presetDate || new Date().toISOString().slice(0, 10));
+        const [planFreq, setPlanFreq] = useState("once");
+        const [planWeekday, setPlanWeekday] = useState(new Date().getDay());
+        const [planDay, setPlanDay] = useState(new Date().getDate());
+        const [planDay1, setPlanDay1] = useState(1);
+        const [planDay2, setPlanDay2] = useState(15);
+        const [planMonth, setPlanMonth] = useState(new Date().getMonth() + 1);
+        // Пікери синхронізуються з датою форми, поки користувач їх не торкався
+        const planTouchedRef = React.useRef(false);
+        useEffect(() => {
+            if (planTouchedRef.current || !planOn)
+                return;
+            const d0 = new Date(date + "T12:00:00");
+            if (!isNaN(d0)) {
+                setPlanWeekday(d0.getDay());
+                setPlanDay(d0.getDate());
+                setPlanMonth(d0.getMonth() + 1);
+            }
+        }, [date, planOn]);
         const [receipts, setReceipts] = useState(() => txReceipts(editing));
         const [recOn, setRecOn] = useState(false);
         const [recFreq, setRecFreq] = useState("monthly");
@@ -9672,8 +9690,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             };
             if (!editing && planOn && addPlanned) {
                 const pcur = (pockets.find((pp) => pp.id === pocketId) || {}).currency || currency;
-                const pd0 = new Date(date + "T12:00:00");
-                addPlanned({ kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), amount: amt, startDate: date, frequency: planFreq, currency: pcur, note: comment.trim() || null, pocketId, categoryId: categoryId || null, projectId: projectId || null, fromPocketId: null, toPocketId: null, weekday: planFreq === "weekly" ? pd0.getDay() : null, day1: null, day2: null, dayOfMonth: +date.slice(8, 10) || 1, month: (planFreq === "yearly" || planFreq === "quarterly") ? (+date.slice(5, 7) || null) : null, lastDone: "" });
+                addPlanned({ kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), amount: amt, startDate: date, frequency: planFreq, currency: pcur, note: comment.trim() || null, pocketId, categoryId: categoryId || null, projectId: projectId || null, fromPocketId: null, toPocketId: null, weekday: planFreq === "weekly" ? Number(planWeekday) : null, day1: planFreq === "semimonthly" ? Number(planDay1) || 1 : null, day2: planFreq === "semimonthly" ? Number(planDay2) || 15 : null, dayOfMonth: Number(planDay) || (+date.slice(8, 10) || 1), month: (planFreq === "yearly" || planFreq === "quarterly") ? Number(planMonth) || null : null, lastDone: "" });
                 onClose();
                 return;
             }
@@ -9816,14 +9833,27 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
                     React.createElement("input", { type: "checkbox", "data-planchk": "1", checked: planOn, onChange: (e) => setPlanOn(e.target.checked), className: "w-4 h-4 rounded accent-current", style: { accentColor: "var(--accent)" } }),
                     React.createElement("span", { className: "text-sm" }, tr("Запланувати на цю дату (не проводити зараз)"))),
-                planOn && React.createElement("div", { className: "mt-2" },
-                    React.createElement(Select, { "data-planfreq": "1", value: planFreq, onChange: (e) => setPlanFreq(e.target.value) },
-                        React.createElement("option", { value: "once" }, tr("Одноразово")),
-                        React.createElement("option", { value: "daily" }, tr("Щодня")),
-                        React.createElement("option", { value: "weekly" }, tr("Щотижня")),
-                        React.createElement("option", { value: "monthly" }, tr("Щомісяця")),
-                        React.createElement("option", { value: "quarterly" }, tr("Щокварталу")),
-                        React.createElement("option", { value: "yearly" }, tr("Щороку")))),
+                planOn && React.createElement("div", { className: "mt-2 grid grid-cols-2 gap-2" },
+                    React.createElement(Field, { label: tr("Періодичність") },
+                        React.createElement(Select, { "data-planfreq": "1", value: planFreq, onChange: (e) => setPlanFreq(e.target.value) },
+                            React.createElement("option", { value: "once" }, tr("Одноразово")),
+                            React.createElement("option", { value: "daily" }, tr("Щодня")),
+                            React.createElement("option", { value: "weekly" }, tr("Щотижня")),
+                            React.createElement("option", { value: "semimonthly" }, tr("Двічі на місяць")),
+                            React.createElement("option", { value: "monthly" }, tr("Щомісяця")),
+                            React.createElement("option", { value: "quarterly" }, tr("Щокварталу")),
+                            React.createElement("option", { value: "yearly" }, tr("Щороку")))),
+                    planFreq === "weekly" && React.createElement(Field, { label: tr("День тижня") },
+                        React.createElement(Select, { "data-planwd": "1", value: String(planWeekday), onChange: (e) => { planTouchedRef.current = true; setPlanWeekday(Number(e.target.value)); } }, [1, 2, 3, 4, 5, 6, 0].map((w) => React.createElement("option", { key: w, value: w }, tr(["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"][w]))))),
+                    planFreq === "semimonthly" && React.createElement(React.Fragment, null,
+                        React.createElement(Field, { label: tr("Перший день") },
+                            React.createElement(Select, { value: String(planDay1), onChange: (e) => { planTouchedRef.current = true; setPlanDay1(Number(e.target.value)); } }, Array.from({ length: 31 }).map((_, i2) => React.createElement("option", { key: i2 + 1, value: i2 + 1 }, i2 + 1)))),
+                        React.createElement(Field, { label: tr("Другий день") },
+                            React.createElement(Select, { value: String(planDay2), onChange: (e) => { planTouchedRef.current = true; setPlanDay2(Number(e.target.value)); } }, Array.from({ length: 31 }).map((_, i2) => React.createElement("option", { key: i2 + 1, value: i2 + 1 }, i2 + 1))))),
+                    (planFreq === "yearly" || planFreq === "quarterly") && React.createElement(Field, { label: planFreq === "quarterly" ? tr("Місяць-якір (далі кожні 3 місяці)") : tr("Місяць") },
+                        React.createElement(Select, { value: String(planMonth), onChange: (e) => { planTouchedRef.current = true; setPlanMonth(Number(e.target.value)); } }, MONTHS_UA.map((mn, i2) => React.createElement("option", { key: i2 + 1, value: i2 + 1 }, tr(mn))))),
+                    (planFreq === "monthly" || planFreq === "quarterly" || planFreq === "yearly") && React.createElement(Field, { label: tr("День місяця") },
+                        React.createElement(Select, { "data-plandom": "1", value: String(planDay), onChange: (e) => { planTouchedRef.current = true; setPlanDay(Number(e.target.value)); } }, Array.from({ length: 31 }).map((_, i2) => React.createElement("option", { key: i2 + 1, value: i2 + 1 }, i2 + 1))))),
                 planOn && React.createElement("p", { className: "text-[0.6875rem] mt-1.5", style: { color: "var(--text-dim)" } }, tr("Операція не буде проведена: у день платежу на головному екрані з'явиться картка «Провести».")))),
             !(editing && editing.recurringId) && !planOn && (React.createElement("div", { className: "mb-3" },
                 React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
@@ -10880,5 +10910,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-16.1");</script></body>
+<script>console.log("K³ build: 2026-09-16.2");</script></body>
 </html>
