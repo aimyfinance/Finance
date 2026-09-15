@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-16.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-16.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1973,6 +1973,8 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Нічого не проводиться: створиться лише правило, перший платіж — за графіком.": "Nothing is posted: only the rule is created, the first payment follows the schedule.",
+        "Провести цю операцію зараз (перша оказія)": "Post this transaction now (first occurrence)",
         "Заплановані": "Planned",
         "Цей переказ рахується першим; наступний — за графіком від цієї дати.": "This transfer counts as the first one; the next follows the schedule from this date.",
         "режим: питати суму": "mode: ask amount",
@@ -9541,6 +9543,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [recDay2, setRecDay2] = useState(15);
         const [recMonthQ, setRecMonthQ] = useState(null); // null = derive from the tx date
         const [recMode, setRecMode] = useState("fixed");
+        const [recPostNow, setRecPostNow] = useState(true);
         const [recDay, setRecDay] = useState(null);
         const [projectId, setProjectId] = useState(editing?.projectId || P.presetProjectId || "");
         const [prjNew, setPrjNew] = useState(false);
@@ -9701,6 +9704,14 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     editTransaction(editing.id, data);
                 if (recOn && !editing.recurringId && addRecurring)
                     addRecurring(buildRecData());
+            }
+            else if (recOn && !recPostNow && addRecurring) {
+                // Лише правило: перша оказія — найближча дата графіка, нічого не проводимо
+                const y = new Date(date + "T12:00:00");
+                y.setDate(y.getDate() - 1);
+                addRecurring({ ...buildRecData(), lastDone: localISODate(y) });
+                onClose();
+                return;
             }
             else if (recOn && addTransactionRecurring) {
                 addTransactionRecurring(data, buildRecData());
@@ -9873,6 +9884,10 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                                 React.createElement("option", { value: "monthly" }, tr("Щомісяця")),
                                 React.createElement("option", { value: "quarterly" }, tr("Щокварталу")),
                                 React.createElement("option", { value: "yearly" }, tr("Щороку"))))),
+                    React.createElement("label", { className: "flex items-center gap-2 mb-2 cursor-pointer" },
+                        React.createElement("input", { type: "checkbox", "data-recpostnow": "1", checked: recPostNow, onChange: (e) => setRecPostNow(e.target.checked), className: "w-4 h-4 rounded", style: { accentColor: "var(--accent)" } }),
+                        React.createElement("span", { className: "text-xs" }, tr("Провести цю операцію зараз (перша оказія)"))),
+                    !recPostNow && React.createElement("p", { className: "text-[0.6875rem] -mt-1 mb-2", style: { color: "var(--text-dim)" } }, tr("Нічого не проводиться: створиться лише правило, перший платіж — за графіком.")),
                     recFreq === "weekly" && React.createElement("div", { className: "flex items-center gap-2" },
                         React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("День тижня")),
                         React.createElement("span", { className: "w-28" },
@@ -10910,5 +10925,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-16.3");</script></body>
+<script>console.log("K³ build: 2026-09-16.4");</script></body>
 </html>
