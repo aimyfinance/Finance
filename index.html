@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-16.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-16.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -9684,7 +9684,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     weekday: recFreq === "weekly" ? (recWeekday != null ? recWeekday : new Date(date + "T12:00:00").getDay()) : null,
                     day1: recFreq === "semimonthly" ? recDay1 : null,
                     day2: recFreq === "semimonthly" ? recDay2 : null,
-                    month: recFreq === "yearly" ? (+date.slice(5, 7) || 1) : recFreq === "quarterly" ? (recMonthQ != null ? recMonthQ : (+date.slice(5, 7) || 1)) : null,
+                    month: (recFreq === "yearly" || recFreq === "quarterly") ? (recMonthQ != null ? recMonthQ : (+date.slice(5, 7) || 1)) : null,
                     // this transaction counts as the first occurrence — the next one is due strictly later
                     lastDone: date };
             };
@@ -9884,8 +9884,8 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                         React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("і")),
                         React.createElement("span", { className: "w-20" },
                             React.createElement(Select, { value: String(recDay2), onChange: (e) => setRecDay2(Number(e.target.value)) }, Array.from({ length: 31 }).map((_, i) => React.createElement("option", { key: i + 1, value: i + 1 }, i + 1))))),
-                    recFreq === "quarterly" && React.createElement("div", { className: "flex items-center gap-2 mb-2" },
-                        React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Місяць-якір (далі кожні 3 місяці)")),
+                    (recFreq === "quarterly" || recFreq === "yearly") && React.createElement("div", { className: "flex items-center gap-2 mb-2" },
+                        React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, recFreq === "quarterly" ? tr("Місяць-якір (далі кожні 3 місяці)") : tr("Місяць")),
                         React.createElement("span", { className: "flex-1" },
                             React.createElement(Select, { value: String(recMonthQ != null ? recMonthQ : (+date.slice(5, 7) || 1)), onChange: (e) => setRecMonthQ(Number(e.target.value)) }, MONTHS_UA.map((mn, mi) => React.createElement("option", { key: mi + 1, value: mi + 1 }, tr(mn)))))),
                     (recFreq === "monthly" || recFreq === "quarterly" || recFreq === "yearly") && React.createElement("div", { className: "flex items-center gap-2" },
@@ -10910,5 +10910,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-16.2");</script></body>
+<script>console.log("K³ build: 2026-09-16.3");</script></body>
 </html>
