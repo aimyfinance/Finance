@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-14.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-16.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -9508,6 +9508,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [categoryId, setCategoryId] = useState(editing?.categoryId || P.presetCategoryId || cats[0]?.id || "");
         const [flagged, setFlagged] = useState(!!(editing && editing.flagged));
         const [planOn, setPlanOn] = useState(false);
+        const [planFreq, setPlanFreq] = useState("once");
         const [catOpen, setCatOpen] = useState(false);
         const [newCatMode, setNewCatMode] = useState(false);
         const [newCatName, setNewCatName] = useState("");
@@ -9671,7 +9672,8 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             };
             if (!editing && planOn && addPlanned) {
                 const pcur = (pockets.find((pp) => pp.id === pocketId) || {}).currency || currency;
-                addPlanned({ kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), amount: amt, startDate: date, frequency: "once", currency: pcur, note: comment.trim() || null, pocketId, categoryId: categoryId || null, projectId: projectId || null, fromPocketId: null, toPocketId: null, weekday: null, day1: null, day2: null, dayOfMonth: +date.slice(8, 10) || 1, lastDone: "" });
+                const pd0 = new Date(date + "T12:00:00");
+                addPlanned({ kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), amount: amt, startDate: date, frequency: planFreq, currency: pcur, note: comment.trim() || null, pocketId, categoryId: categoryId || null, projectId: projectId || null, fromPocketId: null, toPocketId: null, weekday: planFreq === "weekly" ? pd0.getDay() : null, day1: null, day2: null, dayOfMonth: +date.slice(8, 10) || 1, month: (planFreq === "yearly" || planFreq === "quarterly") ? (+date.slice(5, 7) || null) : null, lastDone: "" });
                 onClose();
                 return;
             }
@@ -9814,6 +9816,14 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
                     React.createElement("input", { type: "checkbox", "data-planchk": "1", checked: planOn, onChange: (e) => setPlanOn(e.target.checked), className: "w-4 h-4 rounded accent-current", style: { accentColor: "var(--accent)" } }),
                     React.createElement("span", { className: "text-sm" }, tr("Запланувати на цю дату (не проводити зараз)"))),
+                planOn && React.createElement("div", { className: "mt-2" },
+                    React.createElement(Select, { "data-planfreq": "1", value: planFreq, onChange: (e) => setPlanFreq(e.target.value) },
+                        React.createElement("option", { value: "once" }, tr("Одноразово")),
+                        React.createElement("option", { value: "daily" }, tr("Щодня")),
+                        React.createElement("option", { value: "weekly" }, tr("Щотижня")),
+                        React.createElement("option", { value: "monthly" }, tr("Щомісяця")),
+                        React.createElement("option", { value: "quarterly" }, tr("Щокварталу")),
+                        React.createElement("option", { value: "yearly" }, tr("Щороку")))),
                 planOn && React.createElement("p", { className: "text-[0.6875rem] mt-1.5", style: { color: "var(--text-dim)" } }, tr("Операція не буде проведена: у день платежу на головному екрані з'явиться картка «Провести».")))),
             !(editing && editing.recurringId) && !planOn && (React.createElement("div", { className: "mb-3" },
                 React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
@@ -10870,5 +10880,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-14.5");</script></body>
+<script>console.log("K³ build: 2026-09-16.1");</script></body>
 </html>
