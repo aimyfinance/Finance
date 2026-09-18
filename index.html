@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-18.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-18.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2719,7 +2719,23 @@ window.__K3_START = function () {
                 if (onChange)
                     onChange({ target: { value: cleaned } });
             };
-            return React.createElement("input", { ...rest, value: group(String(rest.value == null ? "" : rest.value)), type: "text", inputMode: "decimal", autoComplete: "off", onChange: handle, style: st, className: cls });
+            // Грошові поля (step 0.01) нормалізуються до копійок на блюрі: 998 -> 998.00.
+            // Під час набору нічого не дописуємо, щоб не битися з кареткою.
+            const money = step === "0.01";
+            const handleBlur = (e) => {
+                if (money) {
+                    const n = parseFloat(clean(e.target.value));
+                    if (isFinite(n) && e.target.value !== "") {
+                        const fixed = n.toFixed(2);
+                        e.target.value = group(fixed);
+                        if (onChange)
+                            onChange({ target: { value: fixed } });
+                    }
+                }
+                if (rest.onBlur)
+                    rest.onBlur(e);
+            };
+            return React.createElement("input", { ...rest, value: group(String(rest.value == null ? "" : rest.value)), type: "text", inputMode: "decimal", autoComplete: "off", onChange: handle, onBlur: handleBlur, style: st, className: cls });
         }
         return React.createElement("input", { ...props, style: st, className: cls });
     }
@@ -10938,5 +10954,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-18.1");</script></body>
+<script>console.log("K³ build: 2026-09-18.2");</script></body>
 </html>
