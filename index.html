@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-18.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-18.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -846,6 +846,11 @@ window.__K3_START = function () {
         return tr("Щомісяця") + " " + (rule.dayOfMonth || 1) + tr("-го");
     }
     /* ============================== HELPERS ============================== */
+    // Copeck-normalized string for money inputs: 998 -> "998.00" (display only, data stays numeric)
+    function money2(v) {
+        const n = Number(v);
+        return v !== "" && v != null && isFinite(n) ? (Math.round(n * 100) / 100).toFixed(2) : "";
+    }
     function fmtMoney(amount, currency) {
         const sym = CURRENCY_SYMBOLS[currency] || currency;
         const n = Number(amount) || 0;
@@ -6798,7 +6803,7 @@ window.__K3_START = function () {
         const active = pockets.filter((p) => !p.archived);
         const [kind, setKind] = useState(existing?.kind || "expense");
         const [title, setTitle] = useState(existing?.title || "");
-        const [amount, setAmount] = useState(existing?.amount != null ? String(existing.amount) : "");
+        const [amount, setAmount] = useState(existing?.amount != null ? money2(existing.amount) : "");
         const [ruleCur, setRuleCur] = useState(existing?.currency || "");
         const [ruleNote, setRuleNote] = useState(existing?.note || "");
         const [pocketId, setPocketId] = useState(existing?.pocketId || active[0]?.id || "");
@@ -7363,7 +7368,7 @@ window.__K3_START = function () {
             ? { id: existing.coinId, symbol: existing.symbol, name: existing.name }
             : CRYPTO_COINS[0]);
         const [picker, setPicker] = useState(false);
-        const [amount, setAmount] = useState(existing?.amount != null ? String(existing.amount) : "");
+        const [amount, setAmount] = useState(existing?.amount != null ? money2(existing.amount) : "");
         const [note, setNote] = useState(existing?.note || "");
         const [error, setError] = useState("");
         const [confirmDel, setConfirmDel] = useState(false);
@@ -8677,7 +8682,7 @@ window.__K3_START = function () {
         const firstPocket = pockets.find((pp) => !pp.archived);
         const [title, setTitle] = useState(existing?.title || "");
         const [mode, setMode] = useState(existing?.mode || "fixed");
-        const [amount, setAmount] = useState(existing?.amount != null ? String(existing.amount) : "");
+        const [amount, setAmount] = useState(existing?.amount != null ? money2(existing.amount) : "");
         const [pocketId, setPocketId] = useState(existing?.pocketId || firstPocket?.id || "");
         const [fromPocketId, setFromPocketId] = useState(existing?.fromPocketId || existing?.pocketId || firstPocket?.id || "");
         const [toPocketId, setToPocketId] = useState(existing?.toPocketId || "");
@@ -9505,7 +9510,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const firstPocket = pockets.find((p) => !p.archived);
         const [note, setNote] = useState(editing?.note || P.presetNote || "");
         const [comment, setComment] = useState(editing?.comment || P.presetComment || "");
-        const [amount, setAmount] = useState(editing?.amount != null ? String(editing.amount) : (P.presetAmount != null ? String(P.presetAmount) : ""));
+        const [amount, setAmount] = useState(editing?.amount != null ? money2(editing.amount) : (P.presetAmount != null ? money2(P.presetAmount) : ""));
         const [pocketId, setPocketId] = useState(editing?.pocketId || presetPocketId || firstPocket?.id || "");
         const activeTx = pockets.filter((pp) => !pp.archived);
         const curListTx = Array.from(new Set(activeTx.map((pp) => pp.currency)));
@@ -10062,7 +10067,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             const f = (active.find((p) => p.id === (presetFromPocketId || active[0]?.id)) || active[0] || {}).currency || "UAH";
             return curListEx.find((cc) => cc !== f) || f;
         });
-        const [fromAmount, setFromAmount] = useState(src && src.fromAmount != null ? String(src.fromAmount) : "");
+        const [fromAmount, setFromAmount] = useState(src && src.fromAmount != null ? money2(src.fromAmount) : "");
         // While editing, the field shows the deal's own rate (derived from the two amounts),
         // not the online one; the quote keeps the ≥1 orientation used by the form.
         const [rate, setRate] = useState(() => {
@@ -10079,7 +10084,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [recFreq, setRecFreq] = useState("monthly");
         const [recMode, setRecMode] = useState("fixed");
         const rateNum = parseFloat(String(rate).replace(",", ".")) || 0;
-        const [toAmount, setToAmount] = useState(src && src.toAmount != null ? String(src.toAmount) : "");
+        const [toAmount, setToAmount] = useState(src && src.toAmount != null ? money2(src.toAmount) : "");
         const [date, setDate] = useState(src?.date || new Date().toISOString().slice(0, 10));
         const [note, setNote] = useState(src?.note || "");
         const [error, setError] = useState("");
@@ -10424,7 +10429,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const active = pockets.filter((p) => !p.archived);
         const remaining = loanRemaining(loan);
         const [mode, setMode] = useState("pocket");
-        const [amount, setAmount] = useState(String(remaining));
+        const [amount, setAmount] = useState(money2(remaining));
         const [pocketId, setPocketId] = useState(active.find((p) => p.id === loan.pocketId)?.id || active[0]?.id || "");
         const [received, setReceived] = useState("");
         // Курс — якір крос-валютного повернення: суми похідні від нього; правка
@@ -10954,5 +10959,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-18.2");</script></body>
+<script>console.log("K³ build: 2026-09-18.3");</script></body>
 </html>
