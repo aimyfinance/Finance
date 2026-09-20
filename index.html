@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-18.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-18.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1978,6 +1978,7 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Основне сховище заповнене — зміни зберігаються в розширене сховище пристрою. Дані в безпеці.": "Primary storage is full — changes are saved to the device's extended storage. Your data is safe.",
         "Очистити": "Clear",
         "Нічого не проводиться: створиться лише правило, перший платіж — за графіком.": "Nothing is posted: only the rule is created, the first payment follows the schedule.",
         "Провести цю операцію зараз (перша оказія)": "Post this transaction now (first occurrence)",
@@ -2328,29 +2329,38 @@ window.__K3_START = function () {
     }
     const IDB_NAME = "k3_state_mirror";
     let IDB_READY = false; // saves must not overwrite the mirror before boot reconciliation reads it
-    function idbPut(json) {
+    let IDB_WRITE_OK = false; // set after the first successful mirror write this session
+    function idbFail(cb) {
+        // Дзеркало відпало: більше не запевняємо, що дані в безпеці, і будимо банер.
+        IDB_WRITE_OK = false;
+        try { if (window.__K3_MIRROR_FAIL) window.__K3_MIRROR_FAIL(); } catch (e) { }
+        if (cb) cb(false);
+    }
+    function idbSet(key, value, cb) {
         try {
             const req = indexedDB.open(IDB_NAME, 1);
             req.onupgradeneeded = () => { req.result.createObjectStore("kv"); };
             req.onsuccess = () => {
                 try {
                     const tx = req.result.transaction("kv", "readwrite");
-                    tx.objectStore("kv").put(json, "state");
-                    tx.oncomplete = () => req.result.close();
+                    tx.objectStore("kv").put(value, key);
+                    tx.oncomplete = () => { try { req.result.close(); } catch (e) { } IDB_WRITE_OK = true; if (cb) cb(true); };
+                    tx.onerror = () => { try { req.result.close(); } catch (e) { } idbFail(cb); };
                 }
-                catch (e) { try { req.result.close(); } catch (e2) { } }
+                catch (e) { try { req.result.close(); } catch (e2) { } idbFail(cb); }
             };
+            req.onerror = () => idbFail(cb);
         }
-        catch (e) { /* IndexedDB unavailable — mirror is best-effort */ }
+        catch (e) { idbFail(cb); /* IndexedDB unavailable — mirror is best-effort */ }
     }
-    function idbGet(cb) {
+    function idbGetKey(key, cb) {
         try {
             const req = indexedDB.open(IDB_NAME, 1);
             req.onupgradeneeded = () => { req.result.createObjectStore("kv"); };
             req.onsuccess = () => {
                 try {
                     const tx = req.result.transaction("kv", "readonly");
-                    const g = tx.objectStore("kv").get("state");
+                    const g = tx.objectStore("kv").get(key);
                     g.onsuccess = () => { const v = g.result || null; try { req.result.close(); } catch (e) { } cb(v); };
                     g.onerror = () => { try { req.result.close(); } catch (e) { } cb(null); };
                 }
@@ -2360,6 +2370,8 @@ window.__K3_START = function () {
         }
         catch (e) { cb(null); }
     }
+    function idbPut(json, cb) { idbSet("state", json, cb); }
+    function idbGet(cb) { idbGetKey("state", cb); }
     /* ---- Subcategories (one level) ----
        A category may reference a parent via parentId. Budgets live on parents only and
        cover the whole nest; analytics rolls children up into the parent. */
@@ -2462,20 +2474,36 @@ window.__K3_START = function () {
         try {
             const d = new Date();
             const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-            if (ok && window.localStorage.getItem("ft_auto_backup_date") !== today) {
-                const prev = window.localStorage.getItem("ft_auto_backup");
-                if (prev)
-                    window.localStorage.setItem("ft_auto_backup_prev", prev);
+            if (window.localStorage.getItem("ft_auto_backup_date") !== today) {
                 // Receipts are stripped from backups: with photos, three copies of the state
                 // tripled storage usage and pushed devices over the quota.
                 const lite = { ...state, transactions: (state.transactions || []).map((t) => (t.receipt || (t.receipts && t.receipts.length) ? { ...t, receipt: null, receipts: [] } : t)) };
-                window.localStorage.setItem("ft_auto_backup", JSON.stringify({ date: today, state: lite }));
-                window.localStorage.setItem("ft_auto_backup_date", today);
+                const packed = JSON.stringify({ date: today, state: lite });
+                if (IDB_READY) {
+                    // Day-snapshots live in IndexedDB now — they no longer eat the 5MB quota.
+                    idbGetKey("backup", (prevRaw) => {
+                        if (prevRaw)
+                            idbSet("backup_prev", prevRaw);
+                        idbSet("backup", packed, (okB) => { if (okB) { try { window.localStorage.setItem("ft_auto_backup_date", today); } catch (e4) { } } });
+                    });
+                }
+                else if (ok) {
+                    const prev = window.localStorage.getItem("ft_auto_backup");
+                    if (prev)
+                        window.localStorage.setItem("ft_auto_backup_prev", prev);
+                    window.localStorage.setItem("ft_auto_backup", packed);
+                    window.localStorage.setItem("ft_auto_backup_date", today);
+                }
             }
         }
         catch (e) { /* auto-backup is best-effort */ }
         if (IDB_READY)
             idbPut(json); // durable mirror — survives iOS force-quit even when localStorage does not
+        // localStorage full, but the IndexedDB mirror (hundreds of MB) took the write:
+        // data is safe there and boot reconciliation adopts the newer revision. Report
+        // "mirror" so the UI can drop the scary banner and show a calm notice instead.
+        if (!ok && IDB_READY && IDB_WRITE_OK)
+            return "mirror";
         return ok;
     }
     /* PIN is stored on the device only (not synced) */
@@ -3316,17 +3344,26 @@ window.__K3_START = function () {
         useEffect(() => {
             const full = { ...state, theme };
             const ok = saveState(full);
-            if (ok === true)
+            if (ok === true || ok === "mirror")
                 pendingPatchesRef.current = [];
             if (ok === "stale") {
                 adoptNewerDiskState();
                 return;
             }
+            if (ok === "mirror") {
+                // Дані в безпеці в розширеному сховищі; страшний банер не потрібен.
+                if (saveFailed)
+                    setSaveFailed(false);
+                if (!mirrorNoticeRef.current) {
+                    mirrorNoticeRef.current = true;
+                    setToast(tr("Основне сховище заповнене — зміни зберігаються в розширене сховище пристрою. Дані в безпеці."));
+                }
+            }
             if (!ok && !saveFailed) {
                 setSaveFailed(true);
                 setToast(tr("Увага: сховище пристрою переповнене — останні зміни не збереглися. Видаліть кілька фото чеків або зробіть експорт даних."));
             }
-            if (ok && saveFailed) {
+            if (ok === true && saveFailed) {
                 setSaveFailed(false);
                 setToast(tr("Місце звільнено — дані знову зберігаються."));
             }
@@ -4248,6 +4285,11 @@ window.__K3_START = function () {
         // Recover the tail of changes iOS may have dropped from localStorage on force-quit:
         // if the IndexedDB mirror holds a newer revision, adopt it and re-save.
         const idbCheckedRef = React.useRef(false);
+        const mirrorNoticeRef = React.useRef(false);
+        useEffect(() => {
+            window.__K3_MIRROR_FAIL = () => setSaveFailed(true);
+            return () => { try { delete window.__K3_MIRROR_FAIL; } catch (e) { } };
+        }, []);
         useEffect(() => {
             if (idbCheckedRef.current)
                 return;
@@ -8011,7 +8053,15 @@ window.__K3_START = function () {
             return null;
         } };
         const [confirmKey, setConfirmKey] = useState(null);
-        const slots = [["ft_auto_backup", read("ft_auto_backup")], ["ft_auto_backup_prev", read("ft_auto_backup_prev")]].filter(([, v]) => v && v.state);
+        // Копії живуть в IndexedDB (нове) з відкатом на legacy-ключі localStorage.
+        const [idbSlots, setIdbSlots] = useState(null);
+        useEffect(() => {
+            idbGetKey("backup", (a) => idbGetKey("backup_prev", (b) => {
+                const parse = (raw) => { try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; } };
+                setIdbSlots([["idb_backup", parse(a)], ["idb_backup_prev", parse(b)]]);
+            }));
+        }, []);
+        const slots = [...(idbSlots || []), ["ft_auto_backup", read("ft_auto_backup")], ["ft_auto_backup_prev", read("ft_auto_backup_prev")]].filter(([, v]) => v && v.state);
         if (!slots.length)
             return React.createElement("p", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Автокопій ще немає — зʼявляться після наступного відкриття застосунку."));
         return (React.createElement("div", { className: "space-y-2" }, slots.map(([key, v]) => (React.createElement("div", { key: key, className: "flex items-center justify-between gap-2" },
@@ -10959,5 +11009,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-18.3");</script></body>
+<script>console.log("K³ build: 2026-09-18.4");</script></body>
 </html>
