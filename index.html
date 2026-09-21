@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-21.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-21.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2504,8 +2504,8 @@ window.__K3_START = function () {
         // localStorage full, but the IndexedDB mirror (hundreds of MB) took the write:
         // data is safe there and boot reconciliation adopts the newer revision. Report
         // "mirror" so the UI can drop the scary banner and show a calm notice instead.
-        if (!ok && IDB_READY && IDB_WRITE_OK)
-            return "mirror";
+        if (!ok && IDB_READY)
+            return "mirror"; // оптимістично: провал дзеркала підніме банер через __K3_MIRROR_FAIL
         return ok;
     }
     /* PIN is stored on the device only (not synced) */
@@ -11033,5 +11033,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-21.4");</script></body>
+<script>console.log("K³ build: 2026-09-21.5");</script></body>
 </html>
