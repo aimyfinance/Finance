@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-21.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-21.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1978,6 +1978,7 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Більше платежів": "More payments",
         "найближчий": "next",
         "Основне сховище заповнене — зміни зберігаються в розширене сховище пристрою. Дані в безпеці.": "Primary storage is full — changes are saved to the device's extended storage. Your data is safe.",
         "Очистити": "Clear",
@@ -4927,7 +4928,7 @@ window.__K3_START = function () {
                     React.createElement("button", { onClick: () => setShowTotalHint(false), className: "p-1 shrink-0", style: { color: "var(--text-dim)" } },
                         React.createElement(X, { size: 14 }))))),
             (plannedOverdue || []).length > 0 && (React.createElement("div", { "data-plcard": "1", className: "space-y-2" },
-                React.createElement(DashSectionHeader, { icon: Clock, title: tr("Очікувані платежі"), urgentCount: plannedOverdue.length, nearestDate: null, open: plnSecOpen, onToggle: () => update({ plnSecOpen: !plnSecOpen }), tag: "secpln" }),
+                React.createElement(DashSectionHeader, { icon: Clock, title: tr("Очікувані платежі"), urgentCount: plannedOverdue.filter((o) => o.days > 0).length, nearestDate: ((plannedOverdue[0] || {}).date) || null, open: plnSecOpen, onToggle: () => update({ plnSecOpen: !plnSecOpen }), tag: "secpln" }),
                 plnSecOpen && React.createElement(Card, { className: "p-4 animate-in" },
                 React.createElement("div", { className: "space-y-2.5" }, plannedOverdue.slice(0, 5).map((o) => (React.createElement("div", { key: o.rule.id + o.date, className: "flex items-center gap-2" },
                     React.createElement("button", { type: "button", className: "flex-1 min-w-0 text-left", onClick: () => setModal({ type: "plannedDetail", payload: { id: o.rule.id, date: o.date, days: o.days } }) },
@@ -4937,9 +4938,9 @@ window.__K3_START = function () {
                     React.createElement("button", { onClick: () => { const p = plannedPostPayload(o.rule, o.date); setModal(p); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Провести")),
                     React.createElement("button", { onClick: () => markPlannedDone(o.rule.id, o.date), className: "px-2 py-1.5 rounded-lg text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Пропустити"))))))))),
             ((pendingByRule && pendingByRule.length > 0) || (upcomingRecurring && upcomingRecurring.length > 0)) && (React.createElement("div", { className: "space-y-2" },
-                React.createElement(DashSectionHeader, { icon: RefreshCw, title: tr("Регулярні платежі"), urgentCount: (pendingRecurring || []).length, nearestDate: (upcomingRecurring[0] || {}).date, open: recSecOpen, onToggle: () => update({ recSecOpen: !recSecOpen }), tag: "secrec" }),
+                React.createElement(DashSectionHeader, { icon: RefreshCw, title: tr("Регулярні платежі"), urgentCount: (pendingRecurring || []).filter((o) => o.date < localISODate(new Date())).length, nearestDate: ((pendingByRule[0] || upcomingRecurring[0]) || {}).date, open: recSecOpen, onToggle: () => update({ recSecOpen: !recSecOpen }), tag: "secrec" }),
                 recSecOpen && React.createElement(React.Fragment, null,
-                pendingByRule.slice(0, 4).map((o) => (React.createElement("div", { key: o.rule.id + o.date, className: "flex items-center gap-2.5 rounded-2xl p-3.5 animate-in", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
+                pendingByRule.slice(0, 4).map((o) => (React.createElement("div", { key: o.rule.id + o.date, className: "flex items-center gap-2.5 rounded-2xl p-3.5 animate-in", style: o.date < localISODate(new Date()) ? { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } : { background: "var(--surface)", border: "1px solid var(--border)" } },
                     React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } },
                         React.createElement(RefreshCw, { size: 15 })),
                     React.createElement("div", { className: "flex-1 min-w-0" },
@@ -4961,9 +4962,9 @@ window.__K3_START = function () {
                     " ",
                     tr("ще очікують")),
                 (() => {
-                    const soonLimit = (() => { const d = new Date(); d.setDate(d.getDate() + 3); return localISODate(d); })();
-                    const soon = upcomingRecurring.filter((o) => o.date <= soonLimit);
-                    const later = upcomingRecurring.filter((o) => o.date > soonLimit);
+                    // Майбутні (завтра і пізніше) не займають головний — всі за кнопкою.
+                    const soon = [];
+                    const later = upcomingRecurring;
                     const daysTo = (iso) => Math.round((new Date(iso + "T12:00:00") - new Date(localISODate(new Date()) + "T12:00:00")) / 86400000);
                     const UpCard = (o) => (React.createElement("div", { key: "up" + o.rule.id + o.date, "data-recup": o.rule.id, className: "flex items-center gap-2.5 rounded-2xl p-3 animate-in", style: { background: "var(--surface)", border: "1px dashed var(--border)" } },
                         React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
@@ -4985,7 +4986,7 @@ window.__K3_START = function () {
                     return React.createElement(React.Fragment, null,
                         soon.map(UpCard),
                         later.length > 0 && React.createElement("button", { "data-recmore": "1", type: "button", onClick: () => setRecMoreOpen((v) => !v), className: "w-full text-center text-[0.6875rem] font-medium py-1", style: { color: "var(--text-dim)" } },
-                            recMoreOpen ? tr("Сховати пізніші") : tr("Показати пізніші") + " (" + later.length + ")"),
+                            recMoreOpen ? tr("Сховати пізніші") : tr("Більше платежів") + " (" + later.length + ")"),
                         recMoreOpen && later.map(UpCard));
                 })()))),
             React.createElement("div", null,
@@ -11028,5 +11029,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-21.1");</script></body>
+<script>console.log("K³ build: 2026-09-21.2");</script></body>
 </html>
