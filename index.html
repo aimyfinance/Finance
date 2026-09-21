@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-21.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-21.6"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1978,6 +1978,7 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Ціна": "Price",
         "Більше платежів": "More payments",
         "найближчий": "next",
         "Основне сховище заповнене — зміни зберігаються в розширене сховище пристрою. Дані в безпеці.": "Primary storage is full — changes are saved to the device's extended storage. Your data is safe.",
@@ -6691,6 +6692,9 @@ window.__K3_START = function () {
         const [toAmt, setToAmt] = useState(seed ? String(seed.coinAmount) : "");
         const [date, setDate] = useState(seed && seed.date ? seed.date : new Date().toISOString().slice(0, 10));
         const [toTouched, setToTouched] = useState(!!seed);
+        // Ціна угоди (лімітний ордер): редагована, керує отриманою кількістю
+        const [priceStr, setPriceStr] = useState("");
+        const [priceEd, setPriceEd] = useState(false);
         const [error, setError] = useState("");
         const toCoin = toCoinSel;
         const priceOf = (cid) => (cryptoPrices[cid] > 0 ? cryptoPrices[cid] : (extraPrices[cid] || 0));
@@ -6722,6 +6726,26 @@ window.__K3_START = function () {
                 setToAmt(String(marketTo));
         }, [marketTo, toTouched]);
         const ta = parseFloat(String(toAmt).replace(",", "."));
+        const STABLE_SYMS = ["USDT", "USDC", "BUSD", "DAI", "TUSD", "FDUSD"];
+        const isStable = (sym) => STABLE_SYMS.includes(String(sym || "").toUpperCase());
+        // sellMode: продаж монети за стейбл — ціна виражається "1 <віддана> = ? <стейбл>"
+        const sellMode = !!(toCoin && src && isStable(toCoin.symbol) && !isStable(src.symbol));
+        const round8 = (v) => Math.round(v * 1e8) / 1e8;
+        const fmtPx = (v) => String(parseFloat(Number(v).toPrecision(8)));
+        const derivedPrice = fa > 0 && ta > 0 ? (sellMode ? ta / fa : fa / ta) : (pf > 0 && pt > 0 ? (sellMode ? pf / pt : pt / pf) : null);
+        const priceShown = priceEd ? priceStr : (derivedPrice != null ? fmtPx(derivedPrice) : "");
+        const applyPrice = (v, faNow) => {
+            const P = parseFloat(String(v).replace(",", "."));
+            const A = faNow != null ? faNow : fa;
+            if (P > 0 && A > 0) {
+                setToAmt(String(round8(sellMode ? A * P : A / P)));
+                setToTouched(true);
+            }
+        };
+        useEffect(() => {
+            if (priceEd)
+                applyPrice(priceStr);
+        }, [fromAmt]);
         const gainBase = marketTo != null && ta > 0 && pt > 0 ? convert((ta - marketTo) * pt, "USD", baseCurrency, rates) : null;
         const submit = () => {
             if (!src)
@@ -6741,7 +6765,7 @@ window.__K3_START = function () {
             React.createElement(Field, { label: tr("Віддаю") },
                 inWal.length ? React.createElement("div", { className: "flex gap-2" },
                     React.createElement("span", { className: "w-32 shrink-0" },
-                        React.createElement(Select, { value: fromCoinId || inWal[0]?.coinId || "", onChange: (e) => { setFromCoinId(e.target.value); setToTouched(false); setError(""); } }, inWal.map((c) => React.createElement("option", { key: c.id, value: c.coinId }, c.symbol)))),
+                        React.createElement(Select, { value: fromCoinId || inWal[0]?.coinId || "", onChange: (e) => { setFromCoinId(e.target.value); setToTouched(false); setPriceEd(false); setError(""); } }, inWal.map((c) => React.createElement("option", { key: c.id, value: c.coinId }, c.symbol)))),
                     React.createElement("span", { className: "flex-1" },
                         React.createElement(Input, { "data-swfrom": "1", type: "text", inputMode: "decimal", value: fromAmt, onChange: (e) => { setFromAmt(e.target.value); setToTouched(false); setError(""); }, placeholder: src ? String(src.amount) : "0" }))) : React.createElement("p", { className: "text-sm", style: { color: "var(--text-dim)" } }, tr("У цьому гаманці немає монет."))),
             React.createElement(Field, { label: tr("Отримую") },
@@ -6750,7 +6774,9 @@ window.__K3_START = function () {
                         React.createElement("span", { className: "truncate" }, toCoin ? toCoin.symbol : tr("Оберіть")),
                         React.createElement(ChevronDown, { size: 14, style: { color: "var(--text-dim)", flexShrink: 0 } })),
                     React.createElement("span", { className: "flex-1" },
-                        React.createElement(Input, { "data-swtoamt": "1", type: "text", inputMode: "decimal", value: toAmt, onChange: (e) => { setToAmt(e.target.value); setToTouched(true); }, placeholder: "0" })))),
+                        React.createElement(Input, { "data-swtoamt": "1", type: "text", inputMode: "decimal", value: toAmt, onChange: (e) => { setToAmt(e.target.value); setToTouched(true); setPriceEd(false); }, placeholder: "0" })))),
+            toCoin && src && React.createElement(Field, { label: tr("Ціна") + " (1 " + (sellMode ? src.symbol : toCoin.symbol) + " = ? " + (sellMode ? toCoin.symbol : src.symbol) + ")" },
+                React.createElement(Input, { "data-swprice": "1", type: "text", inputMode: "decimal", value: priceShown, onChange: (e) => { setPriceEd(true); setPriceStr(e.target.value); applyPrice(e.target.value); }, placeholder: derivedPrice != null ? fmtPx(derivedPrice) : "0" })),
             marketTo != null && React.createElement("p", { className: "text-xs -mt-2 mb-2", style: { color: "var(--text-dim)" } },
                 tr("Ринком"), ": ", marketTo, " ", toCoin ? toCoin.symbol : "",
                 gainBase != null && Math.abs(gainBase) >= 0.005 ? React.createElement("span", { style: { color: gainBase > 0 ? "var(--income, #2F8F5B)" : "var(--danger)", fontWeight: 600 } }, " \u00B7 ", gainBase > 0 ? "+" : "\u2212", fmtMoney(Math.abs(gainBase), baseCurrency)) : null),
@@ -6758,7 +6784,7 @@ window.__K3_START = function () {
             React.createElement(Field, { label: tr("Дата") },
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Button, { className: "w-full", onClick: submit }, editing ? tr("Зберегти") : tr("Виконати своп")),
-            picker && React.createElement(CoinPicker, { selected: toCoin, onPick: (c) => { if (src && c.id === src.coinId) { setError(tr("Оберіть монету-ціль")); setPicker(false); return; } setToCoinSel(c); setToTouched(false); setError(""); setPicker(false); }, onClose: () => setPicker(false) })));
+            picker && React.createElement(CoinPicker, { selected: toCoin, onPick: (c) => { if (src && c.id === src.coinId) { setError(tr("Оберіть монету-ціль")); setPicker(false); return; } setToCoinSel(c); setToTouched(false); setPriceEd(false); setError(""); setPicker(false); }, onClose: () => setPicker(false) })));
     }
     function PlannedListModal({ onClose, plannedOverdue, plannedUpcomingFor, planned, pockets, baseCurrency, setModal, markPlannedDone }) {
         const [horizon, setHorizon] = useState(7);
@@ -11033,5 +11059,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-21.5");</script></body>
+<script>console.log("K³ build: 2026-09-21.6");</script></body>
 </html>
