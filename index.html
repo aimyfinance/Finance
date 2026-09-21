@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-21.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-21.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4753,9 +4753,13 @@ window.__K3_START = function () {
             React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: "var(--surface2)", color: urgentCount > 0 ? "var(--danger)" : "var(--accent-text, var(--accent))" } },
                 React.createElement(Ic, { size: 15 })),
             React.createElement("span", { className: "flex-1 min-w-0 text-left text-sm font-medium truncate" }, title),
-            urgentCount > 0
-                ? React.createElement("span", { className: "px-2 py-0.5 rounded-full text-[0.6875rem] font-bold shrink-0", style: { background: "var(--danger)", color: "#fff" } }, urgentCount)
-                : (nearestDate ? React.createElement("span", { className: "text-[0.6875rem] shrink-0", style: { color: "var(--text-dim)" } }, tr("найближчий"), " ", fmtDate(nearestDate)) : null),
+            open
+                ? null
+                : urgentCount > 0
+                    ? React.createElement("span", { className: "px-2 py-0.5 rounded-full text-[0.6875rem] font-bold shrink-0", style: { background: "var(--danger)", color: "#fff" } }, urgentCount)
+                    : nearestDate === localISODate(new Date())
+                        ? React.createElement("span", { className: "px-2 py-0.5 rounded-full text-[0.6875rem] font-semibold shrink-0", style: { background: "color-mix(in srgb, var(--accent) 16%, transparent)", border: "1px solid var(--accent)", color: "var(--accent-text, var(--accent))" } }, tr("сьогодні"))
+                        : (nearestDate ? React.createElement("span", { className: "text-[0.6875rem] shrink-0", style: { color: "var(--text-dim)" } }, tr("найближчий"), " ", fmtDate(nearestDate)) : null),
             React.createElement(ChevronRight, { size: 16, style: { color: "var(--text-dim)", transform: open ? "rotate(90deg)" : "none", transition: "transform 160ms ease" } })));
     }
     function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, pendingByRule, upcomingRecurring, recSecOpen, plnSecOpen, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, carouselOrder, projectsPeriod, update, plannedOverdue, markPlannedDone }) {
@@ -11029,5 +11033,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-21.2");</script></body>
+<script>console.log("K³ build: 2026-09-21.3");</script></body>
 </html>
