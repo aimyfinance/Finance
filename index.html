@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-21.6"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-21.8"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -7968,6 +7968,7 @@ window.__K3_START = function () {
                     categoryId: r.categoryId || null,
                     projectId: r.projectId || impProject || null,
                     note: r.desc,
+                    flagged: r.flagged ? true : undefined,
                 };
             }));
             onClose();
@@ -8053,8 +8054,9 @@ window.__K3_START = function () {
                                 r.dup && React.createElement("span", { style: { color: "var(--warn)" } },
                                     " \u00B7 ",
                                     tr("Дублікат?")))),
+                        r.include && React.createElement("button", { type: "button", "data-impflag": r.key, "aria-label": tr("Потребує уваги"), onClick: () => setRow(r.key, { flagged: !r.flagged }), className: "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-sm", style: r.flagged ? { background: "rgba(192,86,79,0.14)", border: "1px solid var(--danger)" } : { border: "1px solid var(--border)", opacity: 0.55, filter: "grayscale(1)" } }, "\u2757"),
                         React.createElement("p", { className: "text-sm font-semibold tabular shrink-0", style: { color: r.amount < 0 ? "var(--danger)" : "var(--accent)" } },
-                            r.amount < 0 ? "−" : "+",
+                            r.amount < 0 ? "\u2212" : "+",
                             fmtMoney(Math.abs(r.amount), pkCur))),
                     r.include && (React.createElement("div", { className: "mt-2 pl-7 space-y-2" },
                         r.trHint && !r.asTransfer && React.createElement("button", { type: "button", "data-trhint": r.key, onClick: () => setRow(r.key, { asTransfer: true, otherPocketId: r.mirrorPocketId || r.otherPocketId || defaultOtherPk() }), className: "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg", style: { background: "var(--surface2)", border: "1px dashed var(--accent)", color: "var(--accent-text, var(--accent))" } },
@@ -9605,8 +9607,11 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
     /* ---------- Transaction (income/expense) Modal ---------- */
     function TransactionModal({ onClose, switchType, replaceTransaction, recurringList, openRecurringEdit, addPlanned, kind, editing, presetPocketId, accounts, pockets, categories, addTransaction, editTransaction, pocketBalance, addCategory, editCategory, payload, markRecurringDone, addTransactionRecurring, projects, addProject, rates, baseCurrency, transactions, addRecurring, customEmojis, addCustomEmoji, markPlannedDone, }) {
         const P = payload || {};
-        const isIncome = kind === "income";
-        const cats = categories.filter((c) => c.type === kind && !c.archived && !c.parentId);
+        // У створенні тип можна перемкнути прямо у формі (промах по −/+); у редагуванні — через switchType
+        const [kindL, setKindL] = useState(kind);
+        const kindEff = editing ? kind : kindL;
+        const isIncome = kindEff === "income";
+        const cats = categories.filter((c) => c.type === kindEff && !c.archived && !c.parentId);
         const firstPocket = pockets.find((p) => !p.archived);
         const [note, setNote] = useState(editing?.note || P.presetNote || "");
         const [comment, setComment] = useState(editing?.comment || P.presetComment || "");
@@ -9677,7 +9682,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const noteSugg = useMemo(() => {
             const m = {};
             (transactions || []).forEach((t) => {
-                if (t.type !== kind)
+                if (t.type !== kindEff)
                     return;
                 const n = (t.note || "").trim();
                 if (!n)
@@ -9699,7 +9704,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 }
             });
             return Object.values(m);
-        }, [transactions, kind]);
+        }, [transactions, kindEff]);
         const selCatRaw = categories.find((c) => c.id === categoryId) || null;
         const selParent = selCatRaw && selCatRaw.parentId ? categories.find((c) => c.id === selCatRaw.parentId) : null;
         const selCat = selCatRaw;
@@ -9748,7 +9753,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 setError("");
                 return;
             }
-            const created = addCategory && addCategory({ name, type: kind, icon: newCatIcon || "MoreHorizontal", color: CAT_COLORS[categories.length % CAT_COLORS.length], parentId: newCatParent || null, budget: null });
+            const created = addCategory && addCategory({ name, type: kindEff, icon: newCatIcon || "MoreHorizontal", color: CAT_COLORS[categories.length % CAT_COLORS.length], parentId: newCatParent || null, budget: null });
             if (created && created.id) {
                 setCategoryId(created.id);
                 setNewCatMode(false);
@@ -9780,7 +9785,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 return setError(tr("Оберіть рахунок"));
             if (!categoryId)
                 return setError(tr("Оберіть категорію"));
-            const data = { projectId: projectId || null, type: kind, amount: amt, currency, pocketId, categoryId, date, note, comment: comment.trim() || null, receipts, receipt: null, flagged: flagged || undefined, recurringId: (P.recurringDone && P.recurringDone.id) || P.presetRecurringId || (editing && editing.recurringId) || undefined };
+            const data = { projectId: projectId || null, type: kindEff, amount: amt, currency, pocketId, categoryId, date, note, comment: comment.trim() || null, receipts, receipt: null, flagged: flagged || undefined, recurringId: (P.recurringDone && P.recurringDone.id) || P.presetRecurringId || (editing && editing.recurringId) || undefined };
             if (baseCurrency && currency !== baseCurrency && rates) {
                 const rBase = rates[baseCurrency] || 1;
                 const rCur = rates[currency] != null ? rates[currency] : (editing && editing.fx != null ? editing.fx : 1);
@@ -9794,7 +9799,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 if (String(rateStr).trim()) {
                     const rr0 = natural ? rCur / rBase : rBase / rCur;
                     const bvMarket = natural ? amt * rr0 : (rr0 ? amt / rr0 : amt);
-                    const gain = (kind === "income" ? 1 : -1) * (bvv - bvMarket);
+                    const gain = (kindEff === "income" ? 1 : -1) * (bvv - bvMarket);
                     const g2 = Math.round(gain * 100) / 100;
                     if (Math.abs(g2) >= 0.005) {
                         data.fxGainBase = g2;
@@ -9804,7 +9809,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             }
             const buildRecData = () => {
                 const rd = recDay != null ? recDay : (+date.slice(8, 10) || 1);
-                return { kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), mode: recMode, amount: amt, pocketId, categoryId, projectId: projectId || null, dayOfMonth: rd, startDate: date,
+                return { kind: kindEff, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), mode: recMode, amount: amt, pocketId, categoryId, projectId: projectId || null, dayOfMonth: rd, startDate: date,
                     frequency: recFreq,
                     weekday: recFreq === "weekly" ? (recWeekday != null ? recWeekday : new Date(date + "T12:00:00").getDay()) : null,
                     day1: recFreq === "semimonthly" ? recDay1 : null,
@@ -9815,7 +9820,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             };
             if (!editing && planOn && addPlanned) {
                 const pcur = (pockets.find((pp) => pp.id === pocketId) || {}).currency || currency;
-                addPlanned({ kind, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), amount: amt, startDate: date, frequency: planFreq, currency: pcur, note: comment.trim() || null, pocketId, categoryId: categoryId || null, projectId: projectId || null, fromPocketId: null, toPocketId: null, weekday: planFreq === "weekly" ? Number(planWeekday) : null, day1: planFreq === "semimonthly" ? Number(planDay1) || 1 : null, day2: planFreq === "semimonthly" ? Number(planDay2) || 15 : null, dayOfMonth: Number(planDay) || (+date.slice(8, 10) || 1), month: (planFreq === "yearly" || planFreq === "quarterly") ? Number(planMonth) || null : null, lastDone: "" });
+                addPlanned({ kind: kindEff, title: (note && note.trim()) || tr(selCat ? selCat.name : "") || (isIncome ? tr("Дохід") : tr("Витрата")), amount: amt, startDate: date, frequency: planFreq, currency: pcur, note: comment.trim() || null, pocketId, categoryId: categoryId || null, projectId: projectId || null, fromPocketId: null, toPocketId: null, weekday: planFreq === "weekly" ? Number(planWeekday) : null, day1: planFreq === "semimonthly" ? Number(planDay1) || 1 : null, day2: planFreq === "semimonthly" ? Number(planDay2) || 15 : null, dayOfMonth: Number(planDay) || (+date.slice(8, 10) || 1), month: (planFreq === "yearly" || planFreq === "quarterly") ? Number(planMonth) || null : null, lastDone: "" });
                 onClose();
                 return;
             }
@@ -9852,6 +9857,10 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     React.createElement("option", { value: "income" }, tr("Дохід")),
                     React.createElement("option", { value: "expense" }, tr("Витрата")),
                     React.createElement("option", { value: "transfer" }, tr("Переказ між рахунками")))),
+            !editing && React.createElement(Field, { label: tr("Тип операції") },
+                React.createElement(Select, { "data-kindsw": "1", value: kindEff, onChange: (e) => { const v = e.target.value; if (v !== kindEff) { setKindL(v); const first = (categories || []).find((c) => c.type === v && !c.archived && !c.parentId); setCategoryId(first ? first.id : ""); setError(""); } } },
+                    React.createElement("option", { value: "expense" }, tr("Витрата")),
+                    React.createElement("option", { value: "income" }, tr("Дохід")))),
             React.createElement(Field, { label: tr("Сума"), error: error },
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement("div", { className: "flex-1" },
@@ -11059,5 +11068,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-21.6");</script></body>
+<script>console.log("K³ build: 2026-09-21.8");</script></body>
 </html>
