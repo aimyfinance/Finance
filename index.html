@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-18.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-21.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1978,6 +1978,7 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "найближчий": "next",
         "Основне сховище заповнене — зміни зберігаються в розширене сховище пристрою. Дані в безпеці.": "Primary storage is full — changes are saved to the device's extended storage. Your data is safe.",
         "Очистити": "Clear",
         "Нічого не проводиться: створиться лише правило, перший платіж — за графіком.": "Nothing is posted: only the rule is created, the first payment follows the schedule.",
@@ -3412,6 +3413,8 @@ window.__K3_START = function () {
         const setRecSort = (v) => update({ recSort: v });
         const plnSort = state.plnSort || "due";
         const setPlnSort = (v) => update({ plnSort: v });
+        const recSecOpen = !!state.recSecOpen;
+        const plnSecOpen = !!state.plnSecOpen;
         const dismissDupPair = (a, b) => update({ dupDismissed: [...dupDismissed, [a, b].sort().join("|")] });
         const currencyList = ["UAH"].concat(Object.keys(rates).filter((c) => c !== "UAH"));
         const reminders = state.reminders || [];
@@ -4557,7 +4560,7 @@ window.__K3_START = function () {
                                 React.createElement("div", { className: "flex gap-2 mt-2" },
                                     React.createElement(Button, { variant: "secondary", onClick: exportBackup }, tr("Зберегти копію")),
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[0.6875rem] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
-                        view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, pendingByRule: pendingByRule, upcomingRecurring: upcomingRecurring, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, projectsPeriod: state.projectsPeriod || null, update: update, plannedOverdue: plannedOverdue, markPlannedDone: markPlannedDone })),
+                        view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, pendingByRule: pendingByRule, upcomingRecurring: upcomingRecurring, recSecOpen: recSecOpen, plnSecOpen: plnSecOpen, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, projectsPeriod: state.projectsPeriod || null, update: update, plannedOverdue: plannedOverdue, markPlannedDone: markPlannedDone })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
                         view === "history" && (React.createElement(HistoryView, { setView: setView, cryptoRealized: cryptoRealized, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk, addReportTemplate: addReportTemplate })),
                         view === "loans" && (React.createElement(LoansView, { transactions: transactions, rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
@@ -4742,7 +4745,19 @@ window.__K3_START = function () {
             React.createElement(Button, { variant: "secondary", onClick: save }, "OK")));
     }
     /* ============================== DASHBOARD ============================== */
-    function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, pendingByRule, upcomingRecurring, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, carouselOrder, projectsPeriod, update, plannedOverdue, markPlannedDone }) {
+    // Тонкий рядок-згортка секції на головному: іконка, назва, бейдж терміновості
+    // або нейтральна найближча дата, шеврон. Тап перемикає і персистить стан.
+    function DashSectionHeader({ icon: Ic, title, urgentCount, nearestDate, open, onToggle, tag }) {
+        return (React.createElement("button", { type: "button", ["data-" + tag]: "1", onClick: onToggle, className: "w-full flex items-center gap-2.5 rounded-2xl px-3 py-2.5", style: { background: "var(--surface)", border: "1px solid var(--border)" } },
+            React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: "var(--surface2)", color: urgentCount > 0 ? "var(--danger)" : "var(--accent-text, var(--accent))" } },
+                React.createElement(Ic, { size: 15 })),
+            React.createElement("span", { className: "flex-1 min-w-0 text-left text-sm font-medium truncate" }, title),
+            urgentCount > 0
+                ? React.createElement("span", { className: "px-2 py-0.5 rounded-full text-[0.6875rem] font-bold shrink-0", style: { background: "var(--danger)", color: "#fff" } }, urgentCount)
+                : (nearestDate ? React.createElement("span", { className: "text-[0.6875rem] shrink-0", style: { color: "var(--text-dim)" } }, tr("найближчий"), " ", fmtDate(nearestDate)) : null),
+            React.createElement(ChevronRight, { size: 16, style: { color: "var(--text-dim)", transform: open ? "rotate(90deg)" : "none", transition: "transform 160ms ease" } })));
+    }
+    function Dashboard({ graceInfo, accounts, pockets, accountPockets, pocketBalance, accountTotalBase, totalInBase, baseCurrency, rates, byCurrencyTotals, monthIncome, monthExpense, categoryBreakdown, breakdownCats, setHistoryPreset, pendingRecurring, pendingByRule, upcomingRecurring, recSecOpen, plnSecOpen, markRecurringDone, projects, transactions, categories, getPocket, pocketLabel, setModal, setView, totalLoanedOut, overdueTotal, upcomingLoans, activeLoans, budgetStatus, netWorthSeries, goals, crypto, cryptoPrices, cryptoTotalBase, cryptoFav, loansNetBase, totalOwed, includeLoansInTotal, monthlyBudget, prevMonthExpense, avgDailySpend, carouselOrder, projectsPeriod, update, plannedOverdue, markPlannedDone }) {
         const [recMoreOpen, setRecMoreOpen] = useState(false);
         const net = monthIncome - monthExpense;
         const recent = [...transactions].sort(byRecent).slice(0, 6);
@@ -4911,10 +4926,9 @@ window.__K3_START = function () {
                         React.createElement("p", null, tr("Один тап по сумі — розгортає склад капіталу: валюти, крипто-портфель, видані позики й борги. Подвійний тап — маскує суму крапками; ще один подвійний — показує знову."))),
                     React.createElement("button", { onClick: () => setShowTotalHint(false), className: "p-1 shrink-0", style: { color: "var(--text-dim)" } },
                         React.createElement(X, { size: 14 }))))),
-            (plannedOverdue || []).length > 0 && (React.createElement("div", { "data-plcard": "1" }, React.createElement(Card, { className: "p-4 animate-in" },
-                React.createElement("h3", { className: "font-display font-semibold text-sm mb-2.5 flex items-center gap-1.5" },
-                    React.createElement(Clock, { size: 15, style: { color: "var(--danger)" } }),
-                    tr("Очікувані платежі")),
+            (plannedOverdue || []).length > 0 && (React.createElement("div", { "data-plcard": "1", className: "space-y-2" },
+                React.createElement(DashSectionHeader, { icon: Clock, title: tr("Очікувані платежі"), urgentCount: plannedOverdue.length, nearestDate: null, open: plnSecOpen, onToggle: () => update({ plnSecOpen: !plnSecOpen }), tag: "secpln" }),
+                plnSecOpen && React.createElement(Card, { className: "p-4 animate-in" },
                 React.createElement("div", { className: "space-y-2.5" }, plannedOverdue.slice(0, 5).map((o) => (React.createElement("div", { key: o.rule.id + o.date, className: "flex items-center gap-2" },
                     React.createElement("button", { type: "button", className: "flex-1 min-w-0 text-left", onClick: () => setModal({ type: "plannedDetail", payload: { id: o.rule.id, date: o.date, days: o.days } }) },
                         React.createElement("p", { className: "text-sm font-medium truncate" }, tr(o.rule.title)),
@@ -4923,6 +4937,8 @@ window.__K3_START = function () {
                     React.createElement("button", { onClick: () => { const p = plannedPostPayload(o.rule, o.date); setModal(p); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Провести")),
                     React.createElement("button", { onClick: () => markPlannedDone(o.rule.id, o.date), className: "px-2 py-1.5 rounded-lg text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Пропустити"))))))))),
             ((pendingByRule && pendingByRule.length > 0) || (upcomingRecurring && upcomingRecurring.length > 0)) && (React.createElement("div", { className: "space-y-2" },
+                React.createElement(DashSectionHeader, { icon: RefreshCw, title: tr("Регулярні платежі"), urgentCount: (pendingRecurring || []).length, nearestDate: (upcomingRecurring[0] || {}).date, open: recSecOpen, onToggle: () => update({ recSecOpen: !recSecOpen }), tag: "secrec" }),
+                recSecOpen && React.createElement(React.Fragment, null,
                 pendingByRule.slice(0, 4).map((o) => (React.createElement("div", { key: o.rule.id + o.date, className: "flex items-center gap-2.5 rounded-2xl p-3.5 animate-in", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
                     React.createElement("span", { className: "w-8 h-8 rounded-lg flex items-center justify-center shrink-0", style: { background: "rgba(201,163,98,0.22)", color: "var(--accent)" } },
                         React.createElement(RefreshCw, { size: 15 })),
@@ -4971,7 +4987,7 @@ window.__K3_START = function () {
                         later.length > 0 && React.createElement("button", { "data-recmore": "1", type: "button", onClick: () => setRecMoreOpen((v) => !v), className: "w-full text-center text-[0.6875rem] font-medium py-1", style: { color: "var(--text-dim)" } },
                             recMoreOpen ? tr("Сховати пізніші") : tr("Показати пізніші") + " (" + later.length + ")"),
                         recMoreOpen && later.map(UpCard));
-                })())),
+                })()))),
             React.createElement("div", null,
                 React.createElement("h2", { className: "font-display font-semibold text-lg mb-3" }, tr("Здійснити транзакцію")),
                 React.createElement("div", { "data-tour": "actions", className: "grid grid-cols-2 sm:grid-cols-4 gap-3" },
@@ -8029,7 +8045,10 @@ window.__K3_START = function () {
                             else
                                 setRow(r.key, { categoryId: v }); } },
                             React.createElement("option", { value: "" }, tr("Без категорії")),
-                            (r.amount < 0 ? expenseCats : incomeCats).map((cat) => React.createElement("option", { key: cat.id, value: cat.id }, tr(cat.name))),
+                            (r.amount < 0 ? expenseCats : incomeCats).filter((cat) => !cat.parentId).flatMap((cat) => [
+                                React.createElement("option", { key: cat.id, value: cat.id }, tr(cat.name)),
+                                ...(r.amount < 0 ? expenseCats : incomeCats).filter((kk) => kk.parentId === cat.id).map((kk) => React.createElement("option", { key: kk.id, value: kk.id }, "\u00A0\u00A0\u2014 " + tr(kk.name)))
+                            ]),
                             React.createElement("option", { value: "__new__" }, tr("+ Нова категорія…"))))),
                         (projects || []).filter((xx) => !xx.archived).length > 0 && (React.createElement(Select, { value: r.projectId || "", onChange: (e) => setRow(r.key, { projectId: e.target.value }) },
                             React.createElement("option", { value: "" }, impProject ? tr("Проєкт — як у всіх") : tr("— без проєкту —")),
@@ -11009,5 +11028,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-18.4");</script></body>
+<script>console.log("K³ build: 2026-09-21.1");</script></body>
 </html>
