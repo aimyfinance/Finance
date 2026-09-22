@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-21.8"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-21.9"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -8994,7 +8994,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             if (modal.type === "loanRepays")
                 return React.createElement(LoanRepaysModal, { onClose: close, loan: modal.payload, transactions: transactions, updateRepayAmount: updateRepayAmount, deleteTransaction: deleteTransaction, pocketLabel: pocketLabel });
             if (modal.type === "txDetail")
-                return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, toggleTxFlag: toggleTxFlag, realizedBase: (cryptoRealized || {})[modal.payload && modal.payload.id], categories: categories, pocketLabel: pocketLabel, setModal: setModal, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency, updateRepayAmount: updateRepayAmount });
+                return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, toggleTxFlag: toggleTxFlag, realizedBase: (cryptoRealized || {})[modal.payload && modal.payload.id], categories: categories, pocketLabel: pocketLabel, setModal: (m) => setModal(m && typeof m === "object" && !m.returnTo && modal.returnTo ? { ...m, returnTo: modal.returnTo } : m), deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency, updateRepayAmount: updateRepayAmount });
             if (modal.type === "statementImport")
                 return React.createElement(StatementImportModal, { onClose: close, onBack: modal.returnTo ? close : undefined, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject, payload: modal.payload , rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "cryptoMove")
@@ -11068,5 +11068,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-21.8");</script></body>
+<script>console.log("K³ build: 2026-09-21.9");</script></body>
 </html>
