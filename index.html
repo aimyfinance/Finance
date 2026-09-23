@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-23.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-23.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2775,12 +2775,31 @@ window.__K3_START = function () {
             };
             return React.createElement("input", { ...rest, value: group(String(rest.value == null ? "" : rest.value)), type: "text", inputMode: "decimal", autoComplete: "off", onChange: handle, onBlur: handleBlur, style: st, className: cls });
         }
+        if (props.clearable && !props.disabled) {
+            // Текстове поле з хрестиком очищення: обгортка несе зовнішні класи,
+            // сам інпут лишається w-full усередині — розкладка не змінюється.
+            const { clearable, className, ...restC } = props;
+            const clsIn = `w-full min-w-0 max-w-full box-border rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition`;
+            const hasVal = String(props.value == null ? "" : props.value).length > 0;
+            return React.createElement("span", { className: `relative block ${className || ""}` },
+                React.createElement("input", { ...restC, style: { ...st, paddingRight: "2.25rem" }, className: clsIn }),
+                hasVal && React.createElement("button", { type: "button", "data-clearx": "1", "aria-label": tr("Очистити"), tabIndex: -1, onMouseDown: (e) => e.preventDefault(), onClick: () => { if (props.onChange) props.onChange({ target: { value: "" } }); }, className: "absolute flex items-center justify-center rounded-full", style: { right: "0.5rem", top: "50%", transform: "translateY(-50%)", width: "1.375rem", height: "1.375rem", background: "var(--surface2)", color: "var(--text-dim)" } },
+                    React.createElement(X, { size: 12 })));
+        }
         return React.createElement("input", { ...props, style: st, className: cls });
     }
     function Select({ children, style, ...props }) {
         return React.createElement("select", { ...props, style: { ...inputStyle(), ...(style || {}) }, className: `w-full min-w-0 max-w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${props.className || ""}` }, children);
     }
     function Textarea(props) {
+        if (props.clearable && !props.disabled) {
+            const { clearable, className, ...restC } = props;
+            const hasVal = String(props.value == null ? "" : props.value).length > 0;
+            return React.createElement("span", { className: `relative block ${className || ""}` },
+                React.createElement("textarea", { ...restC, style: { ...inputStyle(), paddingRight: "2.25rem" }, className: "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition resize-none" }),
+                hasVal && React.createElement("button", { type: "button", "data-clearx": "1", "aria-label": tr("Очистити"), tabIndex: -1, onMouseDown: (e) => e.preventDefault(), onClick: () => { if (props.onChange) props.onChange({ target: { value: "" } }); }, className: "absolute flex items-center justify-center rounded-full", style: { right: "0.5rem", top: "0.5rem", width: "1.375rem", height: "1.375rem", background: "var(--surface2)", color: "var(--text-dim)" } },
+                    React.createElement(X, { size: 12 })));
+        }
         return React.createElement("textarea", { ...props, style: inputStyle(), className: "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition resize-none" });
     }
     function Modal({ title, onClose, children, wide, onBack, side }) {
@@ -6115,7 +6134,7 @@ window.__K3_START = function () {
                     React.createElement(X, { size: 14 })))),
             React.createElement("div", { className: "relative" },
                 React.createElement(Search, { size: 16, className: "absolute left-3 top-1/2 -translate-y-1/2", style: { color: "var(--text-dim)" } }),
-                React.createElement(Input, { "data-tour": "histsearch", placeholder: tr("Пошук: опис, категорія, рахунок..."), value: search, onChange: (e) => setSearch(e.target.value), className: "pl-9" })),
+                React.createElement(Input, { clearable: true, "data-tour": "histsearch", placeholder: tr("Пошук: опис, категорія, рахунок..."), value: search, onChange: (e) => setSearch(e.target.value), className: "pl-9" })),
             !showFilters && (filterType.length > 0 || filterPocket.length > 0 || filterCategory.length > 0 || filterCurrency.length > 0 || filterProject.length > 0 || dateFrom || dateTo) && (React.createElement("div", { className: "flex items-center gap-2 rounded-xl px-3 py-2", style: { background: "rgba(201,163,98,0.10)", border: "1px solid rgba(201,163,98,0.35)" } },
                 React.createElement("button", { onClick: () => setShowFilters(true), className: "flex items-center gap-2 min-w-0 flex-1 text-left" },
                     React.createElement(Filter, { size: 12, style: { color: "var(--accent)", flexShrink: 0 } }),
@@ -6194,7 +6213,7 @@ window.__K3_START = function () {
                     React.createElement(Input, { type: "date", value: dateTo, onChange: (e) => setDateTo(e.target.value) })),
                 (filterType.length > 0 || filterPocket.length > 0 || filterCategory.length > 0 || filterCurrency.length > 0 || filterProject.length > 0 || dateFrom || dateTo || search.trim()) && React.createElement("div", { className: "sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-2" }, tplSaving ? (React.createElement(React.Fragment, null,
                     React.createElement("span", { className: "flex-1 min-w-0", style: { minWidth: "9rem" } },
-                        React.createElement(Input, { value: tplName, onChange: (e) => setTplName(e.target.value), placeholder: tr("Назва шаблону"), autoFocus: true })),
+                        React.createElement(Input, { clearable: true, value: tplName, onChange: (e) => setTplName(e.target.value), placeholder: tr("Назва шаблону"), autoFocus: true })),
                     React.createElement(Button, { variant: "secondary", className: "shrink-0", onClick: () => { const nm = tplName.trim(); if (!nm)
                             return; addReportTemplate(nm, { types: filterType, pockets: filterPocket, cats: filterCategory, currs: filterCurrency, prjs: filterProject, perMode: histPer, from: dateFrom, to: dateTo, search: search.trim() }); setTplSaving(false); setTplName(""); } }, tr("Зберегти")),
                     React.createElement("button", { onClick: () => { setTplSaving(false); setTplName(""); }, className: "p-1.5 shrink-0", style: { color: "var(--text-dim)" } },
@@ -6327,7 +6346,7 @@ window.__K3_START = function () {
                                 tr(x.name)))),
                             !selPrjNew && addProject && React.createElement("button", { onClick: () => setSelPrjNew(true), className: "px-2.5 py-1.5 rounded-full text-xs", style: { background: "var(--surface2)", border: "1px dashed var(--border)", color: "var(--text-dim)" } }, tr("+ Новий проєкт…"))),
                         selPrjNew && (React.createElement("div", { className: "flex gap-2 mt-2" },
-                            React.createElement(Input, { value: selPrjName, onChange: (e) => setSelPrjName(e.target.value), placeholder: tr("Назва проєкту"), autoFocus: true }),
+                            React.createElement(Input, { clearable: true, value: selPrjName, onChange: (e) => setSelPrjName(e.target.value), placeholder: tr("Назва проєкту"), autoFocus: true }),
                             React.createElement(Button, { type: "button", onClick: () => { const nm = selPrjName.trim(); if (!nm)
                                     return; const created = addProject({ name: nm, icon: "Home", color: "#6683B4" }); if (created)
                                     assignProjectBulk(ids, created.id); setSelPrjNew(false); setSelPrjName(""); setSelSub(null); } },
@@ -6621,7 +6640,7 @@ window.__K3_START = function () {
                 return React.createElement("div", { key: t.id, "data-rpt": t.id, className: "flex items-center gap-2 py-2.5" },
                     editId === t.id ? (React.createElement(React.Fragment, null,
                         React.createElement("span", { className: "flex-1 min-w-0" },
-                            React.createElement(Input, { value: editName, onChange: (e) => setEditName(e.target.value), autoFocus: true })),
+                            React.createElement(Input, { clearable: true, value: editName, onChange: (e) => setEditName(e.target.value), autoFocus: true })),
                         React.createElement(Button, { variant: "secondary", className: "shrink-0", onClick: () => { const nm = editName.trim(); if (nm)
                                 renameReportTemplate(t.id, nm); setEditId(null); } },
                             React.createElement(Check, { size: 14 })))) : (React.createElement(React.Fragment, null,
@@ -6965,7 +6984,7 @@ window.__K3_START = function () {
                     React.createElement("div", { className: "w-24 shrink-0" },
                         React.createElement(Select, { value: ruleCur || ((active.find((p) => p.id === (isMove ? fromPocketId : pocketId)) || {}).currency || ""), onChange: (e) => setRuleCur(e.target.value) }, (currencies || CURRENCIES).map((c) => React.createElement("option", { key: c, value: c }, c)))))),
             React.createElement(Field, { label: tr("Коментар") },
-                React.createElement(Input, { value: ruleNote, onChange: (e) => setRuleNote(e.target.value), placeholder: tr("Необов'язково") })),
+                React.createElement(Input, { clearable: true, value: ruleNote, onChange: (e) => setRuleNote(e.target.value), placeholder: tr("Необов'язково") })),
             !isMove && React.createElement(Field, { label: tr("Рахунок") },
                 React.createElement(Select, { value: pocketId, onChange: (e) => setPocketId(e.target.value), style: kind === "income" ? { border: "1px solid rgba(111,169,140,0.60)", background: "rgba(111,169,140,0.08)" } : { border: "1px solid rgba(192,86,79,0.55)", background: "rgba(192,86,79,0.07)" } }, active.map(pocketOpt))),
             !isMove && React.createElement(Field, { label: tr("Категорія") },
@@ -7101,7 +7120,7 @@ window.__K3_START = function () {
             React.createElement(Field, { label: tr("Термін (необовʼязково)") },
                 React.createElement(Input, { type: "date", value: deadline, onChange: (e) => setDeadline(e.target.value) })),
             React.createElement(Field, { label: tr("Нотатка (необовʼязково)") },
-                React.createElement(Input, { value: note, onChange: (e) => setNote(e.target.value) })),
+                React.createElement(Input, { clearable: true, value: note, onChange: (e) => setNote(e.target.value) })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти") : tr("Створити ціль")),
             isEdit && (confirmDel ? (React.createElement("div", { className: "flex items-center justify-between mt-3 text-sm" },
                 React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Видалити ціль?")),
@@ -7406,7 +7425,7 @@ window.__K3_START = function () {
             React.createElement(Field, { label: tr("Дата") },
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Field, { label: tr("Нотатка (необовʼязково)") },
-                React.createElement(Input, { value: note, onChange: (e) => setNote(e.target.value) })),
+                React.createElement(Input, { clearable: true, value: note, onChange: (e) => setNote(e.target.value) })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, mode === "buy" ? tr("Купити") : tr("Продати")),
             picker && React.createElement(CoinPicker, { selected: coin, onPick: (x) => { setCoin(x); setPicker(false); setError(""); }, onClose: () => setPicker(false) })));
     }
@@ -7443,7 +7462,7 @@ window.__K3_START = function () {
                     " ",
                     tr("Перейменувати")),
                 ren && (React.createElement("div", { className: "flex gap-2" },
-                    React.createElement(Input, { value: name, onChange: (e) => setName(e.target.value), autoFocus: true }),
+                    React.createElement(Input, { clearable: true, value: name, onChange: (e) => setName(e.target.value), autoFocus: true }),
                     React.createElement(Button, { type: "button", onClick: () => { if (name.trim()) {
                             renameCryptoWallet(wid, name.trim());
                             setRen(false);
@@ -7491,7 +7510,7 @@ window.__K3_START = function () {
                     React.createElement("option", { value: "" }, tr("Основний")),
                     (cryptoWallets || []).map((w) => React.createElement("option", { key: w.id, value: w.id }, w.name)))),
             React.createElement(Field, { label: tr("Нотатка (необовʼязково)") },
-                React.createElement(Input, { value: note, onChange: (e) => setNote(e.target.value) })),
+                React.createElement(Input, { clearable: true, value: note, onChange: (e) => setNote(e.target.value) })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти") : tr("Додати")),
             isEdit && (confirmDel ? (React.createElement("div", { className: "flex items-center justify-between mt-3 text-sm" },
                 React.createElement("span", { style: { color: "var(--text-dim)" } }, tr("Видалити актив?")),
@@ -8029,7 +8048,7 @@ window.__K3_START = function () {
                         (projects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))),
                         addProject && React.createElement("option", { value: "__new__" }, tr("+ Новий проєкт…"))),
                     impPrjNew && (React.createElement("div", { className: "flex gap-2 mt-2" },
-                        React.createElement(Input, { value: impPrjName, onChange: (e) => setImpPrjName(e.target.value), placeholder: tr("Назва проєкту"), autoFocus: true }),
+                        React.createElement(Input, { clearable: true, value: impPrjName, onChange: (e) => setImpPrjName(e.target.value), placeholder: tr("Назва проєкту"), autoFocus: true }),
                         React.createElement(Button, { type: "button", onClick: () => { const nm = impPrjName.trim(); if (!nm)
                                 return; const created = addProject({ name: nm, icon: "Home", color: "#6683B4" }); if (created)
                                 setImpProject(created.id); setImpPrjNew(false); setImpPrjName(""); } },
@@ -8072,7 +8091,7 @@ window.__K3_START = function () {
                             React.createElement("span", { className: "text-xs shrink-0", style: { color: "var(--text-dim)" } }, (r.amount >= 0 ? tr("Списано") : tr("Зараховано")) + " (" + oth.currency + ")"),
                             React.createElement(Input, { type: "number", step: "0.01", value: r.otherAmt || "", onChange: (e) => setRow(r.key, { otherAmt: e.target.value }) })); })(),
                         !r.asTransfer && (r.creating ? (React.createElement("div", { className: "flex items-center gap-2" },
-                            React.createElement(Input, { value: r.newName, onChange: (e) => setRow(r.key, { newName: e.target.value }), placeholder: tr("Назва категорії"), autoFocus: true }),
+                            React.createElement(Input, { clearable: true, value: r.newName, onChange: (e) => setRow(r.key, { newName: e.target.value }), placeholder: tr("Назва категорії"), autoFocus: true }),
                             React.createElement(Button, { variant: "secondary", onClick: () => createCategoryInline(r), disabled: !String(r.newName || "").trim() }, tr("Створити")),
                             React.createElement("button", { onClick: () => setRow(r.key, { creating: false }), className: "p-1.5 shrink-0", style: { color: "var(--text-dim)" } },
                                 React.createElement(X, { size: 14 })))) : (React.createElement(Select, { value: r.categoryId || "", onChange: (e) => { const v = e.target.value; if (v === "__new__")
@@ -8313,9 +8332,9 @@ window.__K3_START = function () {
                 React.createElement(Button, { variant: "secondary", onClick: signOut }, tr("Вийти з акаунта")))) : (React.createElement("div", null,
                 React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Увійдіть, щоб синхронізувати дані між своїми пристроями. На новому пристрої увійдіть тим самим акаунтом — дані підтягнуться.")),
                 React.createElement(Field, { label: "Email" },
-                    React.createElement(Input, { type: "email", value: email, onChange: (e) => { setEmail(e.target.value); setAuthErr(""); }, placeholder: "you@example.com" })),
+                    React.createElement(Input, { clearable: true, type: "email", value: email, onChange: (e) => { setEmail(e.target.value); setAuthErr(""); }, placeholder: "you@example.com" })),
                 React.createElement(Field, { label: tr("Пароль"), error: authErr },
-                    React.createElement(Input, { type: "password", value: password, onChange: (e) => { setPassword(e.target.value); setAuthErr(""); }, placeholder: tr("мінімум 6 символів") })),
+                    React.createElement(Input, { clearable: true, type: "password", value: password, onChange: (e) => { setPassword(e.target.value); setAuthErr(""); }, placeholder: tr("мінімум 6 символів") })),
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement(Button, { onClick: signIn, disabled: authBusy, className: "flex-1" }, tr("Увійти")),
                     React.createElement(Button, { variant: "secondary", onClick: signUp, disabled: authBusy, className: "flex-1" }, tr("Створити акаунт")))))),
@@ -8345,9 +8364,9 @@ window.__K3_START = function () {
                         React.createElement(Button, { variant: "secondary", onClick: removePin }, tr("Вимкнути"))))) : pinMode ? (React.createElement("div", null,
                     React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Придумайте код із 4–6 цифр.")),
                     React.createElement(Field, { label: tr("Новий PIN") },
-                        React.createElement(Input, { type: "password", inputMode: "numeric", maxLength: 6, value: pin1, onChange: (e) => { setPin1(e.target.value.replace(/\D/g, "")); setPinErr(""); }, placeholder: "\u2022\u2022\u2022\u2022" })),
+                        React.createElement(Input, { clearable: true, type: "password", inputMode: "numeric", maxLength: 6, value: pin1, onChange: (e) => { setPin1(e.target.value.replace(/\D/g, "")); setPinErr(""); }, placeholder: "\u2022\u2022\u2022\u2022" })),
                     React.createElement(Field, { label: tr("Повторіть PIN"), error: pinErr },
-                        React.createElement(Input, { type: "password", inputMode: "numeric", maxLength: 6, value: pin2, onChange: (e) => { setPin2(e.target.value.replace(/\D/g, "")); setPinErr(""); }, placeholder: "\u2022\u2022\u2022\u2022" })),
+                        React.createElement(Input, { clearable: true, type: "password", inputMode: "numeric", maxLength: 6, value: pin2, onChange: (e) => { setPin2(e.target.value.replace(/\D/g, "")); setPinErr(""); }, placeholder: "\u2022\u2022\u2022\u2022" })),
                     React.createElement("div", { className: "flex gap-2" },
                         React.createElement(Button, { onClick: savePinCode, className: "flex-1" }, tr("Зберегти")),
                         React.createElement(Button, { variant: "secondary", onClick: () => { setPinMode(false); setPinErr(""); } }, tr("Скасувати"))))) : (React.createElement("div", null,
@@ -8454,7 +8473,7 @@ window.__K3_START = function () {
                 React.createElement(Button, { onClick: save, className: "mt-4" }, tr("Зберегти налаштування"))),
             React.createElement(SettingsSection, { icon: HelpCircle, title: React.createElement(React.Fragment, null, tr("Зворотний зв'язок")), open: openSec === "sec10", onToggle: () => setOpenSec(openSec === "sec10" ? "" : "sec10") },
                 React.createElement("p", { className: "text-xs mb-3", style: { color: "var(--text-dim)" } }, tr("Поділіться побажанням, ідеєю чи повідомте про проблему — ми будемо вдячні за ваш відгук.")),
-                React.createElement(Textarea, { rows: 3, value: feedback, onChange: (e) => setFeedback(e.target.value), placeholder: tr("Ваш відгук або побажання…") }),
+                React.createElement(Textarea, { clearable: true, rows: 3, value: feedback, onChange: (e) => setFeedback(e.target.value), placeholder: tr("Ваш відгук або побажання…") }),
                 React.createElement(Button, { className: "mt-2", onClick: sendFeedback, disabled: !feedback.trim() },
                     React.createElement(ArrowUpRight, { size: 15 }),
                     " ",
@@ -8712,7 +8731,7 @@ window.__K3_START = function () {
         };
         return (React.createElement(Modal, { title: existing && existing.id ? tr("Редагувати проєкт") : tr("Новий проєкт"), onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Назва проєкту"), error: error },
-                React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); }, placeholder: tr("напр. Квартира") })),
+                React.createElement(Input, { clearable: true, value: name, onChange: (e) => { setName(e.target.value); setError(""); }, placeholder: tr("напр. Квартира") })),
             React.createElement("div", { className: "block mb-3" },
                 React.createElement("span", { className: "block text-xs font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Іконка")),
                 React.createElement("div", { className: "grid grid-cols-8 gap-2 max-h-28 overflow-y-auto p-1.5 rounded-lg", style: { background: "var(--surface)", border: "1px solid var(--border)" } }, ICON_CHOICES.map((k) => (React.createElement("button", { type: "button", key: k, onClick: () => setIcon(k), className: "w-8 h-8 rounded-lg flex items-center justify-center", style: { background: icon === k ? "var(--accent)" : "var(--surface2)" } },
@@ -8849,7 +8868,7 @@ window.__K3_START = function () {
                 React.createElement("button", { type: "button", onClick: () => setKind("income"), className: "py-2 rounded-lg text-xs font-medium", style: { background: kind === "income" ? "var(--accent)" : "var(--surface2)", color: kind === "income" ? "var(--accent-ink)" : "var(--text)" } }, tr("Дохід")),
                 React.createElement("button", { type: "button", "data-reckind-tr": "1", onClick: () => setKind("transfer"), className: "py-2 rounded-lg text-xs font-medium", style: { background: kind === "transfer" ? "var(--surface)" : "var(--surface2)", border: kind === "transfer" ? "1px solid var(--accent)" : "1px solid transparent", color: "var(--text)" } }, tr("Переказ"))),
             React.createElement(Field, { label: tr("Назва / опис") },
-                React.createElement(Input, { value: title, onChange: (e) => setTitle(e.target.value), placeholder: tr("напр. Комуналка") })),
+                React.createElement(Input, { clearable: true, value: title, onChange: (e) => setTitle(e.target.value), placeholder: tr("напр. Комуналка") })),
             React.createElement(Field, { label: tr("Режим") },
                 React.createElement("div", { className: "grid grid-cols-2 gap-2" },
                     React.createElement("button", { type: "button", onClick: () => setMode("fixed"), className: "py-2 rounded-lg text-xs font-medium", style: { background: mode === "fixed" ? "var(--accent)" : "var(--surface2)", color: mode === "fixed" ? "var(--accent-ink)" : "var(--text)" } }, tr("Фіксована сума")),
@@ -9147,7 +9166,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                             React.createElement("div", { className: "w-20 shrink-0" },
                                 React.createElement(Select, { value: currency, onChange: (e) => setCurrency(e.target.value) }, (currencies || CURRENCIES).map((c) => React.createElement("option", { key: c, value: c }, c)))))),
                     React.createElement(Field, { label: tr("Коментар") },
-                        React.createElement(Textarea, { rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково") })),
+                        React.createElement(Textarea, { clearable: true, rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково") })),
                     React.createElement("div", { className: "flex gap-2 mt-1" },
                         React.createElement(Button, { onClick: submit, className: "flex-1" }, editing === "new" ? tr("Створити") : tr("Зберегти")),
                         React.createElement(Button, { variant: "secondary", onClick: cancel }, tr("Скасувати"))))) : (React.createElement(Button, { onClick: openNew, className: "w-full" },
@@ -9395,7 +9414,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         };
         return (React.createElement(Modal, { title: tr("Перейменувати банк"), onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Назва банку"), error: error },
-                React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); } })),
+                React.createElement(Input, { clearable: true, value: name, onChange: (e) => { setName(e.target.value); setError(""); } })),
             React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--text-dim)" } }, tr("Нова назва застосується до всіх рахунків цього банку.")),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, tr("Зберегти"))));
     }
@@ -9426,9 +9445,9 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         };
         return (React.createElement(Modal, { title: existing ? tr("Редагувати рахунок") : tr("Новий рахунок"), onClose: onClose, onBack: onBack },
             React.createElement(Field, { label: tr("Назва"), error: error },
-                React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); }, placeholder: tr("Напр. Чорна картка") })),
+                React.createElement(Input, { clearable: true, value: name, onChange: (e) => { setName(e.target.value); setError(""); }, placeholder: tr("Напр. Чорна картка") })),
             React.createElement(Field, { label: bankRequired ? tr("Банк") : tr("Банк (необовʼязково) — для групування"), error: bankError },
-                React.createElement(Input, { value: bank, onChange: (e) => { setBank(e.target.value); setBankError(""); }, onFocus: () => setBankFocus(true), onBlur: () => setTimeout(() => setBankFocus(false), 150), placeholder: tr("Напр. Монобанк, ПриватБанк") }),
+                React.createElement(Input, { clearable: true, value: bank, onChange: (e) => { setBank(e.target.value); setBankError(""); }, onFocus: () => setBankFocus(true), onBlur: () => setTimeout(() => setBankFocus(false), 150), placeholder: tr("Напр. Монобанк, ПриватБанк") }),
                 (() => {
                     if (!bankFocus)
                         return null;
@@ -9447,7 +9466,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             !existing && (React.createElement(React.Fragment, null,
                 React.createElement("p", { className: "text-xs mb-2 mt-1", style: { color: "var(--text-dim)" } }, tr("Створимо перший валютний субрахунок. Інші валюти можна додати пізніше.")),
                 React.createElement(Field, { label: tr("Назва субрахунку (необовʼязково)") },
-                    React.createElement(Input, { value: pocketName, onChange: (e) => setPocketName(e.target.value), placeholder: tr("Напр. Основний") })),
+                    React.createElement(Input, { clearable: true, value: pocketName, onChange: (e) => setPocketName(e.target.value), placeholder: tr("Напр. Основний") })),
                 React.createElement(Field, { label: tr("Валюта") },
                     React.createElement(Select, { value: currency, onChange: (e) => setCurrency(e.target.value) }, (currencies || CURRENCIES).map((c) => React.createElement("option", { key: c, value: c }, c)))),
                 React.createElement(Field, { label: tr("Початковий баланс") },
@@ -9542,7 +9561,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     React.createElement(Icon, { name: k, size: 22, style: { color: icon === k ? "#08110D" : "var(--text-dim)" } }))))),
                 tab === "emoji" && React.createElement(React.Fragment, null,
                     React.createElement("div", { className: "flex gap-2 items-center" },
-                        React.createElement(Input, { value: custom, onChange: (e) => setCustom(e.target.value), placeholder: tr("Свій емоджі з клавіатури…"), maxLength: 4 }),
+                        React.createElement(Input, { clearable: true, value: custom, onChange: (e) => setCustom(e.target.value), placeholder: tr("Свій емоджі з клавіатури…"), maxLength: 4 }),
                         React.createElement(Button, { variant: "secondary", disabled: !custom.trim(), onClick: () => { const em = custom.trim(); pick(em, true); setCustom(""); } }, tr("Обрати"))),
                     React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, tr("Мемоджі та стікери з фото не підтримуються — лише стандартні емоджі.")),
                     React.createElement("div", { className: "max-h-56 overflow-y-auto p-0.5 space-y-2" },
@@ -9588,7 +9607,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         };
         return (React.createElement(Modal, { title: isEdit ? tr("Редагувати категорію") : tr("Нова категорія"), onClose: onClose },
             React.createElement(Field, { label: tr("Назва"), error: error },
-                React.createElement(Input, { value: name, onChange: (e) => { setName(e.target.value); setError(""); } })),
+                React.createElement(Input, { clearable: true, value: name, onChange: (e) => { setName(e.target.value); setError(""); } })),
             React.createElement(Field, { label: tr("Тип") },
                 React.createElement(Select, { value: effType, onChange: (e) => setType(e.target.value), disabled: isEdit || !!parentId },
                     React.createElement("option", { value: "expense" }, tr("Витрата")),
@@ -9770,7 +9789,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                             React.createElement("span", { className: "text-xs font-medium", style: { color: "var(--text-dim)" } }, newCatEditId ? tr("Редагувати підкатегорію") : (newCatParent ? tr("Нова підкатегорія") : tr("Нова категорія"))),
                             React.createElement("button", { type: "button", "aria-label": tr("Скасувати"), onClick: () => { setNewCatMode(false); setNewCatEditId(null); }, className: "p-1.5 shrink-0 -mr-1", style: { color: "var(--text-dim)" } },
                                 React.createElement(X, { size: 14 }))),
-                        React.createElement(Input, { value: newCatName, onChange: (e) => setNewCatName(e.target.value), placeholder: tr("Назва категорії"), autoFocus: true }),
+                        React.createElement(Input, { clearable: true, value: newCatName, onChange: (e) => setNewCatName(e.target.value), placeholder: tr("Назва категорії"), autoFocus: true }),
                         React.createElement("div", { className: "mt-2 p-2 rounded-xl", style: { background: "var(--bg)", border: "1px solid var(--border)" } },
                             React.createElement(IconPickerField, { icon: newCatIcon, setIcon: setNewCatIcon, customEmojis: customEmojis, onCustomEmoji: addCustomEmoji })),
                         React.createElement("div", { className: "mt-2 flex items-center gap-2" },
@@ -9943,7 +9962,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     (projects || []).filter((x) => !x.archived).map((x) => React.createElement("option", { key: x.id, value: x.id }, tr(x.name))),
                     addProject && React.createElement("option", { value: "__new__" }, tr("+ Новий проєкт…"))),
                 prjNew && (React.createElement("div", { className: "flex gap-2 mt-2" },
-                    React.createElement(Input, { value: prjName, onChange: (e) => setPrjName(e.target.value), placeholder: tr("Назва проєкту"), autoFocus: true }),
+                    React.createElement(Input, { clearable: true, value: prjName, onChange: (e) => setPrjName(e.target.value), placeholder: tr("Назва проєкту"), autoFocus: true }),
                     React.createElement(Button, { type: "button", onClick: () => { const nm = prjName.trim(); if (!nm)
                             return; const created = addProject({ name: nm, icon: "Home", color: "#6683B4" }); if (created)
                             setProjectId(created.id); setPrjNew(false); setPrjName(""); } },
@@ -10127,7 +10146,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             !creating && React.createElement("button", { type: "button", onClick: () => setCreating(true), className: "text-xs font-medium mb-3", style: { color: "var(--accent-text, var(--accent))" } }, "+ ", tr("Створити новий рахунок")),
             creating && React.createElement("div", { className: "rounded-xl p-3 mb-3 space-y-2", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
                 React.createElement("div", { className: "flex gap-2" },
-                    React.createElement(Input, { className: "flex-1", value: newName, onChange: (e) => setNewName(e.target.value), placeholder: tr("Назва рахунку") }),
+                    React.createElement(Input, { clearable: true, className: "flex-1", value: newName, onChange: (e) => setNewName(e.target.value), placeholder: tr("Назва рахунку") }),
                     React.createElement("select", { value: newCur, onChange: (e) => setNewCur(e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" } }, ALL_CURRENCIES.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))),
                 React.createElement("div", { className: "flex gap-2" },
                     React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => setCreating(false) }, tr("Скасувати")),
@@ -10138,7 +10157,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             React.createElement(Field, { label: tr("Дата") },
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Field, { label: tr("Нотатка") },
-                React.createElement(Input, { value: note, onChange: (e) => setNote(e.target.value) })),
+                React.createElement(Input, { clearable: true, value: note, onChange: (e) => setNote(e.target.value) })),
             React.createElement(Button, { className: "w-full", onClick: submit }, tr("Зберегти"))));
     }
     // History duplicate scan: same amount twice within a month — pick which record to drop.
@@ -10431,7 +10450,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         };
         return (React.createElement(Modal, { title: isIn ? tr("Додати борг (я винен)") : tr("Надати позику"), onClose: onClose },
             React.createElement(Field, { label: isIn ? tr("Кому ви винні") : tr("Ім'я / назва позичальника"), error: error },
-                React.createElement(Input, { value: borrower, onChange: (e) => { setBorrower(e.target.value); setError(""); }, placeholder: isIn ? tr("Напр. Банк / Андрій") : tr("Напр. Олег К.") })),
+                React.createElement(Input, { clearable: true, value: borrower, onChange: (e) => { setBorrower(e.target.value); setError(""); }, placeholder: isIn ? tr("Напр. Банк / Андрій") : tr("Напр. Олег К.") })),
             React.createElement(Field, { label: isIn ? tr("Рахунок, куди надійшли кошти") : tr("Рахунок, з якого видано кошти") },
                 React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: pocketId, onChange: setPocketId, tint: isIn ? "in" : "out", pocketBalance: pocketBalance })),
             React.createElement(Field, { label: `Сума (${currency})` },
@@ -10441,7 +10460,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             React.createElement(Field, { label: isIn ? tr("Термін сплати") : tr("Очікувана дата повернення") },
                 React.createElement(Input, { type: "date", value: dueDate, onChange: (e) => setDueDate(e.target.value) })),
             React.createElement(Field, { label: tr("Коментар / домовленість") },
-                React.createElement(Textarea, { rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково") })),
+                React.createElement(Textarea, { clearable: true, rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково") })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isIn ? tr("Додати борг") : tr("Надати позику"))));
     }
     /* ---------- Loan Edit Modal ---------- */
@@ -10473,7 +10492,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             React.createElement(Field, { label: tr("Дата повернення") },
                 React.createElement(Input, { type: "date", value: dueDate, onChange: (e) => setDueDate(e.target.value) })),
             React.createElement(Field, { label: tr("Коментар / домовленість") },
-                React.createElement(Textarea, { rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково") })),
+                React.createElement(Textarea, { clearable: true, rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково") })),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, tr("Зберегти"))));
     }
     /* ---------- Loan Return Modal ---------- */
@@ -10603,7 +10622,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             addCrypto({ coinId: r.id, symbol: r.symbol, name: r.name, amount: 0 }); setCoinId(r.id); setCoinNew(false); setCoinQ(""); setCoinRes([]); const sym = String(r.symbol || "").toUpperCase(); if (sym === String(loan.currency).toUpperCase() && coinNum > 0)
             setAmount(String(coinNum)); };
         const coinSearchBlock = (React.createElement("div", { className: "mb-3" },
-            React.createElement(Input, { value: coinQ, onChange: (e) => setCoinQ(e.target.value), placeholder: tr("Пошук монети (напр., USDT)"), autoFocus: true }),
+            React.createElement(Input, { clearable: true, value: coinQ, onChange: (e) => setCoinQ(e.target.value), placeholder: tr("Пошук монети (напр., USDT)"), autoFocus: true }),
             coinBusy && React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Шукаю…")),
             coinList.length > 0 && (React.createElement("div", { className: "flex flex-wrap gap-1.5 mt-2" }, coinList.map((r) => (React.createElement("button", { key: r.id, type: "button", onClick: () => pickCoin(r), className: "px-2.5 py-1.5 rounded-full text-xs", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } },
                 r.symbol,
@@ -11070,5 +11089,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-23.4");</script></body>
+<script>console.log("K³ build: 2026-09-23.5");</script></body>
 </html>
