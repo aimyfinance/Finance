@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-23.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-24.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -661,6 +661,19 @@ window.__K3_START = function () {
         GraduationCap, PartyPopper, Gift, Home, Zap, MoreHorizontal, Briefcase, Building2,
         TrendingUp, RotateCcw, Wallet, Landmark, CreditCard, PiggyBank, LineChartIcon, Coins, Smartphone, Camera, Music, BookOpen, Gamepad2, Scissors, Tv, Umbrella, Ticket, Wifi, Coffee, Apple, Wine, Bike, Map, Wrench, Lightbulb, Droplet, Flame, Pill, Glasses, Baby, PawPrint, Gem, Trophy, Percent, Package, Globe, Key, Palette, Scale, Shield, Headphones, Laptop
     };
+    // Глифи офлайн-набору, яких нема серед іменованих імпортів — реєструємо,
+    // щоб бібліотека іконок не показувала «•••»-заглушки замість них.
+    try {
+        K3_GLYPH_NAMES.forEach(function (gk) {
+            if (!(gk in ICONS)) {
+                const node = _iconMap[gk.toLowerCase().replace(/[^a-z0-9]/g, "")];
+                if (node)
+                    ICONS[gk] = _mkIcon(node);
+            }
+        });
+    }
+    catch (e) { }
+
     const ICON_HIDE = { X: 1, Plus: 1, Minus: 1, Check: 1, ChevronDown: 1, ChevronRight: 1, ChevronLeft: 1, ChevronUp: 1, Edit3: 1, Trash2: 1, Search: 1, Filter: 1, GripVertical: 1, AlertTriangle: 1, LayoutDashboard: 1, Settings: 1, History: 1, Lock: 1, ArrowDownRight: 1, ArrowUpRight: 1, ArrowLeftRight: 1, RefreshCw: 1 };
     const ICON_HIDE_EXTRA = { Play: 1, Pause: 1, Sun: 1, Moon: 1, Bell: 1, Eye: 1, EyeOff: 1, HelpCircle: 1, Info: 1, LogOut: 1, Save: 1, Menu: 1, Copy: 1, Download: 1, Upload: 1, Loader: 1, Loader2: 1, MoreVertical: 1, ExternalLink: 1, Maximize2: 1, Minimize2: 1 };
     const ICON_CHOICES = [
@@ -2781,7 +2794,7 @@ window.__K3_START = function () {
             const { clearable, className, ...restC } = props;
             const clsIn = `w-full min-w-0 max-w-full box-border rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition`;
             const hasVal = String(props.value == null ? "" : props.value).length > 0;
-            return React.createElement("span", { className: `relative block ${className || ""}` },
+            return React.createElement("span", { className: `relative block w-full min-w-0 ${className || ""}` },
                 React.createElement("input", { ...restC, style: { ...st, paddingRight: "2.25rem" }, className: clsIn }),
                 hasVal && React.createElement("button", { type: "button", "data-clearx": "1", "aria-label": tr("Очистити"), tabIndex: -1, onMouseDown: (e) => e.preventDefault(), onClick: () => { if (props.onChange) props.onChange({ target: { value: "" } }); }, className: "absolute flex items-center justify-center rounded-full", style: { right: "0.5rem", top: "50%", transform: "translateY(-50%)", width: "1.375rem", height: "1.375rem", background: "var(--surface2)", color: "var(--text-dim)" } },
                     React.createElement(X, { size: 12 })));
@@ -2795,7 +2808,7 @@ window.__K3_START = function () {
         if (props.clearable && !props.disabled) {
             const { clearable, className, ...restC } = props;
             const hasVal = String(props.value == null ? "" : props.value).length > 0;
-            return React.createElement("span", { className: `relative block ${className || ""}` },
+            return React.createElement("span", { className: `relative block w-full min-w-0 ${className || ""}` },
                 React.createElement("textarea", { ...restC, style: { ...inputStyle(), paddingRight: "2.25rem" }, className: "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition resize-none" }),
                 hasVal && React.createElement("button", { type: "button", "data-clearx": "1", "aria-label": tr("Очистити"), tabIndex: -1, onMouseDown: (e) => e.preventDefault(), onClick: () => { if (props.onChange) props.onChange({ target: { value: "" } }); }, className: "absolute flex items-center justify-center rounded-full", style: { right: "0.5rem", top: "0.5rem", width: "1.375rem", height: "1.375rem", background: "var(--surface2)", color: "var(--text-dim)" } },
                     React.createElement(X, { size: 12 })));
@@ -11089,5 +11102,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-23.5");</script></body>
+<script>console.log("K³ build: 2026-09-24.1");</script></body>
 </html>
