@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-24.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-27.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -9669,6 +9669,8 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             }
         }, [txCur, pocketId]);
         const [categoryId, setCategoryId] = useState(editing?.categoryId || P.presetCategoryId || cats[0]?.id || "");
+        // Автопідбір категорії з опису вимикається, щойно користувач обрав категорію сам
+        const catTouchedRef = React.useRef(!!(editing || P.presetCategoryId || P.presetNote));
         const [flagged, setFlagged] = useState(!!(editing && editing.flagged));
         const [planOn, setPlanOn] = useState(false);
 
@@ -9739,6 +9741,49 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             });
             return Object.values(m);
         }, [transactions, kindEff]);
+        // Опис → категорія/підкатегорія: 1) власна історія (той самий опис),
+        // 2) назва категорії згадана в описі, 3) словник мерчантів імпорту.
+        useEffect(() => {
+            if (editing || catTouchedRef.current)
+                return;
+            const q = searchFold(note.trim());
+            if (q.length < 3)
+                return;
+            const all = categories.filter((c) => c.type === kindEff && !c.archived);
+            const valid = (id) => !!id && all.some((c) => c.id === id);
+            let best = null;
+            noteSugg.forEach((sg) => {
+                const f = searchFold(sg.note);
+                if (!(f === q || f.indexOf(q) === 0 || q.indexOf(f) === 0))
+                    return;
+                if (!valid(sg.categoryId))
+                    return;
+                if (!best || sg.count > best.count || (sg.count === best.count && (sg.last || "") > (best.last || "")))
+                    best = sg;
+            });
+            if (best) {
+                setCategoryId(best.categoryId);
+                return;
+            }
+            for (let ci = 0; ci < all.length; ci++) {
+                const fu = searchFold(tr(all[ci].name));
+                const fr = searchFold(all[ci].name);
+                if ((fu.length >= 4 && q.indexOf(fu) !== -1) || (fr.length >= 4 && q.indexOf(fr) !== -1)) {
+                    setCategoryId(all[ci].id);
+                    return;
+                }
+            }
+            for (let ki = 0; ki < IMPORT_KEYWORDS.length; ki++) {
+                const kw = searchFold(IMPORT_KEYWORDS[ki][0]);
+                if (kw && q.indexOf(kw) !== -1) {
+                    const cat = all.find((x) => x.name === IMPORT_KEYWORDS[ki][1]);
+                    if (cat) {
+                        setCategoryId(cat.id);
+                        return;
+                    }
+                }
+            }
+        }, [note, kindEff]);
         const selCatRaw = categories.find((c) => c.id === categoryId) || null;
         const selParent = selCatRaw && selCatRaw.parentId ? categories.find((c) => c.id === selCatRaw.parentId) : null;
         const selCat = selCatRaw;
@@ -9778,6 +9823,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 return;
             if (newCatEditId) {
                 editCategory && editCategory(newCatEditId, { name, icon: newCatIcon || "MoreHorizontal", parentId: newCatParent || null });
+                catTouchedRef.current = true;
                 setCategoryId(newCatEditId);
                 setNewCatEditId(null);
                 setNewCatMode(false);
@@ -9789,6 +9835,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             }
             const created = addCategory && addCategory({ name, type: kindEff, icon: newCatIcon || "MoreHorizontal", color: CAT_COLORS[categories.length % CAT_COLORS.length], parentId: newCatParent || null, budget: null });
             if (created && created.id) {
+                catTouchedRef.current = true;
                 setCategoryId(created.id);
                 setNewCatMode(false);
                 setNewCatName("");
@@ -9893,7 +9940,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     React.createElement("option", { value: "expense" }, tr("Витрата")),
                     React.createElement("option", { value: "transfer" }, tr("Переказ між рахунками")))),
             !editing && React.createElement(Field, { label: tr("Тип операції") },
-                React.createElement(Select, { "data-kindsw": "1", value: kindEff, onChange: (e) => { const v = e.target.value; if (v !== kindEff) { setKindL(v); const first = (categories || []).find((c) => c.type === v && !c.archived && !c.parentId); setCategoryId(first ? first.id : ""); setError(""); } } },
+                React.createElement(Select, { "data-kindsw": "1", value: kindEff, onChange: (e) => { const v = e.target.value; if (v !== kindEff) { setKindL(v); catTouchedRef.current = false; const first = (categories || []).find((c) => c.type === v && !c.archived && !c.parentId); setCategoryId(first ? first.id : ""); setError(""); } } },
                     React.createElement("option", { value: "expense" }, tr("Витрата")),
                     React.createElement("option", { value: "income" }, tr("Дохід")))),
             React.createElement(Field, { label: tr("Сума"), error: error },
@@ -9924,8 +9971,10 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                         .slice(0, 6);
                     if (!list.length)
                         return null;
-                    return (React.createElement("div", { className: "flex flex-wrap gap-1.5 mt-1.5" }, list.map((s) => (React.createElement("button", { type: "button", key: s.note, onClick: () => { setNote(s.note); if (s.categoryId && cats.some((cc) => cc.id === s.categoryId))
-                            setCategoryId(s.categoryId); if (s.projectId && (projects || []).some((pp) => pp.id === s.projectId)) {
+                    return (React.createElement("div", { className: "flex flex-wrap gap-1.5 mt-1.5" }, list.map((s) => (React.createElement("button", { type: "button", key: s.note, onClick: () => { setNote(s.note); if (s.categoryId && categories.some((cc) => cc.id === s.categoryId && cc.type === kindEff && !cc.archived)) {
+                            catTouchedRef.current = true;
+                            setCategoryId(s.categoryId);
+                        } if (s.projectId && (projects || []).some((pp) => pp.id === s.projectId)) {
                             setProjectId(s.projectId);
                             setPrjNew(false);
                         } }, className: "px-2.5 py-1 rounded-full text-xs", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, s.note)))));
@@ -9945,8 +9994,8 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     const kids = catChildrenOf(categories, root.id);
                     return React.createElement("div", { className: "mt-2" },
                         React.createElement("div", { className: "flex flex-wrap gap-1.5" },
-                            kids.length > 0 && React.createElement("button", { type: "button", onClick: () => { setCategoryId(root.id); setError(""); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-medium", style: { background: categoryId === root.id ? "var(--accent)" : "var(--surface2)", color: categoryId === root.id ? "var(--accent-ink)" : "var(--text)" } }, tr("Загальна")),
-                            kids.map((k) => (React.createElement("button", { type: "button", key: k.id, "data-subchip": k.id, onClick: () => { setCategoryId(k.id); setError(""); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1", style: { background: categoryId === k.id ? "var(--accent)" : "var(--surface2)", color: categoryId === k.id ? "var(--accent-ink)" : "var(--text)" } },
+                            kids.length > 0 && React.createElement("button", { type: "button", onClick: () => { catTouchedRef.current = true; setCategoryId(root.id); setError(""); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-medium", style: { background: categoryId === root.id ? "var(--accent)" : "var(--surface2)", color: categoryId === root.id ? "var(--accent-ink)" : "var(--text)" } }, tr("Загальна")),
+                            kids.map((k) => (React.createElement("button", { type: "button", key: k.id, "data-subchip": k.id, onClick: () => { catTouchedRef.current = true; setCategoryId(k.id); setError(""); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1", style: { background: categoryId === k.id ? "var(--accent)" : "var(--surface2)", color: categoryId === k.id ? "var(--accent-ink)" : "var(--text)" } },
                                 React.createElement(Icon, { name: k.icon, size: 12, style: { color: categoryId === k.id ? "var(--accent-ink)" : k.color } }),
                                 tr(k.name)))),
                             selCatRaw && selCatRaw.parentId && !newCatMode && React.createElement("button", { type: "button", "data-subedit": selCatRaw.id, "aria-label": tr("Редагувати підкатегорію"), onClick: () => { setNewCatEditId(selCatRaw.id); setNewCatMode(true); setNewCatName(selCatRaw.name); setNewCatIcon(selCatRaw.icon || "MoreHorizontal"); setNewCatParent(selCatRaw.parentId); }, className: "px-2 py-1.5 rounded-lg", style: { background: "var(--surface2)", color: "var(--text-dim)" } },
@@ -9956,7 +10005,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                                 kids.length > 0 ? tr("Нова") : tr("Підкатегорія"))));
                 })(), renderQuickCatCreator())) : (React.createElement("div", null,
                     React.createElement("div", { className: "grid grid-cols-4 gap-2" },
-                        cats.map((c) => { const kids = catChildrenOf(categories, c.id); const active = categoryId === c.id || (selCatRaw && selCatRaw.parentId === c.id); return (React.createElement("button", { type: "button", key: c.id, onClick: () => { setCategoryId(c.id); setError(""); setCatOpen(false); }, className: "flex flex-col items-center gap-1 p-2 rounded-xl", style: { background: active ? "var(--surface2)" : "transparent", border: active ? `1px solid ${c.color}` : "1px solid var(--border)" } },
+                        cats.map((c) => { const kids = catChildrenOf(categories, c.id); const active = categoryId === c.id || (selCatRaw && selCatRaw.parentId === c.id); return (React.createElement("button", { type: "button", key: c.id, onClick: () => { catTouchedRef.current = true; setCategoryId(c.id); setError(""); setCatOpen(false); }, className: "flex flex-col items-center gap-1 p-2 rounded-xl", style: { background: active ? "var(--surface2)" : "transparent", border: active ? `1px solid ${c.color}` : "1px solid var(--border)" } },
                             React.createElement(Icon, { name: c.icon, size: 16, style: { color: c.color } }),
                             React.createElement("span", { className: "text-[0.625rem] text-center leading-tight", style: { color: "var(--text)" } }, tr(c.name) + (kids.length ? " ›" : "")))); }),
                         React.createElement("button", { type: "button", onClick: () => { setNewCatMode(true); setNewCatName(""); setNewCatIcon("MoreHorizontal"); setNewCatParent(""); }, className: "flex flex-col items-center justify-center gap-1 p-2 rounded-xl", style: { border: "1px dashed var(--border)", color: "var(--text-dim)" } },
@@ -11102,5 +11151,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-24.1");</script></body>
+<script>console.log("K³ build: 2026-09-27.1");</script></body>
 </html>
