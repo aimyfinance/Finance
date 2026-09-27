@@ -351,7 +351,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-27.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-27.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1991,6 +1991,7 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Після операції:": "After this transaction:",
         "Нова підкатегорія": "New subcategory",
         "Підкатегорія": "Subcategory",
         "Ціна": "Price",
@@ -9981,6 +9982,18 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 })()),
             React.createElement(Field, { label: tr("Рахунок") },
                 React.createElement(PocketSelect, { accounts: accounts, pockets: activeTx.filter((pp) => pp.currency === txCur), value: pocketId, onChange: setPocketId, tint: isIncome ? "in" : "out", pocketBalance: pocketBalance })),
+            (() => {
+                // Прогноз залишку на рахунку після цієї операції (живий, від введеної суми).
+                // Ховаємо, коли зараз нічого не проводиться (заплановано / правило без першої оказії).
+                const aP = parseFloat(String(amount).replace(/[\s\u00A0\u202F]/g, "").replace(",", "."));
+                if (!(aP > 0) || !pocketId || !pocketBalance || planOn || (recOn && !recPostNow))
+                    return null;
+                let bal = pocketBalance(pocketId);
+                if (editing && editing.pocketId === pocketId && (editing.type === "income" || editing.type === "expense"))
+                    bal -= (editing.type === "income" ? 1 : -1) * (editing.amount || 0);
+                const after = Math.round((bal + (isIncome ? aP : -aP)) * 100) / 100;
+                return React.createElement("p", { "data-afterbal": "1", className: "text-[0.6875rem] -mt-2 mb-3 text-right", style: { color: after < 0 ? "var(--danger)" : "var(--text-dim)" } }, tr("Після операції:"), " ", fmtMoney(after, txCur));
+            })(),
             React.createElement("div", { className: "block mb-3" },
                 React.createElement("span", { className: "block text-xs font-medium mb-1.5", style: { color: "var(--text-dim)" } }, tr("Категорія")),
                 !catOpen ? (React.createElement(React.Fragment, null, React.createElement("button", { type: "button", onClick: () => setCatOpen(true), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
@@ -10451,9 +10464,31 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                         if (alt)
                             setToPocketId(alt.id);
                     } }, tint: "out", pocketBalance: pocketBalance })),
+            (() => {
+                const aF = parseFloat(String(fromAmount).replace(/[\s\u00A0\u202F]/g, "").replace(",", "."));
+                if (!(aF > 0) || !fromPocketId || !pocketBalance)
+                    return null;
+                let bal = pocketBalance(fromPocketId);
+                if (editing && editing.fromPocketId === fromPocketId)
+                    bal += (editing.fromAmount || 0);
+                const after = Math.round((bal - aF) * 100) / 100;
+                return React.createElement("p", { "data-afterfrom": "1", className: "text-[0.6875rem] -mt-2 mb-3 text-right", style: { color: after < 0 ? "var(--danger)" : "var(--text-dim)" } }, tr("Після операції:"), " ", fmtMoney(after, fromCurrency));
+            })(),
             React.createElement(Field, { label: tr("Рахунок зарахування") },
                 React.createElement(PocketSelect, { accounts: accounts, pockets: active.filter((pp) => pp.currency === (isExchange ? toCur : fromCur)), value: toPocketId, onChange: (v) => { if (v === fromPocketId)
                         setFromPocketId(toPocketId); setToPocketId(v); }, excludePocketId: fromPocketId, tint: "in", pocketBalance: pocketBalance })),
+            (() => {
+                const aF = parseFloat(String(fromAmount).replace(/[\s\u00A0\u202F]/g, "").replace(",", "."));
+                const tV = parseFloat(String(toAmount).replace(/[\s\u00A0\u202F]/g, "").replace(",", "."));
+                const cred = isExchange ? tV : aF;
+                if (!(cred > 0) || !toPocketId || !pocketBalance)
+                    return null;
+                let bal = pocketBalance(toPocketId);
+                if (editing && editing.toPocketId === toPocketId)
+                    bal -= (editing.toAmount || 0);
+                const after = Math.round((bal + cred) * 100) / 100;
+                return React.createElement("p", { "data-afterto": "1", className: "text-[0.6875rem] -mt-2 mb-3 text-right", style: { color: after < 0 ? "var(--danger)" : "var(--text-dim)" } }, tr("Після операції:"), " ", fmtMoney(after, toCurrency));
+            })(),
             React.createElement(Field, { label: tr("Дата") },
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Field, { label: tr("Коментар") },
@@ -11151,5 +11186,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-27.1");</script></body>
+<script>console.log("K³ build: 2026-09-27.2");</script></body>
 </html>
