@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-27.4"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-27.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2916,7 +2916,7 @@ window.__K3_START = function () {
             return false;
         }
     }
-    function SwipeRow({ children, actions, rounded = false }) {
+    function SwipeRow({ children, actions, rounded = false, hoverActs = true }) {
         const [open, setOpen] = useState(false);
         const sx = React.useRef(0), sy = React.useRef(0);
         const axis = React.useRef(null);
@@ -2949,7 +2949,7 @@ window.__K3_START = function () {
         if (!actions || !actions.length)
             return React.createElement(React.Fragment, null, children);
         return (React.createElement("div", { className: `relative overflow-hidden ${rounded ? "rounded-2xl" : ""}`, onTouchStart: onTouchStart, onTouchMove: onTouchMove, onTouchEnd: onTouchEnd, onMouseEnter: fine ? () => setHov(true) : undefined, onMouseLeave: fine ? () => setHov(false) : undefined },
-            fine && hov && !open && React.createElement("div", { "data-hoveracts": "1", className: "absolute inset-y-0 right-2 z-10 flex items-center gap-1.5" }, actions.map((a, i) => {
+            fine && hov && !open && hoverActs && React.createElement("div", { "data-hoveracts": "1", style: { position: "absolute", top: 0, bottom: 0, right: "0.5rem", zIndex: 10, display: "flex", alignItems: "center", gap: "0.375rem" } }, actions.map((a, i) => {
                 const Ic = a.icon;
                 return (React.createElement("button", { key: "h" + i, title: a.label, "aria-label": a.label, onClick: (e) => { e.stopPropagation(); a.onClick(); }, className: "w-8 h-8 rounded-full flex items-center justify-center shadow-sm", style: { background: a.bg, color: a.fg || "#fff" } },
                     React.createElement(Ic, { size: 14 })));
@@ -6434,7 +6434,7 @@ window.__K3_START = function () {
                                 React.createElement(Plus, { size: 14 })),
                             rowDelArm === tx.id ? React.createElement("button", { "data-txdel": tx.id, onClick: () => { setRowDelArm(null); deleteTransaction(tx.id); }, className: "px-2 py-1 rounded-md text-[0.6875rem] font-semibold", style: { background: "var(--danger)", color: "#fff" } }, tr("Видалити?")) : React.createElement("button", { onClick: () => setRowDelArm(tx.id), className: "p-1.5 rounded-lg", style: { color: "var(--danger)" } },
                                 React.createElement(Trash2, { size: 14 }))))));
-                    return selMode ? React.createElement("div", { key: tx.id }, inner) : React.createElement(SwipeRow, { key: tx.id, actions: acts }, inner);
+                    return selMode ? React.createElement("div", { key: tx.id }, inner) : React.createElement(SwipeRow, { key: tx.id, actions: acts, hoverActs: false }, inner);
                 }),
                 filtered.length === 0 && ((filterType === "loan_ops" || filterType === "debt_ops") ? (React.createElement("div", { className: "py-10 px-4 text-center" },
                     React.createElement("p", { className: "text-sm mb-3", style: { color: "var(--text-dim)" } }, tr("За цими зобов'язаннями немає операцій у журналі. Записи позик і боргів живуть окремо від транзакцій — операції могли бути видалені.")),
@@ -9396,7 +9396,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                         React.createElement("input", { "data-opsq": "1", autoFocus: true, value: opsQ, onChange: (e) => setOpsQ(e.target.value), placeholder: tr("Пошук: нотатка, категорія, сума…"), autoComplete: "off", className: "flex-1 min-w-0 bg-transparent outline-none text-sm", style: { color: "var(--text)" } }),
                         opsQ && React.createElement("button", { type: "button", onClick: () => setOpsQ(""), className: "p-1 rounded-full", style: { color: "var(--text-dim)" } }, React.createElement(X, { size: 14 }))),
                     opsOpen && opsQ.trim() && history.length === 0 && React.createElement("p", { className: "px-4 py-4 text-sm", style: { color: "var(--text-dim)" } }, tr("Нічого не знайдено")),
-                    history.map((tx) => (React.createElement(SwipeRow, { key: tx.id, actions: [
+                    history.map((tx) => (React.createElement(SwipeRow, { key: tx.id, hoverActs: false, actions: [
                             ...((tx.type === "income" || tx.type === "expense") ? [{ icon: Edit3, label: tr("Ред."), bg: "var(--surface2)", fg: "#C9A362", onClick: () => setModal({ type: "transaction", payload: { kind: tx.type, editing: tx }, returnTo: { type: "pocketDetail", payload: pid } }) }] : []),
                             { icon: Plus, label: tr("Копія"), bg: "var(--surface2)", fg: "var(--text-dim)", onClick: () => duplicateTransaction(tx) },
                             { icon: Trash2, label: rowDelArm === tx.id ? tr("Точно?") : tr("Видал."), bg: "var(--danger)", fg: "#fff", keepOpen: rowDelArm !== tx.id, onClick: () => { if (rowDelArm === tx.id) { setRowDelArm(null); deleteTransaction(tx.id); } else setRowDelArm(tx.id); } },
@@ -11228,5 +11228,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-27.4");</script></body>
+<script>console.log("K³ build: 2026-09-27.5");</script></body>
 </html>
