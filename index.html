@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-28.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-28.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1992,6 +1992,7 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Додати ще один субрахунок (валюту)": "Add another sub-account (currency)",
         "Основна картка": "Default card",
         "Основна картка — зняти позначку": "Default card — remove mark",
         "Зробити основною карткою": "Set as default card",
@@ -9459,7 +9460,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             label));
         return (React.createElement(Modal, { title: `${tr(acc.name)} · ${pk.currency}`, onClose: onClose, onBack: onBack },
             React.createElement("div", { className: "space-y-0.5" },
-                React.createElement(Row, { icon: ChevronRight, label: tr("Відкрити рахунок"), onClick: () => setModal({ type: "pocketDetail", payload: pocketId }) }),
+                React.createElement(Row, { icon: Plus, label: tr("Додати ще один субрахунок (валюту)"), onClick: () => setModal({ type: "pocket", payload: { accountId: acc.id }, returnTo: returnTo }) }),
                 setDefaultPocket && React.createElement(Row, { icon: Star, label: defaultPocketId === pocketId ? tr("Основна картка — зняти позначку") : tr("Зробити основною карткою"), onClick: () => { setDefaultPocket(defaultPocketId === pocketId ? null : pocketId); onClose(); } }),
                 React.createElement(Row, { icon: Edit3, label: tr("Редагувати рахунок (назва, колір, тип)"), onClick: () => setModal({ type: "account", payload: acc, returnTo }) }),
                 React.createElement(Row, { icon: ArrowDownRight, label: tr("Імпорт виписки на цей рахунок"), onClick: () => setModal({ type: "statementImport", payload: { presetPocketId: pk.id }, returnTo }) }),
@@ -11248,5 +11249,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-28.1");</script></body>
+<script>console.log("K³ build: 2026-09-28.3");</script></body>
 </html>
