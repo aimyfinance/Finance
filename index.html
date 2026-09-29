@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-28.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-29.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1992,6 +1992,7 @@ window.__K3_START = function () {
         "Курсова різниця": "FX difference",
         "Курсові різниці": "FX differences",
         "Вигода свопів": "Swap gains",
+        "Додавайте доходи й витрати кнопками на головному екрані. Промахнулись кнопкою — тип «Витрата/Дохід» перемикається прямо у формі. Категорія підставляється сама з опису (застосунок вчиться з вашої історії), під рахунком видно баланс після операції, а курс валюти фіксується на момент операції — зміна курсу не змінює минулі суми. Поле суми розуміє вирази: наберіть 25*20 — і сума порахується сама.": "Add incomes and expenses from the home screen. Hit the wrong button? Flip the Expense/Income type right in the form. The category fills itself from the description (learning from your history), the balance after the transaction shows under the account, and the FX rate is pinned at posting time — later rate changes never rewrite past amounts. The amount field understands math: type 25*20 and the total computes itself.",
         "Додати ще один субрахунок (валюту)": "Add another sub-account (currency)",
         "Основна картка": "Default card",
         "Основна картка — зняти позначку": "Default card — remove mark",
@@ -2816,7 +2817,80 @@ window.__K3_START = function () {
                 if (rest.onBlur)
                     rest.onBlur(e);
             };
-            return React.createElement("input", { ...rest, value: group(String(rest.value == null ? "" : rest.value)), type: "text", inputMode: "decimal", autoComplete: "off", onChange: handle, onBlur: handleBlur, style: st, className: cls });
+            // «Невидимий калькулятор»: вираз лишається в полі, батько щоразу отримує результат.
+            const cleanExpr = (v) => String(v == null ? "" : v).replace(/,/g, ".").replace(/[\s\u00A0\u202F]/g, "").replace(/[^0-9.+\-*/\u00D7\u00F7xX()]/g, "");
+            const isExprStr = (v) => /[+*/\u00D7\u00F7(]/.test(v) || v.indexOf("-", 1) !== -1;
+            const round8 = (v) => Math.round(v * 1e8) / 1e8;
+            const handle2 = (e) => {
+                const el = e.target;
+                const raw = el.value;
+                const ce = cleanExpr(raw);
+                if (isExprStr(ce)) {
+                    const caret = el.selectionStart == null ? raw.length : el.selectionStart;
+                    el.value = ce;
+                    const pos = Math.max(0, Math.min(ce.length, caret - (raw.length - ce.length)));
+                    try {
+                        el.setSelectionRange(pos, pos);
+                    }
+                    catch (err) { }
+                    setExprStr(ce);
+                    const r = calcEval(ce);
+                    if (isFinite(r) && onChange)
+                        onChange({ target: { value: String(round8(r)) } });
+                    return;
+                }
+                if (exprStr != null)
+                    setExprStr(null);
+                handle(e);
+            };
+            const handleBlur2 = (e) => {
+                setCalcFoc(false);
+                if (exprStr != null) {
+                    const el = e.target;
+                    const r = calcEval(exprStr);
+                    setExprStr(null);
+                    if (isFinite(r)) {
+                        const base = money ? r.toFixed(2) : String(round8(r));
+                        el.value = group(base);
+                        if (onChange)
+                            onChange({ target: { value: base } });
+                    }
+                    else {
+                        el.value = group(String(rest.value == null ? "" : rest.value));
+                    }
+                    if (rest.onBlur)
+                        rest.onBlur(e);
+                    return;
+                }
+                handleBlur(e);
+            };
+            const [exprStr, setExprStr] = React.useState(null);
+            const [calcFoc, setCalcFoc] = React.useState(false);
+            const inRef = React.useRef(null);
+            const coarse = !hasFinePointer();
+            const shownVal = exprStr != null ? exprStr : group(String(rest.value == null ? "" : rest.value));
+            const inputEl = (extraStyle, klass) => React.createElement("input", { ...rest, ref: inRef, value: shownVal, type: "text", inputMode: "decimal", autoComplete: "off", onChange: handle2, onBlur: handleBlur2, onFocus: (e) => { setCalcFoc(true); if (rest.onFocus) rest.onFocus(e); }, style: { ...st, ...(extraStyle || {}) }, className: klass });
+            if (!coarse)
+                return inputEl(null, cls);
+            // Дотиковий екран: цифрова клавіатура не має операторів — даємо їх чипами в полі при фокусі
+            const toks = String(props.className || "").split(/\s+/).filter(Boolean);
+            const innerCls = `w-full min-w-0 max-w-full box-border rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)] transition ${toks.filter((t) => t === "k3-amt").join(" ")}`;
+            const wrapCls = `relative block min-w-0 ${toks.filter((t) => t !== "k3-amt").join(" ")}`;
+            const insertOp = (ch) => {
+                const el = inRef.current;
+                if (!el)
+                    return;
+                const pos = el.selectionStart == null ? el.value.length : el.selectionStart;
+                el.value = el.value.slice(0, pos) + ch + el.value.slice(pos);
+                try {
+                    el.setSelectionRange(pos + 1, pos + 1);
+                }
+                catch (err) { }
+                handle2({ target: el });
+            };
+            return React.createElement("span", { className: wrapCls },
+                inputEl(calcFoc ? { paddingRight: "8rem" } : null, innerCls),
+                calcFoc && React.createElement("span", { "data-calcops": "1", style: { position: "absolute", right: "0.4rem", top: "50%", transform: "translateY(-50%)", display: "flex", gap: "0.3rem" } }, [["+", "+"], ["\u2212", "-"], ["\u00D7", "\u00D7"], ["\u00F7", "\u00F7"]].map(([lbl, ch]) => React.createElement("button", { key: lbl, type: "button", "data-calcop": ch, tabIndex: -1, onPointerDown: (e) => e.preventDefault(), onMouseDown: (e) => e.preventDefault(), onClick: () => insertOp(ch), className: "flex items-center justify-center rounded-full", style: { width: "1.65rem", height: "1.65rem", fontSize: "1rem", background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text-dim)" } }, lbl))));
         }
         if (props.clearable && !props.disabled) {
             // Текстове поле з хрестиком очищення: обгортка несе зовнішні класи,
@@ -2912,6 +2986,24 @@ window.__K3_START = function () {
         }
         catch (e) { }
     })();
+    // Тихий калькулятор грошових полів: "25*20" -> 500. Без eval, безпечний парсер.
+    function calcEval(src) {
+        try {
+            const s2 = String(src || "").replace(/,/g, ".").replace(/[\u00D7xX]/g, "*").replace(/\u00F7/g, "/").replace(/[\u2212\u2013]/g, "-").replace(/[\s\u00A0\u202F]/g, "");
+            if (!s2 || !/^[0-9+\-*/().]+$/.test(s2))
+                return NaN;
+            let p = 0;
+            const num = () => { const m = /^\d*\.?\d+/.exec(s2.slice(p)); if (!m) return NaN; p += m[0].length; return parseFloat(m[0]); };
+            const factor = () => { if (s2[p] === "(") { p++; const v = addsub(); if (s2[p] === ")") p++; return v; } if (s2[p] === "-") { p++; return -factor(); } if (s2[p] === "+") { p++; return factor(); } return num(); };
+            const muldiv = () => { let v = factor(); while (s2[p] === "*" || s2[p] === "/") { const op = s2[p++]; const r = factor(); v = op === "*" ? v * r : v / r; } return v; };
+            const addsub = () => { let v = muldiv(); while (s2[p] === "+" || s2[p] === "-") { const op = s2[p++]; const r = muldiv(); v = op === "+" ? v + r : v - r; } return v; };
+            const v = addsub();
+            return p === s2.length && isFinite(v) ? v : NaN;
+        }
+        catch (e) {
+            return NaN;
+        }
+    }
     function hasFinePointer() {
         try {
             return !!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches);
@@ -3098,7 +3190,7 @@ window.__K3_START = function () {
         const [open, setOpen] = useState(0);
         const guide = [
             { q: tr("Рахунки та субрахунки"), a: tr("Рахунок — це контейнер (картка, готівка, депозит). Усередині — валютні субрахунки з власними назвами (напр. «Основний», «Заначка»). Додайте тег банку, щоб згрупувати кілька карток одного банку.") },
-            { q: tr("Операції"), a: tr("Додавайте доходи й витрати кнопками на головному екрані. Промахнулись кнопкою — тип «Витрата/Дохід» перемикається прямо у формі. Категорія підставляється сама з опису (застосунок вчиться з вашої історії), під рахунком видно баланс після операції, а курс валюти фіксується на момент операції — зміна курсу не змінює минулі суми.") },
+            { q: tr("Операції"), a: tr("Додавайте доходи й витрати кнопками на головному екрані. Промахнулись кнопкою — тип «Витрата/Дохід» перемикається прямо у формі. Категорія підставляється сама з опису (застосунок вчиться з вашої історії), під рахунком видно баланс після операції, а курс валюти фіксується на момент операції — зміна курсу не змінює минулі суми. Поле суми розуміє вирази: наберіть 25*20 — і сума порахується сама.") },
             { q: tr("Регулярні та заплановані платежі"), a: tr("У формі операції є два чекбокси. «Повторювати» створює правило з періодичністю (щодня, щотижня, щомісяця, двічі на місяць, щокварталу, щороку) і за замовчуванням проводить цю операцію як першу — це вимикається галочкою «Провести цю операцію зараз». «Запланувати» нічого не проводить: у день платежу на головному зʼявиться картка «Провести». Прострочені платежі рахуються червоним бейджем, майбутні сховані за «Більше платежів», а керування списками — за іконкою годинника.") },
             { q: tr("Імпорт виписки (CSV)"), a: tr("Історія → «Імпорт» (або Налаштування → «Імпорт виписки»). Оберіть рахунок і CSV-файл — застосунок сам розпізнає колонки, розкладе операції за категоріями (включно з підкатегоріями) й позначить можливі дублікати. Сумнівним рядкам поставте позначку ❗ — після імпорту знайдете їх фільтром в Історії.") },
             { q: tr("Купівля та продаж крипто"), a: tr("Крипто-портфель → «Купити / Продати» або «Своп». Введіть суму, що реально пішла з рахунку, і кількість отриманих монет — курс із комісією порахується сам і порівняється з ринковим. У свопі можна вписати ціну свого біржового ордера — отримана кількість перерахується, а різниця з ринком запишеться як профіт/лос свопу.") },
@@ -11249,5 +11341,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-28.3");</script></body>
+<script>console.log("K³ build: 2026-09-29.1");</script></body>
 </html>
