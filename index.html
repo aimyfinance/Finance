@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-29.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-09-30.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2343,7 +2343,7 @@ window.__K3_START = function () {
     // so future rate edits don't retroactively change historical totals.
     function migrateState(s) {
         if (s && Array.isArray(s.transactions) && s.rates) {
-            const todayStr = new Date().toISOString().slice(0, 10);
+            const todayStr = localISODate(new Date());
             s.transactions = s.transactions.map(function (t) {
                 let nt = t;
                 if ((t.type === "income" || t.type === "expense") && t.fx == null) {
@@ -3731,7 +3731,7 @@ window.__K3_START = function () {
         const upcomingLoans = [...activeLoans].filter((l) => new Date(l.dueDate) >= now).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 3);
         /* ============================== ACTIONS ============================== */
         const addAccountWithPocket = (accData, currency, initialBalance, pocketName) => {
-            const account = { id: uid("acc"), archived: false, createdAt: new Date().toISOString().slice(0, 10), ...accData };
+            const account = { id: uid("acc"), archived: false, createdAt: localISODate(new Date()), ...accData };
             const pocket = { id: uid("pk"), accountId: account.id, currency, initialBalance: parseFloat(initialBalance) || 0, name: (pocketName || "").trim(), archived: false };
             update({ accounts: [...accounts, account], pockets: [...pockets, pocket] });
             notify(tr("Рахунок створено"));
@@ -3913,7 +3913,7 @@ window.__K3_START = function () {
             notify(msg || tr("Тепер це переказ"));
         };
         const createPocketQuick = (name, currency) => {
-            const account = { id: uid("acc"), archived: false, createdAt: new Date().toISOString().slice(0, 10), name: (name || "").trim() || tr("Новий рахунок"), type: "bank" };
+            const account = { id: uid("acc"), archived: false, createdAt: localISODate(new Date()), name: (name || "").trim() || tr("Новий рахунок"), type: "bank" };
             const pocket = { id: uid("pk"), accountId: account.id, currency: currency, initialBalance: 0, name: "", archived: false };
             update({ accounts: [...accounts, account], pockets: [...pockets, pocket] });
             notify(tr("Рахунок створено"));
@@ -3986,7 +3986,7 @@ window.__K3_START = function () {
             });
             notify(tr("Суму повернення оновлено"));
         };
-        const duplicateTransaction = (tx) => { update({ transactions: [stampBV({ ...tx, id: uid("tx"), createdAt: new Date().toISOString(), date: new Date().toISOString().slice(0, 10), fx: (tx.currency ? (rates[tx.currency] || 1) : 1) }), ...transactions] }); notify(tr("Операцію дубльовано")); };
+        const duplicateTransaction = (tx) => { update({ transactions: [stampBV({ ...tx, id: uid("tx"), createdAt: new Date().toISOString(), date: localISODate(new Date()), fx: (tx.currency ? (rates[tx.currency] || 1) : 1) }), ...transactions] }); notify(tr("Операцію дубльовано")); };
         const importTransactions = (rows) => {
             if (!rows || !rows.length)
                 return;
@@ -4048,7 +4048,7 @@ window.__K3_START = function () {
             if (!l)
                 return;
             const isDebt = l.direction === "in";
-            const tx = stampBV({ id: uid("tx"), createdAt: new Date().toISOString(), fx: (rates[l.currency || "UAH"] || 1), type: isDebt ? "debt_take" : "loan_out", date: l.dateGiven || new Date().toISOString().slice(0, 10), amount: l.amount, currency: l.currency || "UAH", pocketId: pocketId || null, loanId: l.id, note: (isDebt ? tr("Позика (борг) від: ") : tr("Позика: ")) + l.borrower });
+            const tx = stampBV({ id: uid("tx"), createdAt: new Date().toISOString(), fx: (rates[l.currency || "UAH"] || 1), type: isDebt ? "debt_take" : "loan_out", date: l.dateGiven || localISODate(new Date()), amount: l.amount, currency: l.currency || "UAH", pocketId: pocketId || null, loanId: l.id, note: (isDebt ? tr("Позика (борг) від: ") : tr("Позика: ")) + l.borrower });
             update({ transactions: [tx, ...transactions] });
             notify(tr("Запис відновлено"));
         };
@@ -4104,7 +4104,7 @@ window.__K3_START = function () {
         const addReminder = (data) => { update({ reminders: [{ id: uid("rem"), done: false, ...data }, ...reminders] }); notify(tr("Нагадування створено")); };
         const editReminder = (id, patch) => update({ reminders: reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
         const deleteReminder = (id) => { update({ reminders: reminders.filter((r) => r.id !== id) }); notify(tr("Нагадування видалено")); };
-        const addGoal = (data) => { update({ goals: [{ id: uid("goal"), saved: 0, archived: false, createdAt: new Date().toISOString().slice(0, 10), ...data }, ...goals] }); notify(tr("Ціль створено")); };
+        const addGoal = (data) => { update({ goals: [{ id: uid("goal"), saved: 0, archived: false, createdAt: localISODate(new Date()), ...data }, ...goals] }); notify(tr("Ціль створено")); };
         const editGoal = (id, patch) => update({ goals: goals.map((g) => (g.id === id ? { ...g, ...patch } : g)) });
         const deleteGoal = (id) => { update({ goals: goals.filter((g) => g.id !== id) }); notify(tr("Ціль видалено")); };
         const contributeGoal = (id, delta) => { update({ goals: goals.map((g) => (g.id === id ? { ...g, saved: Math.max(0, Math.round((((g.saved || 0) + delta)) * 100) / 100) } : g)) }); notify(delta >= 0 ? tr("Ціль поповнено") : tr("Кошти знято")); };
@@ -4157,7 +4157,7 @@ window.__K3_START = function () {
                 return;
             }
             const wName = wid ? ((cryptoWallets.find((w) => w.id === wid) || {}).name || "?") : tr("Основний");
-            const txRec = { id: prev ? prev.id : uid("tx"), createdAt: prev ? prev.createdAt : new Date().toISOString(), type: "crypto_swap", date: date || new Date().toISOString().slice(0, 10), coinId: toCoin.id, coinSymbol: toCoin.symbol, coinAmount: Math.round(toAmount * 1e8) / 1e8, fromCoinId: fromCoinId, fromCoinSymbol: res.src.symbol, fromCoinAmount: Math.round(fromAmount * 1e8) / 1e8, walletId: wid, walletName: wName, note: prev ? (prev.note || "") : "" };
+            const txRec = { id: prev ? prev.id : uid("tx"), createdAt: prev ? prev.createdAt : new Date().toISOString(), type: "crypto_swap", date: date || localISODate(new Date()), coinId: toCoin.id, coinSymbol: toCoin.symbol, coinAmount: Math.round(toAmount * 1e8) / 1e8, fromCoinId: fromCoinId, fromCoinSymbol: res.src.symbol, fromCoinAmount: Math.round(fromAmount * 1e8) / 1e8, walletId: wid, walletName: wName, note: prev ? (prev.note || "") : "" };
             if (fxGainBase != null && Math.abs(fxGainBase) >= 0.005) {
                 txRec.fxGainBase = Math.round(fxGainBase * 100) / 100;
                 txRec.fxGainBaseCur = baseCurrency;
@@ -4181,7 +4181,7 @@ window.__K3_START = function () {
                 list = [{ id: uid("cx"), note: "", coinId, symbol: src.symbol, name: src.name, walletId: toWalletId || null, amount: Math.round(amount * 1e8) / 1e8 }, ...list];
             list = list.filter((cc) => !(cc.id === src.id && cc.amount <= 1e-9 && !(cc.note || "").trim()));
             const wName = (wid) => wid ? ((cryptoWallets.find((w) => w.id === wid) || {}).name || "?") : tr("Основний");
-            const txRec = { id: uid("tx"), createdAt: new Date().toISOString(), type: "crypto_transfer", date: new Date().toISOString().slice(0, 10), coinId, coinSymbol: src.symbol, coinAmount: Math.round(amount * 1e8) / 1e8, fromWalletId: fromWalletId || null, toWalletId: toWalletId || null, fromWalletName: wName(fromWalletId || null), toWalletName: wName(toWalletId || null), note: "" };
+            const txRec = { id: uid("tx"), createdAt: new Date().toISOString(), type: "crypto_transfer", date: localISODate(new Date()), coinId, coinSymbol: src.symbol, coinAmount: Math.round(amount * 1e8) / 1e8, fromWalletId: fromWalletId || null, toWalletId: toWalletId || null, fromWalletName: wName(fromWalletId || null), toWalletName: wName(toWalletId || null), note: "" };
             update({ crypto: list, transactions: [txRec, ...transactions] });
             notify(tr("Перенесено між гаманцями"));
         };
@@ -4588,7 +4588,7 @@ window.__K3_START = function () {
         const exportBackup = async () => {
             try {
                 const payload = { ...state, theme, _app: "AiMyFinance", _v: 2, _exportedAt: new Date().toISOString() };
-                const res = await saveFile("k3-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(payload, null, 2), "application/json");
+                const res = await saveFile("k3-backup-" + localISODate(new Date()) + ".json", JSON.stringify(payload, null, 2), "application/json");
                 if (res !== "cancelled") {
                     saveBackupAt();
                     setBackupDue(false);
@@ -4611,7 +4611,7 @@ window.__K3_START = function () {
                     rows.push([t.date, typeLbl[t.type] || t.type, amt, cur, catName(t.categoryId), pk, (t.note || "").replace(/[\r\n]+/g, " ")]);
                 });
                 const csv = rows.map((r) => r.map((cell) => { const s = String(cell); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(",")).join("\n");
-                const res = await saveFile("k3-transactions-" + new Date().toISOString().slice(0, 10) + ".csv", "\ufeff" + csv, "text/csv;charset=utf-8");
+                const res = await saveFile("k3-transactions-" + localISODate(new Date()) + ".csv", "\ufeff" + csv, "text/csv;charset=utf-8");
                 if (res !== "cancelled") {
                     saveBackupAt();
                     setBackupDue(false);
@@ -5114,7 +5114,8 @@ window.__K3_START = function () {
                         React.createElement("p", { className: "text-sm font-medium truncate" }, tr(o.rule.title)),
                         React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, fmtDate(o.date))),
                     React.createElement("span", { className: "px-2 py-0.5 rounded-full text-[0.6875rem] font-bold shrink-0", style: { background: o.days > 0 ? "var(--danger)" : "var(--accent)", color: "#fff" } }, o.days > 0 ? o.days + " " + tr("дн") : tr("сьогодні")),
-                    React.createElement("button", { onClick: () => { const p = plannedPostPayload(o.rule, o.date); setModal(p); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Провести")),
+                    React.createElement("button", { "data-plndo": o.rule.id, "aria-label": tr("Провести"), onClick: () => { const p = plannedPostPayload(o.rule, o.date); setModal(p); }, className: "w-7 h-7 rounded-lg flex items-center justify-center shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } },
+                        React.createElement(Check, { size: 15, strokeWidth: 2.5 })),
                     React.createElement("button", { onClick: () => markPlannedDone(o.rule.id, o.date), className: "px-2 py-1.5 rounded-lg text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Пропустити"))))))))),
             (pendingByRule && pendingByRule.length > 0) && (React.createElement("div", { className: "space-y-2" },
                 React.createElement(DashSectionHeader, { icon: RefreshCw, title: tr("Регулярні платежі"), urgentCount: (pendingRecurring || []).filter((o) => o.date < localISODate(new Date())).length, nearestDate: ((pendingByRule[0] || upcomingRecurring[0]) || {}).date, open: recSecOpen, onToggle: () => update({ recSecOpen: !recSecOpen }), tag: "secrec" }),
@@ -6786,7 +6787,7 @@ window.__K3_START = function () {
     }
     /* "Copy" opens a prefilled NEW form (today's date) instead of instantly cloning. */
     function txCopyPayload(tx) {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = localISODate(new Date());
         if (tx.type === "transfer" || tx.type === "exchange")
             return { type: tx.type, payload: { planned: { fromPocketId: tx.fromPocketId, toPocketId: tx.toPocketId, fromAmount: tx.fromAmount, toAmount: tx.toAmount, fromCurrency: tx.fromCurrency, toCurrency: tx.toCurrency, rate: tx.rate, note: tx.note || "", date: today } } };
         if (tx.type === "income" || tx.type === "expense")
@@ -6878,7 +6879,7 @@ window.__K3_START = function () {
         const [picker, setPicker] = useState(false);
         const [extraPrices, setExtraPrices] = useState({});
         const [toAmt, setToAmt] = useState(seed ? String(seed.coinAmount) : "");
-        const [date, setDate] = useState(seed && seed.date ? seed.date : new Date().toISOString().slice(0, 10));
+        const [date, setDate] = useState(seed && seed.date ? seed.date : localISODate(new Date()));
         const [toTouched, setToTouched] = useState(!!seed);
         // Ціна угоди (лімітний ордер): редагована, керує отриманою кількістю
         const [priceStr, setPriceStr] = useState("");
@@ -6985,7 +6986,8 @@ window.__K3_START = function () {
                     React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                         plannedKindLabel(o.rule.kind), " \u00B7 ", fmtMoney(o.rule.amount, cur), " \u00B7 ", fmtDate(o.date))),
                 overdue && React.createElement("span", { "data-pldays": o.rule.id, className: "px-2 py-0.5 rounded-full text-[0.6875rem] font-bold shrink-0", style: { background: o.days > 0 ? "var(--danger)" : "var(--accent)", color: "#fff" } }, o.days > 0 ? o.days + " " + tr("дн") : tr("сьогодні")),
-                overdue && React.createElement("button", { onClick: () => { const p = plannedPostPayload(o.rule, o.date); setModal(p); }, className: "px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } }, tr("Провести")),
+                overdue && React.createElement("button", { "data-plndo": o.rule.id, "aria-label": tr("Провести"), onClick: () => { const p = plannedPostPayload(o.rule, o.date); setModal(p); }, className: "w-7 h-7 rounded-lg flex items-center justify-center shrink-0", style: { background: "var(--accent)", color: "var(--accent-ink)" } },
+                    React.createElement(Check, { size: 15, strokeWidth: 2.5 })),
                 overdue && React.createElement("button", { onClick: () => markPlannedDone(o.rule.id, o.date), className: "px-2 py-1.5 rounded-lg text-xs shrink-0", style: { color: "var(--text-dim)" } }, tr("Пропустити")));
         };
         return (React.createElement(Modal, { title: tr("Заплановані платежі"), onClose: onClose },
@@ -7075,7 +7077,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-3", onClick: () => setModal({ type: "plannedEdit", origin: "manage" }) },
                 React.createElement(Plus, { size: 15 }), " ", tr("Додати платіж"))));
     }
-    function PlannedEditModal({ onClose, existing, accounts, pockets, categories, projects, addPlanned, editPlanned, setModal, origin, currencies }) {
+    function PlannedEditModal({ defaultPocketId, onClose, existing, accounts, pockets, categories, projects, addPlanned, editPlanned, setModal, origin, currencies }) {
         const isEdit = existing && existing.id;
         const active = pockets.filter((p) => !p.archived);
         const [kind, setKind] = useState(existing?.kind || "expense");
@@ -7083,8 +7085,8 @@ window.__K3_START = function () {
         const [amount, setAmount] = useState(existing?.amount != null ? money2(existing.amount) : "");
         const [ruleCur, setRuleCur] = useState(existing?.currency || "");
         const [ruleNote, setRuleNote] = useState(existing?.note || "");
-        const [pocketId, setPocketId] = useState(existing?.pocketId || active[0]?.id || "");
-        const [fromPocketId, setFromPocketId] = useState(existing?.fromPocketId || active[0]?.id || "");
+        const [pocketId, setPocketId] = useState(existing?.pocketId || ((defaultPocketId && active.some((p) => p.id === defaultPocketId)) ? defaultPocketId : "") || active[0]?.id || "");
+        const [fromPocketId, setFromPocketId] = useState(existing?.fromPocketId || ((defaultPocketId && active.some((p) => p.id === defaultPocketId)) ? defaultPocketId : "") || active[0]?.id || "");
         const [toPocketId, setToPocketId] = useState(existing?.toPocketId || active.find((p) => p.id !== active[0]?.id)?.id || "");
         const cats = categories.filter((c) => c.type === (kind === "income" ? "income" : "expense") && !c.archived);
         const [categoryId, setCategoryId] = useState(existing?.categoryId || "");
@@ -7095,7 +7097,7 @@ window.__K3_START = function () {
         const [day2, setDay2] = useState(existing?.day2 || 15);
         const [dayOfMonth, setDayOfMonth] = useState(existing?.dayOfMonth || (+new Date().toISOString().slice(8, 10) || 1));
         const [recMonth, setRecMonth] = useState(existing?.month || (new Date().getMonth() + 1));
-        const [startDate, setStartDate] = useState(existing?.startDate || new Date().toISOString().slice(0, 10));
+        const [startDate, setStartDate] = useState(existing?.startDate || localISODate(new Date()));
         const [error, setError] = useState("");
         const isMove = kind === "transfer" || kind === "exchange";
         const pocketOpt = (p) => {
@@ -7525,7 +7527,7 @@ window.__K3_START = function () {
         const [pocketId, setPocketId] = useState(activeP[0]?.id || "");
         const [fiat, setFiat] = useState("");
         const [coins, setCoins] = useState("");
-        const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+        const [date, setDate] = useState(localISODate(new Date()));
         const [note, setNote] = useState("");
         const [error, setError] = useState("");
         const pk = pockets.find((p) => p.id === pocketId);
@@ -8060,7 +8062,7 @@ window.__K3_START = function () {
         } return ""; };
         const buildPreview = () => {
             const noteIdx = buildNoteIndex(transactions);
-            const today = new Date().toISOString().slice(0, 10);
+            const today = localISODate(new Date());
             const out = [];
             dataRows.forEach((r, i) => {
                 const dISO = parseDateCell(String(r[map.date] == null ? "" : r[map.date]));
@@ -8966,15 +8968,15 @@ window.__K3_START = function () {
                 " ",
                 tr("Додати платіж"))));
     }
-    function RecurringEditModal({ onClose, onBack, existing, accounts, pockets, categories, addRecurring, editRecurring, pocketBalance, projects, addPlanned, deleteRecurring }) {
+    function RecurringEditModal({ defaultPocketId, onClose, onBack, existing, accounts, pockets, categories, addRecurring, editRecurring, pocketBalance, projects, addPlanned, deleteRecurring }) {
         const [kind, setKind] = useState(existing?.kind || "expense");
         const cats = categories.filter((x) => x.type === kind && !x.archived);
         const firstPocket = pockets.find((pp) => !pp.archived);
         const [title, setTitle] = useState(existing?.title || "");
         const [mode, setMode] = useState(existing?.mode || "fixed");
         const [amount, setAmount] = useState(existing?.amount != null ? money2(existing.amount) : "");
-        const [pocketId, setPocketId] = useState(existing?.pocketId || firstPocket?.id || "");
-        const [fromPocketId, setFromPocketId] = useState(existing?.fromPocketId || existing?.pocketId || firstPocket?.id || "");
+        const [pocketId, setPocketId] = useState(existing?.pocketId || ((defaultPocketId && pockets.some((p) => p.id === defaultPocketId && !p.archived)) ? defaultPocketId : "") || firstPocket?.id || "");
+        const [fromPocketId, setFromPocketId] = useState(existing?.fromPocketId || existing?.pocketId || ((defaultPocketId && pockets.some((p) => p.id === defaultPocketId && !p.archived)) ? defaultPocketId : "") || firstPocket?.id || "");
         const [toPocketId, setToPocketId] = useState(existing?.toPocketId || "");
         const [categoryId, setCategoryId] = useState(existing?.categoryId || "");
         const [projectId, setProjectId] = useState(existing?.projectId || "");
@@ -8984,7 +8986,7 @@ window.__K3_START = function () {
         const [day1, setDay1] = useState(existing?.day1 || 1);
         const [day2, setDay2] = useState(existing?.day2 || 15);
         const [recMonth, setRecMonth] = useState(existing?.month || (new Date().getMonth() + 1));
-        const [startDate, setStartDate] = useState(existing?.startDate || new Date().toISOString().slice(0, 10));
+        const [startDate, setStartDate] = useState(existing?.startDate || localISODate(new Date()));
         const [error, setError] = useState("");
         useEffect(() => { if (!(existing && existing.id))
             setCategoryId((categories.filter((x) => x.type === kind && !x.archived)[0] || {}).id || ""); }, [kind]);
@@ -9213,11 +9215,11 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             if (modal.type === "plannedManage")
                 return React.createElement(PlannedManageModal, { onClose: close, planned: planned, pockets: pockets, baseCurrency: baseCurrency, setModal: setModal, editPlanned: editPlanned, deletePlanned: deletePlanned , plnSort: plnSort, setPlnSort: setPlnSort });
             if (modal.type === "plannedEdit")
-                return React.createElement(PlannedEditModal, { onClose: close, existing: modal.payload || null, origin: modal.origin || null, accounts: accounts, pockets: pockets, categories: categories, projects: projects, addPlanned: addPlanned, editPlanned: editPlanned, setModal: setModal, currencies: currencies });
+                return React.createElement(PlannedEditModal, { onClose: close, defaultPocketId: defaultPocketId, existing: modal.payload || null, origin: modal.origin || null, accounts: accounts, pockets: pockets, categories: categories, projects: projects, addPlanned: addPlanned, editPlanned: editPlanned, setModal: setModal, currencies: currencies });
             if (modal.type === "recurring")
                 return React.createElement(RecurringListModal, { onClose: close, recurring: recurring, pockets: pockets, categories: categories, pocketLabel: pocketLabel, setModal: setModal, editRecurring: editRecurring, deleteRecurring: deleteRecurring, recSort: recSort, setRecSort: setRecSort });
             if (modal.type === "recurringEdit")
-                return React.createElement(RecurringEditModal, { onClose: close, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects, addPlanned: addPlanned, deleteRecurring: deleteRecurring });
+                return React.createElement(RecurringEditModal, { onClose: close, defaultPocketId: defaultPocketId, onBack: modal.returnTo ? close : undefined, existing: modal.payload, accounts: accounts, pockets: pockets, categories: categories, addRecurring: addRecurring, editRecurring: editRecurring, pocketBalance: pocketBalance, projects: projects, addPlanned: addPlanned, deleteRecurring: deleteRecurring });
             if (modal.type === "projects")
                 return React.createElement(ProjectsListModal, { onClose: close, projects: projects, transactions: transactions, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects, origin: modal.origin, showArrows: modal.origin !== "dashboard", setView: setView, setHistoryPreset: setHistoryPreset, rates: rates, baseCurrency: baseCurrency, periodFrom: (modal.payload || {}).from || null, periodTo: (modal.payload || {}).to || null });
             if (modal.type === "projectEdit")
@@ -9257,12 +9259,12 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         useBodyScrollLock();
         const [editing, setEditing] = useState(null); // null | "new" | reminder object
         const [title, setTitle] = useState("");
-        const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+        const [date, setDate] = useState(localISODate(new Date()));
         const [amount, setAmount] = useState("");
         const [currency, setCurrency] = useState("UAH");
         const [note, setNote] = useState("");
         const [error, setError] = useState("");
-        const openNew = () => { setEditing("new"); setTitle(""); setDate(new Date().toISOString().slice(0, 10)); setAmount(""); setCurrency("UAH"); setNote(""); setError(""); };
+        const openNew = () => { setEditing("new"); setTitle(""); setDate(localISODate(new Date())); setAmount(""); setCurrency("UAH"); setNote(""); setError(""); };
         const openEdit = (r) => { setEditing(r); setTitle(r.title); setDate(r.date); setAmount(r.amount != null ? String(r.amount) : ""); setCurrency(r.currency || "UAH"); setNote(r.note || ""); setError(""); };
         const cancel = () => setEditing(null);
         const submit = () => {
@@ -9835,7 +9837,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [newCatName, setNewCatName] = useState("");
         const [newCatIcon, setNewCatIcon] = useState("MoreHorizontal");
         const [newCatParent, setNewCatParent] = useState(""); // "" = top-level
-        const [date, setDate] = useState(editing?.date || P.presetDate || new Date().toISOString().slice(0, 10));
+        const [date, setDate] = useState(editing?.date || P.presetDate || localISODate(new Date()));
         const [planFreq, setPlanFreq] = useState("once");
         const [planWeekday, setPlanWeekday] = useState(new Date().getDay());
         const [planDay, setPlanDay] = useState(new Date().getDate());
@@ -10324,7 +10326,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const other = pockets.find((p) => p.id === otherId);
         const cross = !!(other && other.currency !== tx.currency);
         const [otherAmt, setOtherAmt] = useState("");
-        const [date, setDate] = useState(tx.date || new Date().toISOString().slice(0, 10));
+        const [date, setDate] = useState(tx.date || localISODate(new Date()));
         const [note, setNote] = useState(tx.note || "");
         const [creating, setCreating] = useState(false);
         const [newName, setNewName] = useState("");
@@ -10445,7 +10447,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [recMode, setRecMode] = useState("fixed");
         const rateNum = parseFloat(String(rate).replace(",", ".")) || 0;
         const [toAmount, setToAmount] = useState(src && src.toAmount != null ? money2(src.toAmount) : "");
-        const [date, setDate] = useState(src?.date || new Date().toISOString().slice(0, 10));
+        const [date, setDate] = useState(src?.date || localISODate(new Date()));
         const [note, setNote] = useState(src?.note || "");
         const [error, setError] = useState("");
         const [manualTo, setManualTo] = useState(!!editing); // keep the stored toAmount until the user touches inputs
@@ -10682,7 +10684,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [borrower, setBorrower] = useState("");
         const [amount, setAmount] = useState("");
         const [pocketId, setPocketId] = useState(active[0]?.id || "");
-        const [dateGiven, setDateGiven] = useState(new Date().toISOString().slice(0, 10));
+        const [dateGiven, setDateGiven] = useState(localISODate(new Date()));
         const [dueDate, setDueDate] = useState("");
         const [note, setNote] = useState("");
         const [error, setError] = useState("");
@@ -10818,7 +10820,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         // «зараховано» перераховує доларовий еквівалент боргу, а не курс.
         const [retRate, setRetRate] = useState("");
         const lastEditedRef = React.useRef("amt");
-        const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+        const [date, setDate] = useState(localISODate(new Date()));
         const [note, setNote] = useState("");
         const [error, setError] = useState("");
         const [coinId, setCoinId] = useState("");
@@ -11341,5 +11343,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-29.1");</script></body>
+<script>console.log("K³ build: 2026-09-30.1");</script></body>
 </html>
