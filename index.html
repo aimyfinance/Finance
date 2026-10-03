@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-09-30.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-10-03.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -3172,6 +3172,30 @@ window.__K3_START = function () {
                 APP_VERSION)));
     }
     /* First-run consent gate */
+    // Перший екран нового пристрою: бренд + вибір мови, до будь-якого тексту Угоди.
+    // Мова передвибирається з мови браузера; далі все йде обраною мовою.
+    function LangGateScreen({ onPick }) {
+        // Пікер мов (дефолт — англійська); список розшириться, щойно з\u2019являться нові переклади
+        const [sel, setSel] = useState("en");
+        const names = { en: "English", uk: "\u0423\u043a\u0440\u0430\u0457\u043d\u0441\u044c\u043a\u0430" };
+        return (React.createElement("div", { className: "fixed inset-0 z-[130] flex flex-col", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
+            React.createElement("div", { className: "flex-1 flex flex-col items-center justify-center px-8 w-full" },
+                React.createElement(AppIcon, { size: 72 }),
+                React.createElement("div", { className: "flex flex-col items-center text-center", style: { gap: 8, marginTop: 20, marginBottom: 44 } },
+                    React.createElement("span", { className: "font-display font-bold tracking-tight", style: { fontSize: 30, color: "var(--text)" } },
+                        "K",
+                        React.createElement("sup", { style: { color: "var(--accent)", fontSize: "0.6em", fontWeight: 700, position: "relative", top: "-0.5em" } }, "3"),
+                        React.createElement("span", { style: { fontWeight: 600, marginLeft: 9 } }, "Finance")),
+                    React.createElement("span", { className: "font-display uppercase", style: { fontSize: 10, letterSpacing: "0.3em", color: "var(--accent)" } }, "Your capital. Your command.")),
+                React.createElement("div", { className: "w-full max-w-sm" },
+                    React.createElement("span", { className: "block text-xs font-medium mb-1.5", style: { color: "var(--text-dim)" } }, "Language"),
+                    React.createElement("select", { "data-langsel": "1", value: sel, onChange: (e) => setSel(e.target.value), className: "w-full min-w-0 max-w-full rounded-lg border px-3 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-[var(--accent)]", style: { background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" } },
+                        Object.keys(names).map((id) => React.createElement("option", { key: id, value: id }, names[id]))))),
+            React.createElement("div", { className: "w-full flex justify-end px-6 pb-8" },
+                React.createElement("button", { type: "button", "data-langgo": "1", onClick: () => onPick(sel), className: "inline-flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold transition-all active:scale-[0.98]", style: { background: "var(--accent)", color: "var(--accent-ink)" } },
+                    sel === "uk" ? "\u0414\u0430\u043b\u0456" : "Continue",
+                    React.createElement(ChevronRight, { size: 18 })))));
+    }
     function ConsentScreen({ onAccept }) {
         return (React.createElement("div", { className: "fixed inset-0 z-[120] flex flex-col", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
             React.createElement("div", { className: "flex-1 overflow-y-auto px-6 pt-8 pb-4 w-full max-w-lg mx-auto" },
@@ -3468,6 +3492,14 @@ window.__K3_START = function () {
         const [consented, setConsented] = useState(() => loadConsent());
         const [welcome, setWelcome] = useState(() => !loadState());
         const acceptConsent = () => { saveConsent(); setConsented(true); };
+        // Мова вважається обраною, якщо її вже збережено (старі користувачі) або пройдено екран вибору
+        const [langPicked, setLangPicked] = useState(() => { try {
+            return !!(window.localStorage && (window.localStorage.getItem("ft_lang_picked") === "1" || window.localStorage.getItem(LANG_KEY)));
+        }
+        catch (e) {
+            return true;
+        } });
+        const pickLang = (v) => { applyLang(v); try { window.localStorage.setItem("ft_lang_picked", "1"); } catch (e) { } setLangPicked(true); };
         const finishWelcome = () => setWelcome(false);
         const [tourStep, setTourStep] = useState(null);
         const [backupDue, setBackupDue] = useState(() => {
@@ -4769,7 +4801,8 @@ window.__K3_START = function () {
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
             consented && welcome && React.createElement(WelcomeScreen, { onStart: finishWelcome, onTour: welcomeTour }),
-            !consented && React.createElement(ConsentScreen, { onAccept: acceptConsent }),
+            !consented && !langPicked && React.createElement(LangGateScreen, { onPick: pickLang }),
+            !consented && langPicked && React.createElement(ConsentScreen, { onAccept: acceptConsent }),
             tourStep != null && React.createElement(TourOverlay, { step: tourStep, setStep: setTourStep, setView: setView, onClose: () => { setTourStep(null); setView("dashboard"); } })));
     }
     /* ============================== POCKET SELECT ============================== */
@@ -11343,5 +11376,5 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 })();
 
 </script>
-<script>console.log("K³ build: 2026-09-30.2");</script></body>
+<script>console.log("K³ build: 2026-10-03.2");</script></body>
 </html>
