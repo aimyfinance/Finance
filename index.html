@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-10-05.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-10-06.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1040,6 +1040,25 @@ window.__K3_START = function () {
             const tf = searchFold(tok);
             return wordsRaw.some(function (w) { return w.indexOf(tok) === 0; }) || (tf && wordsFold.some(function (w) { return w.indexOf(tf) === 0; }));
         });
+    }
+    // Канонічна назва типу операції (укр. ключ словника; tr() дає переклад).
+    // Використовується пошуком, щоб «Повернення», «Loan return» тощо знаходили записи за типом.
+    function txTypeKey(t) {
+        switch (t.type) {
+            case "income": return "Дохід";
+            case "expense": return "Витрата";
+            case "transfer": return "Переказ";
+            case "exchange": return "Обмін валюти";
+            case "loan_out": return "Позика надана";
+            case "loan_return": return "Повернення позики";
+            case "debt_take": return "Отримання боргу";
+            case "debt_repay": return "Погашення боргу";
+            case "crypto_buy": return "Купівля крипто";
+            case "crypto_sell": return "Продаж крипто";
+            case "crypto_transfer": return "Переказ крипти";
+            case "crypto_swap": return "Своп крипти";
+            default: return "";
+        }
     }
     function Icon({ name, size = 18, className = "", style = {} }) {
         const C = ICONS[name];
@@ -2391,6 +2410,24 @@ window.__K3_START = function () {
         }
         if (s && Array.isArray(s.loans)) {
             s.loans = s.loans.map(function (l) { return l.direction ? l : Object.assign({}, l, { direction: "out" }); });
+        }
+        // Записи позик без нотатки (старі збірки): підставляємо ім'я контрагента,
+        // щоб в історії було видно, від кого платіж, і працював пошук за ім'ям.
+        if (s && Array.isArray(s.transactions) && Array.isArray(s.loans) && s.loans.length) {
+            const lnById = {};
+            s.loans.forEach(function (l) { lnById[l.id] = l; });
+            s.transactions = s.transactions.map(function (t) {
+                if (!t.loanId || (t.note || "").trim())
+                    return t;
+                const l = lnById[t.loanId];
+                if (!l || !l.borrower)
+                    return t;
+                const pre = t.type === "loan_return" ? tr("Повернення позики: ")
+                    : t.type === "debt_repay" ? tr("Погашення боргу: ")
+                        : t.type === "loan_out" ? tr("Позика: ")
+                            : t.type === "debt_take" ? tr("Позика (борг) від: ") : null;
+                return pre ? Object.assign({}, t, { note: pre + l.borrower }) : t;
+            });
         }
         return reconcileLoanReturns(s);
     }
@@ -4870,7 +4907,7 @@ window.__K3_START = function () {
                                     React.createElement("button", { onClick: dismissBackup, className: "text-[0.6875rem] font-medium px-2", style: { color: "var(--text-dim)" } }, tr("Пізніше")))))),
                         view === "dashboard" && (React.createElement(Dashboard, { graceInfo: graceInfo, defaultPocketId: state.defaultPocketId || null, duplicateTransaction: duplicateTransaction, deleteTransaction: deleteTransaction, accounts: accounts, pockets: pockets, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, totalInBase: totalInBase, baseCurrency: baseCurrency, rates: rates, byCurrencyTotals: byCurrencyTotals, monthIncome: monthIncome, monthExpense: monthExpense, categoryBreakdown: categoryBreakdown, breakdownCats: state.breakdownCats || null, setHistoryPreset: setHistoryPreset, pendingRecurring: pendingRecurring, pendingByRule: pendingByRule, upcomingRecurring: upcomingRecurring, recSecOpen: recSecOpen, plnSecOpen: plnSecOpen, markRecurringDone: markRecurringDone, projects: projects, transactions: transactions, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, setModal: setModal, setView: setView, totalLoanedOut: totalLoanedOut, overdueTotal: overdueTotal, upcomingLoans: upcomingLoans, activeLoans: activeLoans, budgetStatus: budgetStatus, netWorthSeries: netWorthSeries, goals: goals, crypto: crypto, cryptoPrices: cryptoPrices, cryptoTotalBase: cryptoTotalBase, cryptoFav: cryptoFav, loansNetBase: loansNetBase, totalOwed: totalOwed, includeLoansInTotal: includeLoansInTotal, monthlyBudget: monthlyBudget, prevMonthExpense: prevMonthExpense, avgDailySpend: avgDailySpend, carouselOrder: state.carouselOrder || null, projectsPeriod: state.projectsPeriod || null, update: update, plannedOverdue: plannedOverdue, markPlannedDone: markPlannedDone })),
                         view === "accounts" && (React.createElement(AccountsView, { accounts: accounts, accountPockets: accountPockets, pocketBalance: pocketBalance, accountTotalBase: accountTotalBase, baseCurrency: baseCurrency, setModal: setModal, archiveAccount: archiveAccount, archivePocket: archivePocket, deleteAccount: deleteAccount, reorderAccounts: reorderAccounts, reorderBanks: reorderBanks, toggleFavPocket: toggleFavPocket, chipOrder: state.chipOrder || null, saveChipOrder: (arr) => update({ chipOrder: arr }), setView: setView, cryptoTotalBase: cryptoTotalBase, cryptoCount: crypto.length })),
-                        view === "history" && (React.createElement(HistoryView, { setView: setView, cryptoRealized: cryptoRealized, transactions: transactions, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk, addReportTemplate: addReportTemplate })),
+                        view === "history" && (React.createElement(HistoryView, { setView: setView, cryptoRealized: cryptoRealized, transactions: transactions, loans: loans, pockets: pockets, accounts: accounts, categories: categories, getPocket: getPocket, pocketLabel: pocketLabel, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, setModal: setModal, currencies: currencyList, historyPreset: historyPreset, clearHistoryPreset: () => setHistoryPreset(null), projects: projects, addProject: addProject, rates: rates, baseCurrency: baseCurrency, assignProjectBulk: assignProjectBulk, deleteTransactionsBulk: deleteTransactionsBulk, moveTransactionsBulk: moveTransactionsBulk, addReportTemplate: addReportTemplate })),
                         view === "loans" && (React.createElement(LoansView, { transactions: transactions, rates: rates, baseCurrency: baseCurrency, setView: setView, setHistoryPreset: setHistoryPreset, loans: loans, pockets: pockets, getPocket: getPocket, setModal: setModal, loanRemaining: loanRemaining, archiveLoan: archiveLoan, deleteLoan: deleteLoan })),
                         view === "categories" && (React.createElement(CategoriesView, { categories: categories, setModal: setModal, archiveCategory: archiveCategory, reorderCategories: reorderCategories, deleteSubcategory: deleteSubcategory })),
                 view === "projects" && (React.createElement(ProjectsView, { projects: projects, setModal: setModal, deleteProject: deleteProject, editProject: editProject, reorderProjects: reorderProjects })),
@@ -5720,7 +5757,7 @@ window.__K3_START = function () {
         // plain income/expense rows go through the emoji-aware Icon component
         const TypeIcon = specialIcon || ((p) => React.createElement(Icon, Object.assign({ name: cat?.icon || "MoreHorizontal" }, p)));
         if (tx.coinId && !tx.pocketId)
-            sub = tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "");
+            sub = ((tx.type === "loan_return" || tx.type === "debt_repay") && tx.note ? tr(tx.note) + " · " : "") + tr("Крипто-портфель") + (tx.coinAmount ? " · " + tx.coinAmount : "");
         else if (tx.loanId && !tx.pocketId && (tx.type === "loan_return" || tx.type === "debt_repay"))
             sub = tr("Без рахунку");
         return (React.createElement("div", { onClick: onClick, "data-flagged": tx.flagged ? "1" : undefined, className: `flex items-center gap-3 px-4 py-3 ${onClick ? "cursor-pointer hover:opacity-80" : ""}`, style: tx.flagged ? { background: "color-mix(in srgb, var(--danger) 7%, transparent)", boxShadow: "inset 3px 0 0 var(--danger)" } : undefined },
@@ -6248,7 +6285,7 @@ window.__K3_START = function () {
                             isGroup && React.createElement(openGroups[o.value] ? ChevronUp : ChevronDown, { size: 13, style: { color: "var(--text-dim)", flexShrink: 0 } })));
                 }))));
     }
-    function HistoryView({ cryptoRealized, transactions, pockets, accounts, categories, getPocket, pocketLabel, setView, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, rates, baseCurrency, projects, addProject, assignProjectBulk, deleteTransactionsBulk, moveTransactionsBulk, addReportTemplate }) {
+    function HistoryView({ cryptoRealized, transactions, loans, pockets, accounts, categories, getPocket, pocketLabel, setView, deleteTransaction, duplicateTransaction, setModal, currencies, historyPreset, clearHistoryPreset, rates, baseCurrency, projects, addProject, assignProjectBulk, deleteTransactionsBulk, moveTransactionsBulk, addReportTemplate }) {
         const [rowDelArm, setRowDelArm] = useState(null); // tx id awaiting the second delete tap
         useEffect(() => { if (!rowDelArm) return; const t = setTimeout(() => setRowDelArm(null), 6000); return () => clearTimeout(t); }, [rowDelArm]);
         const [tplSaving, setTplSaving] = useState(false);
@@ -6389,10 +6426,18 @@ window.__K3_START = function () {
                     return false;
                 if (search) {
                     const cat = categories.find((x) => x.id === t.categoryId);
+                    const tk = txTypeKey(t);
+                    const ln = t.loanId && loans ? loans.find((l) => l.id === t.loanId) : null;
                     const hay = [
                         t.note || "",
                         t.comment || "",
+                        tk,
+                        tk ? tr(tk) : "",
+                        ln ? ln.borrower : "",
+                        t.coinSymbol || "",
+                        t.fromCoinSymbol || "",
                         cat ? cat.name : "",
+                        cat ? tr(cat.name) : "",
                         pocketLabel(t.pocketId || t.fromPocketId),
                         t.toPocketId ? pocketLabel(t.toPocketId) : "",
                         t.currency || t.fromCurrency || "",
@@ -6405,7 +6450,7 @@ window.__K3_START = function () {
                 }
                 return true;
             }).sort(byRecent);
-        }, [transactions, categories, filterFlag, filterType, filterPocket, filterCategory, filterCurrency, filterProject, dateFrom, dateTo, search, pocketLabel]);
+        }, [transactions, loans, categories, filterFlag, filterType, filterPocket, filterCategory, filterCurrency, filterProject, dateFrom, dateTo, search, pocketLabel]);
         const typeLabel = { all: tr("Усі типи"), income: tr("Доходи"), expense: tr("Витрати"), transfer: tr("Перекази"), exchange: tr("Обмін валют"), loan_out: tr("Позики надані"), loan_return: tr("Повернення позик"), crypto_ops: tr("Крипто-операції"), loan_ops: tr("Операції позик"), debt_ops: tr("Операції боргів") };
         return (React.createElement("div", { className: "space-y-4 animate-in k3-hist-col" },
             React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-y-2" },
@@ -9565,6 +9610,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             const catName = (cid) => { const c = categories.find((x) => x.id === cid); return c ? tr(c.name).toLowerCase() : ""; };
             return base.filter((t) => ((t.note || "") + " " + (t.comment || "")).toLowerCase().includes(q)
                 || catName(t.categoryId).includes(q)
+                || (txTypeKey(t) + " " + tr(txTypeKey(t) || "")).toLowerCase().includes(q)
                 || String(t.amount != null ? t.amount : (t.toAmount != null ? t.toAmount : "")).includes(q.replace(",", ".")));
         }, [transactions, pid, opsQ, categories]);
         return (React.createElement("div", { "data-pocket-scrim": "1", className: "fixed inset-0 z-50 overflow-y-auto animate-in k3-scrim-center", style: { background: "var(--bg)" }, onMouseDown: (e) => { if (e.target === e.currentTarget) onClose(); } },
