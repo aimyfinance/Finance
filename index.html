@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-10-06.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-10-06.5"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2116,7 +2116,9 @@ window.__K3_START = function () {
         "без собівартості": "no cost basis",
         "Реалізований результат": "Realised result",
         "до середньої ціни купівлі": "vs average buy price",
-        "P&L за фільтром": "P&L for filter",
+        "Результат за фільтром": "Filter summary",
+        "Результат": "Filter",
+        "за фільтром:": "summary",
         "Рух коштів": "Cash flow",
         "позики/борги": "loans/debts",
         "У фільтрі є операції позик чи боргів. Це рух капіталу, а не прибуток: видана сума стає боргом, а повернення — знову грошима, тому в P&L вони дають нуль. Реальний заробіток тут — лише курсова різниця. Рядок «Рух коштів» показує фактичні надходження мінус видачі за цим фільтром.": "This filter includes loan or debt operations. They move capital rather than earn it: money lent becomes a receivable, and repayments turn it back into cash, so they add zero to P&L. The only real earnings here are FX differences. The Cash flow row shows actual money in minus money out for this filter.",
@@ -6606,8 +6608,11 @@ window.__K3_START = function () {
                 return (React.createElement(Card, { className: "animate-in overflow-hidden" },
                     React.createElement("button", { type: "button", onClick: () => setPrjPnlOpen(!prjPnlOpen), className: "w-full px-4 py-3 flex items-center gap-2 text-left" },
                         prj && React.createElement(Icon, { name: prj.icon || "Home", size: 15, style: { color: prj.color } }),
-                        React.createElement("span", { className: "truncate text-sm font-display font-semibold flex-1 min-w-0" },
-                            prj ? tr(prj.name) : tr("P&L за фільтром"),
+                        React.createElement("span", { className: (prj ? "truncate " : "") + "text-sm font-display font-semibold flex-1 min-w-0" },
+                            prj ? tr(prj.name) : React.createElement("span", { className: "block", style: { lineHeight: 1.25 } },
+                                tr("Результат"),
+                                React.createElement("br", null),
+                                tr("за фільтром:")),
                             " ",
                             prj && React.createElement("span", { className: "text-[0.6875rem] font-normal", style: { color: "var(--text-dim)" } },
                                 "\u00B7 ",
