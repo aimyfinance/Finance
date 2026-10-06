@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-10-06.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-10-06.3"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -6599,6 +6599,9 @@ window.__K3_START = function () {
                     else if (t.type === "expense" || t.type === "loan_out" || t.type === "debt_repay" || t.type === "crypto_buy")
                         flow -= v; });
                 const net = inc - exp + swSum + slSum;
+                // Дві правди поруч: коли грошовий потік і P&L суттєво різняться
+                // (позики, продажі крипти), показуємо обидві цифри в заголовку
+                const dual = Math.abs(flow - net) >= 0.005;
                 const prj = filterProject.length === 1 && filterProject[0] !== "__none__" ? (projects || []).find((x) => x.id === filterProject[0]) : null;
                 return (React.createElement(Card, { className: "animate-in overflow-hidden" },
                     React.createElement("button", { type: "button", onClick: () => setPrjPnlOpen(!prjPnlOpen), className: "w-full px-4 py-3 flex items-center gap-2 text-left" },
@@ -6609,7 +6612,17 @@ window.__K3_START = function () {
                             prj && React.createElement("span", { className: "text-[0.6875rem] font-normal", style: { color: "var(--text-dim)" } },
                                 "\u00B7 ",
                                 "P&L")),
-                        React.createElement("span", { className: "tabular text-sm font-bold shrink-0", style: { color: net >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
+                        dual ? React.createElement("span", { "data-dualpnl": "1", className: "shrink-0 inline-flex items-center gap-3" },
+                            React.createElement("span", { className: "text-right" },
+                                React.createElement("span", { className: "block text-[0.5625rem] font-medium uppercase", style: { color: "var(--text-dim)", letterSpacing: "0.06em", lineHeight: 1.2 } }, tr("Рух коштів")),
+                                React.createElement("span", { className: "block tabular text-sm font-bold", style: { color: flow >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
+                                    flow >= 0 ? "+" : "−",
+                                    fmtMoney(Math.abs(flow), baseCurrency))),
+                            React.createElement("span", { className: "text-right" },
+                                React.createElement("span", { className: "block text-[0.5625rem] font-medium uppercase", style: { color: "var(--text-dim)", letterSpacing: "0.06em", lineHeight: 1.2 } }, "P&L"),
+                                React.createElement("span", { className: "block tabular text-sm font-bold", style: { color: net >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
+                                    net >= 0 ? "+" : "−",
+                                    fmtMoney(Math.abs(net), baseCurrency)))) : React.createElement("span", { className: "tabular text-sm font-bold shrink-0", style: { color: net >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
                             net >= 0 ? "+" : "−",
                             fmtMoney(Math.abs(net), baseCurrency)),
                         loanCnt > 0 && React.createElement("span", { "data-loaninfo": "1", role: "button", tabIndex: 0, onClick: (e) => { e.stopPropagation(); setPrjPnlOpen(true); setLoanPnlInfo(true); }, className: "rounded-full border font-display font-bold shrink-0 inline-flex items-center justify-center", style: { width: "1.25rem", height: "1.25rem", fontSize: "0.6875rem", borderColor: loanPnlInfo ? "var(--accent)" : "var(--border)", color: loanPnlInfo ? "var(--accent)" : "var(--text-dim)" } }, "\u0456"),
@@ -6644,9 +6657,9 @@ window.__K3_START = function () {
                                 React.createElement("span", { className: "tabular font-medium", style: { color: fxSum >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
                                     fxSum >= 0 ? "+" : "\u2212",
                                     fmtMoney(Math.abs(fxSum), baseCurrency))),
-                            loanCnt > 0 && React.createElement("div", { "data-flowrow": "1", className: "flex items-center justify-between text-xs" },
+                            (dual || loanCnt > 0) && React.createElement("div", { "data-flowrow": "1", className: "flex items-center justify-between text-xs" },
                                 React.createElement("span", { style: { color: "var(--text-dim)" } },
-                                    tr("Рух коштів"), " \u00B7 ", tr("позики/борги"), " (", loanCnt, ")"),
+                                    tr("Рух коштів"), loanCnt > 0 ? " \u00B7 " + tr("позики/борги") + " (" + loanCnt + ")" : null),
                                 React.createElement("span", { className: "tabular font-medium", style: { color: flow >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
                                     flow >= 0 ? "+" : "\u2212",
                                     fmtMoney(Math.abs(flow), baseCurrency))),
