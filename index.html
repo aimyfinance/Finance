@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-10-06.5"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-10-10.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1229,6 +1229,7 @@ window.__K3_START = function () {
         "Шукаю…": "Searching…",
         "Обрана монета зʼявиться в Крипто-портфелі автоматично.": "The chosen coin will appear in your Crypto portfolio automatically.",
         "Історія повернень": "Repayment history",
+        "Опис операції": "Transaction description",
         "Редагувати повернення": "Edit return",
         "Редагувати погашення": "Edit repayment",
         "без цього запису": "excluding this entry",
@@ -8009,7 +8010,7 @@ window.__K3_START = function () {
         pairs.sort((x, y) => x.gap - y.gap || (y.a.amount - x.a.amount));
         return pairs;
     }
-    function guessCategory(desc, amount, categories, noteIdx) {
+    function guessCategory(desc, amount, categories, noteIdx, noFallback) {
         const hay = searchFold(desc || "");
         const wantType = amount < 0 ? "expense" : "income";
         const cats = categories.filter((x) => !x.archived && x.type === wantType);
@@ -8052,6 +8053,8 @@ window.__K3_START = function () {
                     return cat.id;
             }
         }
+        if (noFallback)
+            return ""; // строгий режим: лише впевнені сигнали, без гарантованого фолбеку
         // 4) guaranteed fallback: "Інше"/"Інший", otherwise the first category of this type
         const fb = cats.find((x) => x.name === "Інше" || x.name === "Інший" || x.name === "Other");
         return fb ? fb.id : (cats[0] ? cats[0].id : "");
@@ -8312,6 +8315,22 @@ window.__K3_START = function () {
             setStage("preview");
         };
         const setRow = (key, patch) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+        // Опис із виписки часто незрозумілий — користувач може виправити його прямо тут.
+        // Після правки, якщо категорію ще не обрано, пробуємо вгадати її з нового опису.
+        const commitDesc = (key) => setRows((rs) => rs.map((x) => {
+            if (x.key !== key)
+                return x;
+            const d = String(x.desc || "").trim();
+            let cat = x.categoryId;
+            if (!x.asTransfer && !x.catTouched) {
+                // категорію користувач не чіпав — передобираємо за новим описом,
+                // але лише за впевненими сигналами (історія/назва/словник), без фолбеку
+                const g = guessCategory(d, x.amount, categories, buildNoteIndex(transactions), true);
+                if (g)
+                    cat = g;
+            }
+            return { ...x, desc: d, descEdit: false, categoryId: cat };
+        }));
         // Preselect the counterparty account so the visible select and the state agree.
         const defaultOtherPk = () => {
             const same = activePockets.find((p) => p.id !== pocketId && p.currency === (pkCur || "UAH"));
@@ -8456,7 +8475,9 @@ window.__K3_START = function () {
                     React.createElement("div", { className: "flex items-center gap-2.5" },
                         React.createElement("input", { type: "checkbox", checked: r.include, onChange: (e) => setRow(r.key, { include: e.target.checked }), style: { width: 17, height: 17, accentColor: "var(--accent)", flexShrink: 0 } }),
                         React.createElement("div", { className: "min-w-0 flex-1" },
-                            React.createElement("p", { className: "text-sm font-medium truncate" }, r.desc || "—"),
+                            r.descEdit ? React.createElement(Input, { "data-impdesc": r.key, clearable: true, value: r.desc, autoFocus: true, onChange: (e) => setRow(r.key, { desc: e.target.value }), onKeyDown: (e) => { if (e.key === "Enter") { e.preventDefault(); commitDesc(r.key); } }, onBlur: () => commitDesc(r.key), placeholder: tr("Опис операції") }) : React.createElement("button", { type: "button", "data-impdescbtn": r.key, onClick: () => setRow(r.key, { descEdit: true }), className: "w-full text-left flex items-center gap-1.5 min-w-0" },
+                                React.createElement("p", { className: "text-sm font-medium truncate min-w-0" }, r.desc || "—"),
+                                React.createElement(Edit3, { size: 12, className: "shrink-0", style: { color: "var(--text-dim)", opacity: 0.65 } })),
                             React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } },
                                 fmtDate(r.date),
                                 r.bankCat ? " · " + r.bankCat : "",
@@ -8483,9 +8504,9 @@ window.__K3_START = function () {
                             React.createElement(Button, { variant: "secondary", onClick: () => createCategoryInline(r), disabled: !String(r.newName || "").trim() }, tr("Створити")),
                             React.createElement("button", { onClick: () => setRow(r.key, { creating: false }), className: "p-1.5 shrink-0", style: { color: "var(--text-dim)" } },
                                 React.createElement(X, { size: 14 })))) : (React.createElement(Select, { value: r.categoryId || "", onChange: (e) => { const v = e.target.value; if (v === "__new__")
-                                setRow(r.key, { creating: true, newName: r.bankCat || "" });
+                                setRow(r.key, { creating: true, newName: r.bankCat || "", catTouched: true });
                             else
-                                setRow(r.key, { categoryId: v }); } },
+                                setRow(r.key, { categoryId: v, catTouched: true }); } },
                             React.createElement("option", { value: "" }, tr("Без категорії")),
                             (r.amount < 0 ? expenseCats : incomeCats).filter((cat) => !cat.parentId).flatMap((cat) => [
                                 React.createElement("option", { key: cat.id, value: cat.id }, tr(cat.name)),
