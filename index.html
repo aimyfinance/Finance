@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-10-10.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-10-28.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1042,6 +1042,18 @@ window.__K3_START = function () {
             return wordsRaw.some(function (w) { return w.indexOf(tok) === 0; }) || (tf && wordsFold.some(function (w) { return w.indexOf(tf) === 0; }));
         });
     }
+    // Рядок стану пільгового періоду для обох моделей (проста і банківська)
+    function graceText(gi, currency) {
+        if (!gi)
+            return "";
+        if (gi.mode === "bank") {
+            const ds = gi.due ? gi.due.slice(8, 10) + "." + gi.due.slice(5, 7) : "";
+            return gi.left >= 0
+                ? tr("Пільговий: сплатити") + " " + fmtMoney(gi.toPay, currency) + " " + tr("до") + " " + ds + " (" + gi.left + " " + tr("дн.") + ")"
+                : tr("Пільговий прострочено на") + " " + (-gi.left) + " " + tr("дн.") + " (" + tr("було до") + " " + ds + ")";
+        }
+        return gi.left >= 0 ? tr("Пільговий: лишилось") + " " + gi.left + " " + tr("дн.") : tr("Пільговий прострочено на") + " " + (-gi.left) + " " + tr("дн.");
+    }
     // Канонічна назва типу операції (укр. ключ словника; tr() дає переклад).
     // Використовується пошуком, щоб «Повернення», «Loan return» тощо знаходили записи за типом.
     function txTypeKey(t) {
@@ -1204,6 +1216,15 @@ window.__K3_START = function () {
         "Пільгові періоди": "Grace periods",
         "Пільговий прострочено на": "Grace overdue by",
         "Пільговий: лишилось": "Grace: left",
+        "Пільговий: сплатити": "Grace: pay",
+        "було до": "was due by",
+        "Пільговий період": "Grace period",
+        "Банківський: до числа наступного місяця": "Bank-style: by a day of the next month",
+        "Простий: днів від виходу в мінус": "Simple: days after going negative",
+        "До 25-го наступного місяця (як ПриватБанк)": "By the 25th of the next month (like PrivatBank)",
+        "До кінця наступного місяця (як monobank)": "By the end of the next month (like monobank)",
+        "Інше число…": "Another day…",
+        "Як у банків: усі витрати календарного місяця погашаються до вказаного числа наступного місяця. Розрахунок орієнтовний, за операціями у K³ — точні дати перевіряйте в банку.": "Like real banks: all spending within a calendar month is repaid by the chosen day of the next month. Estimated from the records in K³ — check exact dates with your bank.",
         "Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку.": "How many days the bank charges no interest. Counting starts the day the balance goes negative. The estimate is based on transactions entered in K³ — verify exact dates with your bank.",
         "Пільговий період (днів)": "Grace period (days)",
         "Керувати": "Manage",
@@ -3887,8 +3908,8 @@ window.__K3_START = function () {
             order.splice(to, 0, moved);
             update({ accounts: order.flatMap((k) => buckets[k]) });
         };
-        const addPocket = (accountId, currency, initialBalance, name, creditLimitArg, graceDaysArg, last4Arg) => {
-            update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), creditLimit: creditLimitArg || null, graceDays: graceDaysArg || null, last4: last4Arg || null, archived: false }] });
+        const addPocket = (accountId, currency, initialBalance, name, creditLimitArg, graceDaysArg, last4Arg, graceModeArg, graceRepayDayArg) => {
+            update({ pockets: [...pockets, { id: uid("pk"), accountId, currency, initialBalance: parseFloat(initialBalance) || 0, name: (name || "").trim(), creditLimit: creditLimitArg || null, graceDays: graceDaysArg || null, graceMode: graceModeArg || null, graceRepayDay: graceRepayDayArg || null, last4: last4Arg || null, archived: false }] });
             notify(tr("Валютний субрахунок додано"));
         };
         const editPocket = (id, patch) => update({ pockets: pockets.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
@@ -4733,32 +4754,96 @@ window.__K3_START = function () {
         }).filter((w) => w.pct <= 0.2);
         const graceInfo = useCallback((pocketId) => {
             const pk = pockets.find((pp) => pp.id === pocketId);
-            if (!pk || !(pk.graceDays > 0))
+            if (!pk)
+                return null;
+            const bankMode = pk.graceMode === "bank" && pk.graceRepayDay > 0;
+            if (!bankMode && !(pk.graceDays > 0))
                 return null;
             const bal = pocketBalance(pocketId);
             if (bal >= -0.005)
                 return null;
             const txs = transactions.filter((t) => txPocketDelta(t, pocketId) !== 0)
                 .slice().sort((x, y) => ((x.date || "") + (x.createdAt || "")).localeCompare((y.date || "") + (y.createdAt || "")));
-            let run = pk.initialBalance || 0;
-            let start = null;
-            if (run < -0.005)
-                start = txs.length ? (txs[0].date || null) : null;
-            txs.forEach((t) => {
-                const prev = run;
-                run += txPocketDelta(t, pocketId);
-                if (prev >= -0.005 && run < -0.005)
-                    start = t.date || start;
-                else if (run >= -0.005)
-                    start = null;
-            });
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const sd = start ? new Date(start + "T00:00:00") : today;
-            const elapsed = Math.max(0, Math.round((today - sd) / 86400000));
-            return { start, elapsed, left: pk.graceDays - elapsed, debt: -bal, graceDays: pk.graceDays };
+            if (!bankMode) {
+                let run = pk.initialBalance || 0;
+                let start = null;
+                if (run < -0.005)
+                    start = txs.length ? (txs[0].date || null) : null;
+                txs.forEach((t) => {
+                    const prev = run;
+                    run += txPocketDelta(t, pocketId);
+                    if (prev >= -0.005 && run < -0.005)
+                        start = t.date || start;
+                    else if (run >= -0.005)
+                        start = null;
+                });
+                const sd = start ? new Date(start + "T00:00:00") : today;
+                const elapsed = Math.max(0, Math.round((today - sd) / 86400000));
+                return { mode: "days", start, elapsed, left: pk.graceDays - elapsed, debt: -bal, graceDays: pk.graceDays };
+            }
+            // Банківська модель (ПриватБанк / monobank): увесь борг станом на КІНЕЦЬ
+            // календарного місяця M треба ВНЕСТИ на картку до дня погашення в місяці
+            // M+1 (25-те число або кінець місяця). Період єдиний для всіх витрат
+            // місяця; нові витрати наступного місяця мають власний дедлайн і не
+            // рятують попередній. Шукаємо найстаріший непогашений «місячний рахунок».
+            const rd = pk.graceRepayDay;
+            const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+            const dlOf = (k) => {
+                const y = Math.floor(k / 12), m = k % 12;
+                const dim = new Date(y, m + 2, 0).getDate();
+                const d = rd >= 31 ? new Date(y, m + 2, 0) : new Date(y, m + 1, Math.min(rd, dim));
+                d.setHours(0, 0, 0, 0);
+                return d;
+            };
+            // хроніка: залишок на кінець кожного місяця + датовані надходження
+            let run = pk.initialBalance || 0;
+            const endBal = {};
+            const inflows = [];
+            let minIdx = null, prevIdx = null;
+            txs.forEach((t) => {
+                const v = txPocketDelta(t, pocketId);
+                if (!t.date) {
+                    run += v;
+                    return;
+                }
+                const idx = (+t.date.slice(0, 4)) * 12 + (+t.date.slice(5, 7) - 1);
+                if (prevIdx != null)
+                    for (let k = prevIdx; k < idx; k++)
+                        endBal[k] = run;
+                if (minIdx == null)
+                    minIdx = idx;
+                prevIdx = idx;
+                run += v;
+                if (v > 0)
+                    inflows.push({ date: t.date, v });
+            });
+            const nowIdx = today.getFullYear() * 12 + today.getMonth();
+            if (prevIdx != null)
+                for (let k = prevIdx; k < nowIdx; k++)
+                    endBal[k] = run;
+            for (let k = (minIdx != null ? minIdx : nowIdx); k < nowIdx; k++) {
+                const b = endBal[k];
+                if (b == null || b >= -0.005)
+                    continue;
+                const dl = dlOf(k);
+                const dlIso = iso(dl);
+                const y = Math.floor(k / 12), m = k % 12;
+                const fromIso = iso(new Date(y, m + 1, 1));
+                let paid = 0;
+                inflows.forEach((f) => { if (f.date >= fromIso && f.date <= dlIso)
+                    paid += f.v; });
+                if (paid >= -b - 0.005)
+                    continue; // місячний рахунок погашено вчасно — далі
+                const left = Math.round((dl - today) / 86400000);
+                return { mode: "bank", start: null, elapsed: 0, left, debt: -bal, graceDays: null, due: dlIso, toPay: Math.round((-b - paid) * 100) / 100 };
+            }
+            // всі завершені місяці чисті — борг виник у поточному місяці
+            const dl2 = dlOf(nowIdx);
+            return { mode: "bank", start: null, elapsed: 0, left: Math.round((dl2 - today) / 86400000), debt: -bal, graceDays: null, due: iso(dl2), toPay: Math.round(-bal * 100) / 100 };
         }, [pockets, transactions, pocketBalance]);
-        const graceWarnings = pockets.filter((pp) => !pp.archived && pp.graceDays > 0).map((pp) => ({ pocket: pp, label: pocketLabel(pp.id), gi: graceInfo(pp.id) })).filter((w) => w.gi && w.gi.left <= 7);
+        const graceWarnings = pockets.filter((pp) => !pp.archived && (pp.graceDays > 0 || (pp.graceMode === "bank" && pp.graceRepayDay > 0))).map((pp) => ({ pocket: pp, label: pocketLabel(pp.id), gi: graceInfo(pp.id) })).filter((w) => w.gi && w.gi.left <= 7);
         const bellCount = overdueReminders.length + pendingRecurring.length + creditWarnings.length + graceWarnings.length;
         const applyPin = (v) => { savePin(v); setPinState(v); };
         const applyPinDelay = (sec) => { savePinDelay(sec); setPinDelayState(sec); };
@@ -5658,7 +5743,7 @@ window.__K3_START = function () {
                     React.createElement("sup", { style: { color: "#C9A362", fontSize: "0.58em", fontWeight: 700, marginLeft: 1 } }, "3"))),
             React.createElement("div", { className: "h-8 flex items-end pb-1 min-w-0" }, grace && (React.createElement("p", { className: "text-[0.625rem] leading-none truncate", style: { color: grace.left <= 3 ? "#E8A79B" : grace.left <= 7 ? "var(--accent)" : "rgba(255,255,255,0.55)" } },
                 "\u23F3 ",
-                grace.left >= 0 ? tr("Пільговий: лишилось") + " " + grace.left + " " + tr("дн.") : tr("Пільговий прострочено на") + " " + (-grace.left) + " " + tr("дн.")))),
+                graceText(grace, pocket.currency)))),
             React.createElement("div", { className: "flex items-baseline gap-2 flex-wrap" },
                 React.createElement("p", { className: "font-display font-bold text-2xl tabular text-white" }, fmtMoney(balance, pocket.currency))),
             pocket.creditLimit > 0 && (() => {
@@ -9558,7 +9643,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     React.createElement("div", { className: "space-y-1.5" }, graceWarnings.map((w) => (React.createElement("p", { key: w.pocket.id, className: "text-xs" },
                         w.label,
                         " \u00B7 ",
-                        w.gi.left >= 0 ? tr("лишилось") + " " + w.gi.left + " " + tr("дн.") : tr("прострочено на") + " " + (-w.gi.left) + " " + tr("дн."),
+                        graceText(w.gi, w.pocket.currency),
                         " \u00B7 ",
                         React.createElement("span", { className: "tabular font-semibold" }, fmtMoney(w.gi.debt, w.pocket.currency)))))),
                     React.createElement("p", { className: "text-[0.625rem] mt-2", style: { color: "var(--text-dim)" } }, tr("Орієнтовно, за внесеними в K³ операціями. Точні дати перевіряйте у своєму банку.")))),
@@ -9716,7 +9801,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                             return null;
                         return (React.createElement("p", { className: "text-xs mt-2", style: { color: gi.left <= 3 ? "#E8A79B" : gi.left <= 7 ? "var(--accent)" : "rgba(243,240,232,0.7)" } },
                             "\u23F3 ",
-                            gi.left >= 0 ? tr("Пільговий: лишилось") + " " + gi.left + " " + tr("дн.") : tr("Пільговий прострочено на") + " " + (-gi.left) + " " + tr("дн."),
+                            graceText(gi, pocket.currency),
                             " \u00B7 ",
                             tr("борг"),
                             " ",
@@ -9895,6 +9980,9 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [balance, setBalance] = useState(existing ? String(existing.initialBalance) : "0");
         const [creditLimit, setCreditLimit] = useState(existing && existing.creditLimit != null ? String(existing.creditLimit) : "");
         const [graceDays, setGraceDays] = useState(existing && existing.graceDays != null ? String(existing.graceDays) : "");
+        const [graceMode, setGraceMode] = useState(existing ? (existing.graceMode === "bank" ? "bank" : (existing.graceDays > 0 ? "days" : "")) : "");
+        const [grDaySel, setGrDaySel] = useState(existing && existing.graceRepayDay ? (existing.graceRepayDay === 25 ? "25" : existing.graceRepayDay >= 31 ? "31" : "custom") : "25");
+        const [grDayCustom, setGrDayCustom] = useState(existing && existing.graceRepayDay && existing.graceRepayDay !== 25 && existing.graceRepayDay < 31 ? String(existing.graceRepayDay) : "");
         const [last4, setLast4] = useState((existing && existing.last4) || "");
         const [error, setError] = useState("");
         const currencyChanged = existing && currency !== existing.currency;
@@ -9904,12 +9992,14 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             const clP = parseFloat(String(creditLimit).replace(",", "."));
             const clVal = clP > 0 ? Math.round(clP * 100) / 100 : null;
             const gdP = parseInt(String(graceDays), 10);
-            const gdVal = gdP > 0 ? gdP : null;
+            const gdVal = graceMode === "days" && gdP > 0 ? gdP : null;
+            const grDay = graceMode === "bank" ? (grDaySel === "custom" ? Math.min(28, Math.max(1, parseInt(String(grDayCustom), 10) || 25)) : Number(grDaySel)) : null;
+            const gMode = graceMode === "bank" && grDay ? "bank" : (gdVal ? "days" : null);
             const l4Val = String(last4).replace(/\D/g, "").slice(0, 4) || null;
             if (existing)
-                editPocket(existing.id, { creditLimit: clVal, graceDays: gdVal, last4: l4Val, currency, initialBalance: parseFloat(balance) || 0, name: name.trim() });
+                editPocket(existing.id, { creditLimit: clVal, graceDays: gdVal, graceMode: gMode, graceRepayDay: grDay, last4: l4Val, currency, initialBalance: parseFloat(balance) || 0, name: name.trim() });
             else
-                addPocket(accountId, currency, balance, name, clVal, gdVal, l4Val);
+                addPocket(accountId, currency, balance, name, clVal, gdVal, l4Val, gMode, grDay);
             onClose();
         };
         return (React.createElement(Modal, { title: existing ? `Субрахунок ${account?.name}` : `Новий валютний субрахунок · ${account?.name}`, onClose: onClose, onBack: onBack },
@@ -9928,9 +10018,20 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             React.createElement(Field, { label: tr("Кредитний ліміт (необовʼязково)") },
                 React.createElement(Input, { type: "number", step: "0.01", inputMode: "decimal", value: creditLimit, onChange: (e) => setCreditLimit(e.target.value), placeholder: "0" }),
                 React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Для кредитної картки. Доступно = ліміт + баланс."))),
-            React.createElement(Field, { label: tr("Пільговий період (днів)") },
-                React.createElement(Input, { type: "number", step: "1", inputMode: "numeric", value: graceDays, onChange: (e) => setGraceDays(e.target.value), placeholder: "55" }),
-                React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, tr("Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку."))),
+            React.createElement(Field, { label: tr("Пільговий період") },
+                React.createElement(Select, { "data-gmode": "1", value: graceMode, onChange: (e) => setGraceMode(e.target.value) },
+                    React.createElement("option", { value: "" }, tr("Вимкнено")),
+                    React.createElement("option", { value: "bank" }, tr("Банківський: до числа наступного місяця")),
+                    React.createElement("option", { value: "days" }, tr("Простий: днів від виходу в мінус"))),
+                graceMode === "bank" && React.createElement("div", { className: "mt-2 space-y-2" },
+                    React.createElement(Select, { "data-grday": "1", value: grDaySel, onChange: (e) => setGrDaySel(e.target.value) },
+                        React.createElement("option", { value: "25" }, tr("До 25-го наступного місяця (як ПриватБанк)")),
+                        React.createElement("option", { value: "31" }, tr("До кінця наступного місяця (як monobank)")),
+                        React.createElement("option", { value: "custom" }, tr("Інше число…"))),
+                    grDaySel === "custom" && React.createElement(Input, { type: "number", step: "1", inputMode: "numeric", value: grDayCustom, onChange: (e) => setGrDayCustom(e.target.value), placeholder: "20" })),
+                graceMode === "days" && React.createElement("div", { className: "mt-2" },
+                    React.createElement(Input, { type: "number", step: "1", inputMode: "numeric", value: graceDays, onChange: (e) => setGraceDays(e.target.value), placeholder: "55" })),
+                graceMode && React.createElement("p", { className: "text-[0.6875rem] mt-1", style: { color: "var(--text-dim)" } }, graceMode === "bank" ? tr("Як у банків: усі витрати календарного місяця погашаються до вказаного числа наступного місяця. Розрахунок орієнтовний, за операціями у K³ — точні дати перевіряйте в банку.") : tr("Скільки днів банк не нараховує відсотки. Відлік — з дня, коли баланс пішов у мінус. Розрахунок орієнтовний, за внесеними у K³ операціями — точні дати перевіряйте в банку."))),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, existing ? tr("Зберегти зміни") : tr("Додати субрахунок"))));
     }
     /* ---------- Category Modal ---------- */
