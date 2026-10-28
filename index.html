@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-10-28.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-10-28.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1218,6 +1218,11 @@ window.__K3_START = function () {
         "Пільговий: лишилось": "Grace: left",
         "Пільговий: сплатити": "Grace: pay",
         "було до": "was due by",
+        "погашено вчасно": "settled on time",
+        "рахунок триває": "statement in progress",
+        "внесено": "paid in",
+        "Лишилось внести": "Still to pay",
+        "Борг кожного календарного місяця погашається внесеннями до свого числа наступного. Розрахунок за операціями у K³.": "Each calendar month's debt is settled by payments made before its own due day of the next month. Estimated from the records in K³.",
         "Пільговий період": "Grace period",
         "Банківський: до числа наступного місяця": "Bank-style: by a day of the next month",
         "Простий: днів від виходу в мінус": "Simple: days after going negative",
@@ -4823,6 +4828,9 @@ window.__K3_START = function () {
             if (prevIdx != null)
                 for (let k = prevIdx; k < nowIdx; k++)
                     endBal[k] = run;
+            // деталізація по «місячних рахунках»: кожен завершений місяць з боргом
+            const stmts = [];
+            let act = null;
             for (let k = (minIdx != null ? minIdx : nowIdx); k < nowIdx; k++) {
                 const b = endBal[k];
                 if (b == null || b >= -0.005)
@@ -4834,14 +4842,20 @@ window.__K3_START = function () {
                 let paid = 0;
                 inflows.forEach((f) => { if (f.date >= fromIso && f.date <= dlIso)
                     paid += f.v; });
-                if (paid >= -b - 0.005)
-                    continue; // місячний рахунок погашено вчасно — далі
                 const left = Math.round((dl - today) / 86400000);
-                return { mode: "bank", start: null, elapsed: 0, left, debt: -bal, graceDays: null, due: dlIso, toPay: Math.round((-b - paid) * 100) / 100 };
+                const settled = paid >= -b - 0.005;
+                const st = { ym: y + "-" + String(m + 1).padStart(2, "0"), debt: Math.round(-b * 100) / 100, paid: Math.round(paid * 100) / 100, toPay: settled ? 0 : Math.round((-b - paid) * 100) / 100, due: dlIso, left, status: settled ? "settled" : (left < 0 ? "overdue" : "active") };
+                stmts.push(st);
+                if (!settled && !act)
+                    act = st;
             }
-            // всі завершені місяці чисті — борг виник у поточному місяці
-            const dl2 = dlOf(nowIdx);
-            return { mode: "bank", start: null, elapsed: 0, left: Math.round((dl2 - today) / 86400000), debt: -bal, graceDays: null, due: iso(dl2), toPay: Math.round(-bal * 100) / 100 };
+            if (!act) {
+                // всі завершені місяці чисті — борг виник у поточному місяці (рахунок триває)
+                const dl2 = dlOf(nowIdx);
+                stmts.push({ ym: today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0"), debt: Math.round(-bal * 100) / 100, paid: 0, toPay: Math.round(-bal * 100) / 100, due: iso(dl2), left: Math.round((dl2 - today) / 86400000), status: "open" });
+            }
+            const top = act || stmts[stmts.length - 1];
+            return { mode: "bank", start: null, elapsed: 0, left: top.left, debt: -bal, graceDays: null, due: top.due, toPay: top.toPay, stmts };
         }, [pockets, transactions, pocketBalance]);
         const graceWarnings = pockets.filter((pp) => !pp.archived && (pp.graceDays > 0 || (pp.graceMode === "bank" && pp.graceRepayDay > 0))).map((pp) => ({ pocket: pp, label: pocketLabel(pp.id), gi: graceInfo(pp.id) })).filter((w) => w.gi && w.gi.left <= 7);
         const bellCount = overdueReminders.length + pendingRecurring.length + creditWarnings.length + graceWarnings.length;
@@ -9702,6 +9716,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
         const [rowDelArm, setRowDelArm] = useState(null);
         useEffect(() => { if (!rowDelArm) return; const t = setTimeout(() => setRowDelArm(null), 6000); return () => clearTimeout(t); }, [rowDelArm]);
         useBodyScrollLock();
+        const [graceOpen, setGraceOpen] = useState(false);
         const [pid, setPid] = useState(pocketId);
         const [confirmArc, setConfirmArc] = useState(false);
         const swipeRef = React.useRef(null);
@@ -9799,13 +9814,37 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                         const gi = graceInfo && graceInfo(pid);
                         if (!gi)
                             return null;
-                        return (React.createElement("p", { className: "text-xs mt-2", style: { color: gi.left <= 3 ? "#E8A79B" : gi.left <= 7 ? "var(--accent)" : "rgba(243,240,232,0.7)" } },
+                        const lineCol = gi.left <= 3 ? "#E8A79B" : gi.left <= 7 ? "var(--accent)" : "rgba(243,240,232,0.7)";
+                        const line = React.createElement("p", { className: "text-xs mt-2 flex items-center gap-1", style: { color: lineCol } },
                             "\u23F3 ",
                             graceText(gi, pocket.currency),
                             " \u00B7 ",
                             tr("борг"),
                             " ",
-                            fmtMoney(gi.debt, pocket.currency)));
+                            fmtMoney(gi.debt, pocket.currency),
+                            gi.mode === "bank" && gi.stmts && gi.stmts.length ? React.createElement(ChevronDown, { size: 12, style: { flexShrink: 0, transition: "transform .15s", transform: graceOpen ? "rotate(180deg)" : "none" } }) : null);
+                        if (gi.mode !== "bank" || !gi.stmts || !gi.stmts.length)
+                            return line;
+                        const stCol = (st) => st.status === "overdue" ? "#E8A79B" : st.status === "active" ? "var(--accent)" : st.status === "settled" ? "#9BD4AE" : "rgba(243,240,232,0.6)";
+                        const mLabel = (ym) => { const mn = tr(MONTHS_FULL[+ym.slice(5, 7) - 1]); return mn.charAt(0).toUpperCase() + mn.slice(1) + " " + ym.slice(0, 4); };
+                        return React.createElement("div", null,
+                            React.createElement("button", { type: "button", "data-gracedet": "1", onClick: () => setGraceOpen(!graceOpen), className: "block w-full text-left" }, line),
+                            graceOpen && React.createElement("div", { "data-gracestmts": "1", className: "mt-2 rounded-xl p-3 space-y-2.5", style: { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" } },
+                                gi.stmts.slice(-6).map((st) => (React.createElement("div", { key: st.ym },
+                                    React.createElement("div", { className: "flex items-center justify-between gap-2" },
+                                        React.createElement("span", { className: "text-xs font-semibold", style: { color: "rgba(243,240,232,0.92)" } }, mLabel(st.ym)),
+                                        React.createElement("span", { className: "text-[0.6875rem] font-medium", style: { color: stCol(st) } },
+                                            st.status === "settled" ? "\u2713 " + tr("погашено вчасно")
+                                                : st.status === "overdue" ? tr("прострочено на") + " " + (-st.left) + " " + tr("дн.")
+                                                    : st.status === "active" ? tr("лишилось") + " " + st.left + " " + tr("дн.")
+                                                        : tr("рахунок триває"))),
+                                    React.createElement("p", { className: "text-[0.6875rem] mt-0.5", style: { color: "rgba(243,240,232,0.6)" } },
+                                        tr("борг"), " ", React.createElement("span", { className: "tabular" }, fmtMoney(st.debt, pocket.currency)),
+                                        " \u00B7 ", tr("внесено"), " ", React.createElement("span", { className: "tabular" }, fmtMoney(st.paid, pocket.currency)),
+                                        " \u00B7 ", tr("до"), " ", fmtDate(st.due)),
+                                    st.toPay > 0 && React.createElement("p", { className: "text-xs mt-0.5 font-semibold tabular", style: { color: stCol(st) } },
+                                        tr("Лишилось внести"), ": ", fmtMoney(st.toPay, pocket.currency))))),
+                                React.createElement("p", { className: "text-[0.625rem] pt-1", style: { color: "rgba(243,240,232,0.45)", borderTop: "1px solid rgba(255,255,255,0.1)" } }, tr("Борг кожного календарного місяця погашається внесеннями до свого числа наступного. Розрахунок за операціями у K³."))));
                     })()),
                 pocket.name && React.createElement("p", { className: "text-sm mt-1 font-medium", style: { color: "rgba(255,255,255,0.72)" } }, tr(pocket.name)),
                 siblings.length > 1 && (React.createElement("div", { "data-noswipe": true, className: "flex gap-2 overflow-x-auto mt-4 -mx-1 px-1 pb-0.5" }, siblings.map((s) => {
