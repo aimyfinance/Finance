@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-10-28.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-10-29.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -10934,7 +10934,10 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 setError(tr("Оберіть два різні рахунки"));
                 return;
             }
-            const to = parseFloat(toAmount);
+            // В одній валюті зараховується рівно стільки, скільки списано: поле
+            // «зарахування» тут приховане, і при редагуванні збережене toAmount
+            // інакше лишалося б старим (списали 998 — зарахувалось 1000).
+            const to = crossCurrency ? parseFloat(toAmount) : amt;
             if (!to || to <= 0)
                 return setError(tr("Сума зарахування має бути додатною"));
             const data = { type: isExchange ? "exchange" : "transfer", date, fromPocketId, toPocketId, fromAmount: amt, fromCurrency, toAmount: to, toCurrency, rate: crossCurrency ? (quoteFrom ? rateNum : (rateNum > 0 ? Math.round((1 / rateNum) * 1e6) / 1e6 : 0)) : 1, fee: 0, note, flagged: flagged || undefined };
@@ -10977,7 +10980,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     React.createElement(Input, { className: "flex-1 k3-amt", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setManualTo(false); setError(""); } }),
                     React.createElement("select", { value: fromCur, onChange: (e) => pickCur("from", e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))) : (React.createElement(Field, { label: tr("Сума переказу"), error: error },
                 React.createElement("div", { className: "flex gap-2" },
-                    React.createElement(Input, { className: "flex-1 k3-amt", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setError(""); } }),
+                    React.createElement(Input, { className: "flex-1 k3-amt", type: "number", step: "0.01", value: fromAmount, onChange: (e) => { setFromAmount(e.target.value); setManualTo(false); setError(""); } }),
                     React.createElement("select", { value: fromCur, onChange: (e) => pickTrCur(e.target.value), className: "px-2.5 rounded-xl text-sm font-semibold outline-none shrink-0", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" } }, curListEx.map((cc) => React.createElement("option", { key: cc, value: cc }, cc)))))),
             crossCurrency && (React.createElement(Field, { label: `Курс обміну (1 ${quoteCur} = X ${otherCur})` },
                 React.createElement(Input, { type: "number", value: rate, onChange: (e) => { setRate(e.target.value); setManualTo(false); setRateTouched(true); } }),
