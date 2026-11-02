@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-10-29.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-11-02.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1480,6 +1480,8 @@ window.__K3_START = function () {
         "Без категорії": "No category",
         "У файлі не знайдено рядків з датою та сумою.": "No rows with a date and an amount were found.",
         "Не вдалося розпізнати файл. Перевірте, що це CSV.": "Could not parse the file. Make sure it's a CSV.",
+        "Цей браузер не вміє розпаковувати Excel-файли. Збережіть виписку як CSV.": "This browser can't unpack Excel files. Save the statement as CSV.",
+        "Не вдалося прочитати Excel-файл. Збережіть виписку як CSV і спробуйте ще раз.": "Could not read the Excel file. Save the statement as CSV and try again.",
         "Поза рахунками": "Outside accounts",
         "Списано з рахунку": "Debited from the account",
         "Зараховано на рахунок": "Credited to the account",
@@ -8287,6 +8289,162 @@ window.__K3_START = function () {
         const fb = cats.find((x) => x.name === "Інше" || x.name === "Інший" || x.name === "Other");
         return fb ? fb.id : (cats[0] ? cats[0].id : "");
     }
+    /* --- вбудований XLSX-рідер: .xlsx = zip(deflate) + xml. Жодних бібліотек:
+       zip розбираємо самі, deflate віддаємо браузерному DecompressionStream.
+       Дата-клітинки розпізнаються через styles.xml (numFmtId), серійні числа
+       Excel конвертуються в dd.mm.yyyy — далі працює звичайний CSV-конвеєр. --- */
+    function xmlEntities(t) {
+        return String(t || "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#x([0-9a-fA-F]+);/g, function (m, n) { return String.fromCharCode(parseInt(n, 16)); }).replace(/&#(\d+);/g, function (m, n) { return String.fromCharCode(+n); }).replace(/&amp;/g, "&");
+    }
+    async function unzipEntries(buf) {
+        const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+        const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+        let e = -1;
+        for (let i = u8.length - 22; i >= Math.max(0, u8.length - 22 - 65535); i--) {
+            if (dv.getUint32(i, true) === 0x06054b50) {
+                e = i;
+                break;
+            }
+        }
+        if (e < 0)
+            throw new Error("notzip");
+        const count = dv.getUint16(e + 10, true);
+        let off = dv.getUint32(e + 16, true);
+        const entries = {};
+        for (let i = 0; i < count; i++) {
+            if (dv.getUint32(off, true) !== 0x02014b50)
+                break;
+            const method = dv.getUint16(off + 10, true);
+            const csize = dv.getUint32(off + 20, true);
+            const nameLen = dv.getUint16(off + 28, true);
+            const extraLen = dv.getUint16(off + 30, true);
+            const cmtLen = dv.getUint16(off + 32, true);
+            const lho = dv.getUint32(off + 42, true);
+            const name = new TextDecoder().decode(u8.subarray(off + 46, off + 46 + nameLen));
+            entries[name] = { method, csize, lho };
+            off += 46 + nameLen + extraLen + cmtLen;
+        }
+        const read = async (name) => {
+            const en = entries[name];
+            if (!en)
+                return null;
+            const lnl = dv.getUint16(en.lho + 26, true);
+            const lel = dv.getUint16(en.lho + 28, true);
+            const start = en.lho + 30 + lnl + lel;
+            const data = u8.subarray(start, start + en.csize);
+            if (en.method === 0)
+                return new TextDecoder().decode(data);
+            if (typeof DecompressionStream === "undefined")
+                throw new Error("nozlib");
+            const ds = new DecompressionStream("deflate-raw");
+            const resp = new Response(new Blob([data]).stream().pipeThrough(ds));
+            return await resp.text();
+        };
+        return { names: Object.keys(entries), read };
+    }
+    async function parseXlsxRows(buf) {
+        const z = await unzipEntries(buf);
+        const ssXml = await z.read("xl/sharedStrings.xml");
+        const shared = [];
+        if (ssXml)
+            ssXml.split(/<si[ >]/).slice(1).forEach(function (si) {
+                let txt = "";
+                const re = /<t[^>]*>([\s\S]*?)<\/t>/g;
+                let mm;
+                while ((mm = re.exec(si)))
+                    txt += xmlEntities(mm[1]);
+                shared.push(txt);
+            });
+        // які стилі є датними (вбудовані 14–22, 45–47 + кастомні формати з d/m/y)
+        const stXml = await z.read("xl/styles.xml");
+        const dateXf = [];
+        if (stXml) {
+            const custom = {};
+            const fmtRe = /<numFmt[^>]*numFmtId="(\d+)"[^>]*formatCode="([^"]*)"/g;
+            let fm;
+            while ((fm = fmtRe.exec(stXml)))
+                custom[+fm[1]] = fm[2];
+            const cx = stXml.match(/<cellXfs[\s\S]*?<\/cellXfs>/);
+            if (cx) {
+                const xfRe = /<xf\b[^>]*>/g;
+                let xm;
+                while ((xm = xfRe.exec(cx[0]))) {
+                    const idm = xm[0].match(/numFmtId="(\d+)"/);
+                    const id = idm ? +idm[1] : 0;
+                    const f = custom[id];
+                    const isDate = (id >= 14 && id <= 22) || (id >= 45 && id <= 47) || (f ? (/[dmyDMY]/.test(f.replace(/\[[^\]]*\]/g, "").replace(/"[^"]*"/g, "")) && !/[#0]/.test(f)) : false);
+                    dateXf.push(isDate);
+                }
+            }
+        }
+        let sheetPath = null;
+        try {
+            const wb = await z.read("xl/workbook.xml");
+            const rels = await z.read("xl/_rels/workbook.xml.rels");
+            const m1 = wb && wb.match(/<sheet [^>]*r:id="(rId\d+)"/);
+            if (m1 && rels) {
+                const m2 = rels.match(new RegExp('Id="' + m1[1] + '"[^>]*Target="([^"]+)"'));
+                if (m2)
+                    sheetPath = "xl/" + m2[1].replace(/^\//, "").replace(/^xl\//, "");
+            }
+        }
+        catch (e) { }
+        if (!sheetPath || z.names.indexOf(sheetPath) === -1)
+            sheetPath = z.names.find(function (n) { return /^xl\/worksheets\/sheet\d+\.xml$/.test(n); }) || z.names.find(function (n) { return n.indexOf("xl/worksheets/") === 0; });
+        const shXml = sheetPath ? await z.read(sheetPath) : null;
+        if (!shXml)
+            throw new Error("nosheet");
+        const colIdx = function (ref) { let n = 0; for (let i = 0; i < ref.length; i++) {
+            const c = ref.charCodeAt(i);
+            if (c >= 65 && c <= 90)
+                n = n * 26 + (c - 64);
+            else
+                break;
+        } return n - 1; };
+        const out = [];
+        const rowRe = /<row[^>]*>([\s\S]*?)<\/row>/g;
+        let rm;
+        while ((rm = rowRe.exec(shXml))) {
+            const cells = [];
+            const cellRe = /<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+            let cm;
+            while ((cm = cellRe.exec(rm[1]))) {
+                const attrs = cm[1] || "";
+                const body = cm[2] || "";
+                const rRef = (attrs.match(/r="([A-Z]+)\d+"/) || [])[1];
+                const idx = rRef ? colIdx(rRef) : cells.length;
+                const tAttr = (attrs.match(/t="(\w+)"/) || [])[1] || "";
+                let val = "";
+                if (tAttr === "inlineStr") {
+                    const tm = body.match(/<t[^>]*>([\s\S]*?)<\/t>/);
+                    val = tm ? xmlEntities(tm[1]) : "";
+                }
+                else {
+                    const vm = body.match(/<v>([\s\S]*?)<\/v>/);
+                    val = vm ? xmlEntities(vm[1]) : "";
+                    if (tAttr === "s")
+                        val = shared[+val] != null ? shared[+val] : "";
+                }
+                if (!tAttr && /^\d+(\.\d+)?$/.test(val)) {
+                    const sA = (attrs.match(/s="(\d+)"/) || [])[1];
+                    if (sA != null && dateXf[+sA]) {
+                        const n = Math.floor(+val);
+                        if (n > 20000 && n < 80000) {
+                            const d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+                            val = String(d.getUTCDate()).padStart(2, "0") + "." + String(d.getUTCMonth() + 1).padStart(2, "0") + "." + d.getUTCFullYear();
+                        }
+                    }
+                }
+                cells[idx] = val;
+            }
+            for (let i = 0; i < cells.length; i++)
+                if (cells[i] === undefined)
+                    cells[i] = "";
+            if (cells.some(function (v) { return String(v).trim() !== ""; }))
+                out.push(cells);
+        }
+        return out;
+    }
     // --- tiny CSV toolkit ---
     function detectDelimiter(text) {
         const line = (text.split(/\r?\n/).find((l) => l.trim() !== "") || "");
@@ -8468,37 +8626,53 @@ window.__K3_START = function () {
             r.onerror = () => rej(new Error("read"));
             r.readAsText(file, enc);
         });
+        const adoptParsed = (parsed, fname) => {
+            if (!parsed.length) {
+                setError(tr("Не вдалося розпізнати файл. Перевірте, що це CSV."));
+                return;
+            }
+            const hasDate0 = parsed[0].some((v) => parseDateCell(v));
+            const header = !hasDate0 && parsed.length > 1 ? parsed[0] : null;
+            const data = header ? parsed.slice(1) : parsed;
+            if (!data.length) {
+                setError(tr("У файлі не знайдено рядків з датою та сумою."));
+                return;
+            }
+            const colCount = Math.max.apply(null, data.map((r) => r.length));
+            const det = detectColumns(data, colCount);
+            setFileName(fname);
+            setHeaderRow(header);
+            setDataRows(data);
+            setCols(colCount);
+            setMap(det);
+            setStage("map");
+        };
         const handleFile = async (file) => {
             if (!file)
                 return;
             setError("");
+            // Excel-виписка: .xlsx читається вбудованим рідером, далі — той самий конвеєр
+            const isXlsx = /\.xlsx$/i.test(file.name || "") || file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            if (isXlsx) {
+                try {
+                    const buf = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error("read")); r.readAsArrayBuffer(file); });
+                    const grid = await parseXlsxRows(new Uint8Array(buf));
+                    adoptParsed(grid, file.name || "statement.xlsx");
+                }
+                catch (e) {
+                    setError(e && e.message === "nozlib"
+                        ? tr("Цей браузер не вміє розпаковувати Excel-файли. Збережіть виписку як CSV.")
+                        : tr("Не вдалося прочитати Excel-файл. Збережіть виписку як CSV і спробуйте ще раз."));
+                }
+                return;
+            }
             try {
                 let text = await readFile(file, "utf-8");
                 // Legacy bank exports are often windows-1251; re-read if UTF-8 came back mangled
                 if ((text.match(/\uFFFD/g) || []).length > 3)
                     text = await readFile(file, "windows-1251");
                 text = text.replace(/^\uFEFF/, "");
-                const parsed = parseCSV(text, detectDelimiter(text));
-                if (!parsed.length) {
-                    setError(tr("Не вдалося розпізнати файл. Перевірте, що це CSV."));
-                    return;
-                }
-                const hasDate0 = parsed[0].some((v) => parseDateCell(v));
-                const header = !hasDate0 && parsed.length > 1 ? parsed[0] : null;
-                const data = header ? parsed.slice(1) : parsed;
-                if (!data.length) {
-                    setError(tr("У файлі не знайдено рядків з датою та сумою."));
-                    return;
-                }
-                const colCount = Math.max.apply(null, data.map((r) => r.length));
-                const n = Math.min(data.length, 40);
-                const det = detectColumns(data, colCount);
-                setFileName(file.name || "statement.csv");
-                setHeaderRow(header);
-                setDataRows(data);
-                setCols(colCount);
-                setMap(det);
-                setStage("map");
+                adoptParsed(parseCSV(text, detectDelimiter(text)), file.name || "statement.csv");
             }
             catch (e) {
                 setError(tr("Не вдалося прочитати файл"));
@@ -8637,7 +8811,7 @@ window.__K3_START = function () {
                 React.createElement(Field, { label: tr("Рахунок, куди імпортувати") },
                     React.createElement(PocketSelect, { accounts: accounts, pockets: pockets, value: pocketId, onChange: setPocketId, pocketBalance: pocketBalance })),
                 React.createElement(Field, { label: tr("Файл виписки (CSV)"), error: error },
-                    React.createElement("input", { ref: fileRef, type: "file", accept: ".csv,text/csv,text/plain", onChange: (e) => handleFile(e.target.files && e.target.files[0]), style: { display: "none" } }),
+                    React.createElement("input", { ref: fileRef, type: "file", accept: ".csv,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", onChange: (e) => handleFile(e.target.files && e.target.files[0]), style: { display: "none" } }),
                     React.createElement(Button, { variant: "secondary", className: "w-full", onClick: () => fileRef.current && fileRef.current.click() },
                         React.createElement(ArrowDownRight, { size: 15 }),
                         " ",
