@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-11-02.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-11-06.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -1239,6 +1239,9 @@ window.__K3_START = function () {
         "У цьому гаманці поки немає монет.": "No coins in this wallet yet.",
         "Разом у гаманці": "Wallet total",
         "Недостатньо монет у цьому гаманці": "Not enough coins in this wallet",
+        "Ще": "Another",
+        "в інших гаманцях — спершу «Перемістити» або оберіть інший гаманець.": "sits in other wallets — use Move first or pick another wallet.",
+        "доступно": "available",
         "Транші": "Lots",
         "Разом за записами": "Total from records",
         "У гаманці зараз": "In the wallet now",
@@ -7265,7 +7268,7 @@ window.__K3_START = function () {
             catch (e) { } })();
             return () => { dead = true; };
         }, [src && src.coinId, toCoin && toCoin.id]);
-        const fa = parseFloat(String(fromAmt).replace(",", "."));
+        const fa = parseFloat(String(fromAmt).replace(/[\s\u00A0\u202F]/g, "").replace(",", "."));
         const marketTo = fa > 0 && pf > 0 && pt > 0 ? Math.round((fa * pf / pt) * 1e8) / 1e8 : null;
         useEffect(() => {
             if (!toTouched && marketTo != null)
@@ -7298,8 +7301,14 @@ window.__K3_START = function () {
                 return setError(tr("Оберіть монету"));
             if (!toCoin || toCoin.id === src.coinId)
                 return setError(tr("Оберіть монету-ціль"));
-            if (!(fa > 0) || fa > (src.amount || 0) + 1e-9)
+            if (!(fa > 0))
                 return setError(tr("Введіть коректну суму"));
+            if (fa > (src.amount || 0) + 1e-9) {
+                // Монета може лежати ще й в інших гаманцях — скажемо про це прямо,
+                // а не ховатимемо за «введіть коректну суму»
+                const elsewhere = round8(crypto.filter((c) => c.coinId === src.coinId && (c.walletId || null) !== (wal || null)).reduce((s0, c) => s0 + (c.amount || 0), 0));
+                return setError(tr("Недостатньо монет у цьому гаманці") + " (" + (src.amount || 0) + " " + src.symbol + ")" + (elsewhere > 1e-9 ? ". " + tr("Ще") + " " + elsewhere + " " + src.symbol + " " + tr("в інших гаманцях — спершу «Перемістити» або оберіть інший гаманець.") : ""));
+            }
             if (!(ta > 0))
                 return setError(tr("Вкажіть отриману кількість"));
             swapCrypto(wal || null, src.coinId, fa, toCoin, ta, gainBase, date, editing ? editing.id : null);
@@ -7308,7 +7317,7 @@ window.__K3_START = function () {
         return (React.createElement(Modal, { title: editing ? tr("Редагувати своп") : tr("Своп крипти"), onClose: onClose },
             React.createElement(Field, { label: tr("Гаманець"), error: error },
                 React.createElement(Select, { value: wal, onChange: (e) => { setWal(e.target.value); setFromCoinId(""); setError(""); } }, wallets.map((w) => React.createElement("option", { key: w.id || "main", value: w.id }, w.name)))),
-            React.createElement(Field, { label: tr("Віддаю") },
+            React.createElement(Field, { label: tr("Віддаю") + (src ? " \u00B7 " + tr("доступно") + " " + src.amount + " " + src.symbol : "") },
                 inWal.length ? React.createElement("div", { className: "flex gap-2" },
                     React.createElement("span", { className: "w-32 shrink-0" },
                         React.createElement(Select, { value: fromCoinId || inWal[0]?.coinId || "", onChange: (e) => { setFromCoinId(e.target.value); setToTouched(false); setPriceEd(false); setError(""); } }, inWal.map((c) => React.createElement("option", { key: c.id, value: c.coinId }, c.symbol)))),
