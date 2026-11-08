@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-11-08.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-11-08.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -8524,13 +8524,13 @@ window.__K3_START = function () {
         "\u0441\u0456\u0447": 1, "\u043b\u044e\u0442": 2, "\u0431\u0435\u0440": 3, "\u043a\u0432\u0456": 4, "\u0442\u0440\u0430": 5, "\u0447\u0435\u0440": 6, "\u043b\u0438\u043f": 7, "\u0441\u0435\u0440": 8, "\u0432\u0435\u0440": 9, "\u0436\u043e\u0432": 10, "\u043b\u0438\u0441": 11, "\u0433\u0440\u0443": 12 };
     function parseDateCell(s) {
         const v = String(s || "");
-        let m = /(\d{2})[.\/](\d{2})[.\/](\d{4})/.exec(v);
+        let m = /(\d{2})[.\/\-](\d{2})[.\/\-](\d{4})/.exec(v);
         if (m)
             return isoDate(m[3], m[2], m[1]);
         m = /(\d{4})-(\d{2})-(\d{2})/.exec(v);
         if (m)
             return isoDate(m[1], m[2], m[3]);
-        m = /(\d{2})[.\/](\d{2})[.\/](\d{2})(?!\d)/.exec(v);
+        m = /(\d{2})[.\/\-](\d{2})[.\/\-](\d{2})(?!\d)/.exec(v);
         if (m)
             return isoDate("20" + m[3], m[2], m[1]);
         // "1 Sep 2026", "01 вересня 2026"
