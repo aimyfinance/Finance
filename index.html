@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-11-08.3"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-11-11.1"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -2101,6 +2101,8 @@ window.__K3_START = function () {
         "Оберіть обидва рахунки": "Pick both accounts",
         "на паузі · увімкнути": "paused · resume",
         "Перетворити на запланований": "Convert to a planned payment",
+        "Перетворити на регулярний": "Convert to a recurring payment",
+        "Тепер це регулярний платіж": "This is now a recurring payment",
         "Операція не буде проведена: у день платежу на головному екрані з'явиться картка «Провести».": "Nothing is posted now: on the due date a «Post» card appears on the overview.",
         "Запланувати на цю дату (не проводити зараз)": "Schedule for this date (don't post now)",
         "Сортувати: за частотою": "Sort: by frequency",
@@ -7443,7 +7445,7 @@ window.__K3_START = function () {
             React.createElement(Button, { className: "w-full mt-3", onClick: () => setModal({ type: "plannedEdit", origin: "manage" }) },
                 React.createElement(Plus, { size: 15 }), " ", tr("Додати платіж"))));
     }
-    function PlannedEditModal({ defaultPocketId, onClose, existing, accounts, pockets, categories, projects, addPlanned, editPlanned, setModal, origin, currencies }) {
+    function PlannedEditModal({ defaultPocketId, onClose, existing, accounts, pockets, categories, projects, addPlanned, editPlanned, setModal, origin, currencies, addRecurring, deletePlanned }) {
         const isEdit = existing && existing.id;
         const active = pockets.filter((p) => !p.archived);
         const [kind, setKind] = useState(existing?.kind || "expense");
@@ -7496,6 +7498,35 @@ window.__K3_START = function () {
                 editPlanned(existing.id, data);
             else
                 addPlanned(data);
+            if (origin === "list")
+                setModal({ type: "plannedList" });
+            else if (origin === "manage")
+                setModal({ type: "plannedManage" });
+            else
+                onClose();
+        };
+        // Запланований → Регулярний: створює правило з тих самих полів і прибирає
+        // запис зі Запланованих. Перший платіж правила — найближча планова дата.
+        const toRecurring = () => {
+            const amt = parseFloat(String(amount).replace(",", "."));
+            if (!title.trim())
+                return setError(tr("Введіть назву"));
+            if (!(amt > 0))
+                return setError(tr("Введіть коректну суму"));
+            if (isMove && (!fromPocketId || !toPocketId || fromPocketId === toPocketId))
+                return setError(tr("Оберіть два різні рахунки"));
+            const todayISO2 = localISODate(new Date());
+            const freq = frequency === "once" ? "monthly" : frequency;
+            const probe = { frequency: freq, startDate, dayOfMonth: Number(dayOfMonth) || 1, weekday: freq === "weekly" ? Number(weekday) : null, day1: freq === "semimonthly" ? Number(day1) || 1 : null, day2: freq === "semimonthly" ? Number(day2) || 15 : null, month: (freq === "yearly" || freq === "quarterly") ? Number(recMonth) || 1 : null, lastDone: "" };
+            const nd = nextRuleDate(probe, todayISO2);
+            const prev = new Date((nd !== "9999-99-99" ? nd : todayISO2) + "T12:00:00");
+            prev.setDate(prev.getDate() - 1);
+            const cf = isMove ? ((active.find((p) => p.id === fromPocketId) || {}).currency || null) : null;
+            const ct = isMove ? ((active.find((p) => p.id === toPocketId) || {}).currency || null) : null;
+            const catId = isMove ? null : (categoryId || ((categories.filter((c) => c.type === (kind === "income" ? "income" : "expense") && !c.archived)[0] || {}).id || null));
+            addRecurring({ kind: isMove ? "transfer" : kind, title: title.trim(), mode: isMove && cf !== ct ? "ask" : "fixed", amount: Math.round(amt * 100) / 100, pocketId: isMove ? fromPocketId : pocketId, categoryId: catId, projectId: isMove ? null : (projectId || null), fromPocketId: isMove ? fromPocketId : null, toPocketId: isMove ? toPocketId : null, dayOfMonth: Number(dayOfMonth) || 1, startDate, frequency: freq, weekday: freq === "weekly" ? Number(weekday) : null, day1: freq === "semimonthly" ? Number(day1) || 1 : null, day2: freq === "semimonthly" ? Number(day2) || 15 : null, month: (freq === "yearly" || freq === "quarterly") ? Number(recMonth) || 1 : null, lastDone: localISODate(prev) });
+            deletePlanned(existing.id);
+            notify(tr("Тепер це регулярний платіж"));
             if (origin === "list")
                 setModal({ type: "plannedList" });
             else if (origin === "manage")
@@ -7560,6 +7591,10 @@ window.__K3_START = function () {
                 React.createElement(Select, { value: String(dayOfMonth), onChange: (e) => setDayOfMonth(Number(e.target.value)) }, dayOpts)),
             React.createElement(Field, { label: frequency === "once" ? tr("Дата платежу") : tr("Початок") },
                 React.createElement(Input, { type: "date", value: startDate, onChange: (e) => setStartDate(e.target.value) })),
+            isEdit && kind !== "exchange" && addRecurring && deletePlanned && React.createElement("button", { type: "button", "data-torecurring": "1", onClick: toRecurring, className: "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium mt-2 mb-1", style: { background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text-dim)" } },
+                React.createElement(RefreshCw, { size: 14 }),
+                " ",
+                tr("Перетворити на регулярний")),
             React.createElement(Button, { className: "w-full mt-2", onClick: submit }, isEdit ? tr("Зберегти зміни") : tr("Створити"))));
     }
     /* ============================== GOALS ============================== */
@@ -9885,7 +9920,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             if (modal.type === "plannedManage")
                 return React.createElement(PlannedManageModal, { onClose: close, planned: planned, pockets: pockets, baseCurrency: baseCurrency, setModal: setModal, editPlanned: editPlanned, deletePlanned: deletePlanned , plnSort: plnSort, setPlnSort: setPlnSort });
             if (modal.type === "plannedEdit")
-                return React.createElement(PlannedEditModal, { onClose: close, defaultPocketId: defaultPocketId, existing: modal.payload || null, origin: modal.origin || null, accounts: accounts, pockets: pockets, categories: categories, projects: projects, addPlanned: addPlanned, editPlanned: editPlanned, setModal: setModal, currencies: currencies });
+                return React.createElement(PlannedEditModal, { onClose: close, defaultPocketId: defaultPocketId, existing: modal.payload || null, origin: modal.origin || null, accounts: accounts, pockets: pockets, categories: categories, projects: projects, addPlanned: addPlanned, editPlanned: editPlanned, addRecurring: addRecurring, deletePlanned: deletePlanned, setModal: setModal, currencies: currencies });
             if (modal.type === "recurring")
                 return React.createElement(RecurringListModal, { onClose: close, recurring: recurring, pockets: pockets, categories: categories, pocketLabel: pocketLabel, setModal: setModal, editRecurring: editRecurring, deleteRecurring: deleteRecurring, recSort: recSort, setRecSort: setRecSort });
             if (modal.type === "recurringEdit")
@@ -11294,7 +11329,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                 markPlannedDone(plannedDone.id, plannedDone.key);
             if (!editing && recurringDone && markRecurringDone)
                 markRecurringDone(recurringDone.id, recurringDone.month);
-            if (!editing && !isExchange && recOn && addRecurring) {
+            if (!isExchange && recOn && addRecurring && !(editing && editing.recurringId)) {
                 const d0 = new Date(date + "T12:00:00");
                 addRecurring({ kind: "transfer", title: (note && note.trim()) || tr("Переказ між рахунками"), mode: crossCurrency ? "ask" : recMode, amount: amt, pocketId: fromPocketId, fromPocketId: fromPocketId, toPocketId: toPocketId, categoryId: null, projectId: null, dayOfMonth: +date.slice(8, 10) || 1, startDate: date, frequency: recFreq, weekday: d0.getDay(), day1: null, day2: null, month: +date.slice(5, 7) || null, lastDone: date });
             }
@@ -11368,7 +11403,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
                     React.createElement(Textarea, { rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: tr("Необов'язково"), style: { paddingRight: "2.25rem" } }),
                     note && React.createElement("button", { type: "button", "data-clearnote": "1", "aria-label": tr("Очистити"), onMouseDown: (e) => e.preventDefault(), onClick: () => setNote(""), className: "absolute flex items-center justify-center rounded-full", style: { right: "0.5rem", top: "0.5rem", width: "1.375rem", height: "1.375rem", background: "var(--surface2)", color: "var(--text-dim)" } },
                         React.createElement(X, { size: 12 })))),
-            !editing && !isExchange && addRecurring && React.createElement("div", { className: "mb-3" },
+            !isExchange && addRecurring && !(editing && editing.recurringId) && React.createElement("div", { className: "mb-3" },
                 React.createElement("label", { className: "flex items-center gap-2.5 cursor-pointer" },
                     React.createElement("input", { type: "checkbox", "data-recchk-tr": "1", checked: recOn, onChange: (e) => setRecOn(e.target.checked), className: "w-4 h-4 rounded accent-current", style: { accentColor: "var(--accent)" } }),
                     React.createElement("span", { className: "text-sm" }, tr("Повторювати"))),
