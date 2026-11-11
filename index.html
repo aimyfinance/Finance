@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-11-11.1"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-11-11.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -4537,7 +4537,26 @@ window.__K3_START = function () {
         const addRecurring = (data) => { update({ recurring: [...recurring, { id: uid("rec"), paused: false, archived: false, lastDone: "", createdAt: new Date().toISOString(), ...data }] }); notify(tr("Регулярний платіж додано")); };
         const editRecurring = (id, patch) => update({ recurring: recurring.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
         const deleteRecurring = (id) => { update({ recurring: recurring.filter((r) => r.id !== id) }); notify(tr("Регулярний платіж видалено")); };
-        const markRecurringDone = (id, monthKey) => update({ recurring: recurring.map((r) => (r.id === id && (!r.lastDone || monthKey > r.lastDone) ? { ...r, lastDone: monthKey } : r)) });
+        const markRecurringDone = (id, monthKey, actual) => update({ recurring: recurring.map((r) => {
+            if (r.id !== id)
+                return r;
+            const upd = { ...r };
+            if (!r.lastDone || monthKey > r.lastDone)
+                upd.lastDone = monthKey;
+            // Правило запам'ятовує факт: наступне проведення підставить останню
+            // реальну суму і рахунок, а не стартові з моменту створення правила.
+            if (actual) {
+                if (actual.amount > 0)
+                    upd.amount = actual.amount;
+                if (actual.pocketId)
+                    upd.pocketId = actual.pocketId;
+                if (actual.fromPocketId)
+                    upd.fromPocketId = actual.fromPocketId;
+                if (actual.toPocketId)
+                    upd.toPocketId = actual.toPocketId;
+            }
+            return upd;
+        }) });
         const addTransactionRecurring = (txData, recData) => {
             const rec = { id: uid("rec"), paused: false, archived: false, lastDone: "", createdAt: new Date().toISOString(), ...recData };
             const tx = stampBV({ id: uid("tx"), createdAt: new Date().toISOString(), fx: (txData.currency ? (rates[txData.currency] || 1) : 1), ...txData, recurringId: rec.id });
@@ -10833,7 +10852,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             else
                 addTransaction(data);
             if (P.recurringDone && markRecurringDone)
-                markRecurringDone(P.recurringDone.id, P.recurringDone.month);
+                markRecurringDone(P.recurringDone.id, P.recurringDone.month, { amount: amt, pocketId: pocketId });
             if (P.plannedDone && markPlannedDone)
                 markPlannedDone(P.plannedDone.id, P.plannedDone.key);
             onClose();
@@ -11328,7 +11347,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             if (plannedDone && markPlannedDone)
                 markPlannedDone(plannedDone.id, plannedDone.key);
             if (!editing && recurringDone && markRecurringDone)
-                markRecurringDone(recurringDone.id, recurringDone.month);
+                markRecurringDone(recurringDone.id, recurringDone.month, { amount: amt, pocketId: fromPocketId, fromPocketId: fromPocketId, toPocketId: toPocketId });
             if (!isExchange && recOn && addRecurring && !(editing && editing.recurringId)) {
                 const d0 = new Date(date + "T12:00:00");
                 addRecurring({ kind: "transfer", title: (note && note.trim()) || tr("Переказ між рахунками"), mode: crossCurrency ? "ask" : recMode, amount: amt, pocketId: fromPocketId, fromPocketId: fromPocketId, toPocketId: toPocketId, categoryId: null, projectId: null, dayOfMonth: +date.slice(8, 10) || 1, startDate: date, frequency: recFreq, weekday: d0.getDay(), day1: null, day2: null, month: +date.slice(5, 7) || null, lastDone: date });
