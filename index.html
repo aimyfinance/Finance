@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-11-11.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-11-17.2"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -939,9 +939,14 @@ window.__K3_START = function () {
             else if (t.type === "crypto_sell") {
                 const p = pos[t.coinId];
                 const q = t.coinAmount || 0;
-                if (!p || p.qty <= 0 || q > p.qty + 1e-9) {
+                if (!p || p.qty <= 0 || q > p.qty + 1e-9 || p.dirty) {
                     out[t.id] = null;
-                    if (p) { p.qty = Math.max(0, p.qty - q); if (p.qty <= 1e-9) { p.qty = 0; p.cost = 0; } }
+                    if (p) {
+                        const avg0 = p.qty > 0 ? p.cost / p.qty : 0;
+                        p.qty = Math.max(0, p.qty - q);
+                        p.cost = Math.max(0, p.cost - avg0 * q);
+                        if (p.qty <= 1e-9) { p.qty = 0; p.cost = 0; p.dirty = false; }
+                    }
                     return;
                 }
                 const avg = p.cost / p.qty;
@@ -951,17 +956,35 @@ window.__K3_START = function () {
                 if (p.qty <= 1e-9) { p.qty = 0; p.cost = 0; }
             }
             else if (t.type === "crypto_swap") {
-                const p = pos[t.fromCoinId];
+                // Своп передає собівартість цілі. Непокрита базисом частина віддатого
+                // оцінюється за зафіксованою вартістю угоди (valBase); якщо її нема
+                // (старі записи, монета з депозиту) — позиція цілі позначається
+                // «без базису» і продажі з неї чесно показують no cost basis.
                 const q = t.fromCoinAmount || 0;
-                if (!p || p.qty <= 0 || q <= 0) return;
-                const take = Math.min(q, p.qty);
-                const moved = (p.cost / p.qty) * take;
-                p.qty -= take;
-                p.cost -= moved;
-                if (p.qty <= 1e-9) { p.qty = 0; p.cost = 0; }
+                const outQty = t.coinAmount || 0;
+                if (q <= 0 || outQty <= 0)
+                    return;
+                const p = pos[t.fromCoinId];
                 const r = pos[t.coinId] || (pos[t.coinId] = { qty: 0, cost: 0 });
-                r.qty += (t.coinAmount || 0) * (take / q);
-                r.cost += moved;
+                const have = p && p.qty > 0 ? Math.min(q, p.qty) : 0;
+                const moved = have > 0 ? (p.cost / p.qty) * have : 0;
+                if (have > 0) {
+                    p.qty -= have;
+                    p.cost -= moved;
+                    if (p.qty <= 1e-9) { p.qty = 0; p.cost = 0; p.dirty = false; }
+                }
+                const uncov = (q - have) / q;
+                let addCost = moved;
+                if (uncov > 1e-9) {
+                    if (t.valBase != null)
+                        addCost += t.valBase * uncov;
+                    else
+                        r.dirty = true;
+                }
+                if (p && p.dirty)
+                    r.dirty = true;
+                r.qty += outQty;
+                r.cost += addCost;
             }
         });
         return out;
@@ -1239,6 +1262,9 @@ window.__K3_START = function () {
         "У цьому гаманці поки немає монет.": "No coins in this wallet yet.",
         "Разом у гаманці": "Wallet total",
         "Недостатньо монет у цьому гаманці": "Not enough coins in this wallet",
+        "Редагувати купівлю": "Edit the purchase",
+        "Редагувати продаж": "Edit the sale",
+        "Операцію оновлено": "Transaction updated",
         "Ще": "Another",
         "в інших гаманцях — спершу «Перемістити» або оберіть інший гаманець.": "sits in other wallets — use Move first or pick another wallet.",
         "доступно": "available",
@@ -4216,6 +4242,33 @@ window.__K3_START = function () {
             update({ crypto: newCrypto, transactions: [tx, ...transactions] });
             notify(mode === "buy" ? tr("Крипто куплено") : tr("Крипто продано"));
         };
+        // Повна правка купівлі/продажу крипти: відкочуємо старий вплив на портфель
+        // і проводимо новий — сума, кількість, рахунок, гаманець, дата, нотатка.
+        const editCryptoTrade = (txId, pocketId, fiatAmount, coinAmount, date, note, walletId) => {
+            const old = transactions.find((t) => t.id === txId);
+            if (!old || (old.type !== "crypto_buy" && old.type !== "crypto_sell"))
+                return;
+            const pk = pockets.find((p) => p.id === pocketId);
+            if (!pk)
+                return;
+            const wid = walletId || null;
+            const oldWid = old.walletId === undefined ? wid : (old.walletId || null);
+            const sign = old.type === "crypto_buy" ? 1 : -1;
+            const adj = (l, w, delta) => {
+                const hit = l.find((h) => h.coinId === old.coinId && (h.walletId || null) === w) || l.find((h) => h.coinId === old.coinId);
+                if (hit)
+                    return l.map((h) => (h.id === hit.id ? { ...h, amount: Math.round((h.amount + delta) * 1e8) / 1e8 } : h));
+                if (delta <= 0)
+                    return l;
+                return [{ id: uid("cr"), coinId: old.coinId, symbol: old.coinSymbol || "", name: old.coinSymbol || old.coinId, amount: Math.round(delta * 1e8) / 1e8, walletId: w, note: "" }, ...l];
+            };
+            let list = adj(crypto, oldWid, -sign * (old.coinAmount || 0));
+            list = adj(list, wid, sign * coinAmount);
+            list = list.filter((h) => Math.abs(h.amount || 0) > 1e-9);
+            const ntx = stampBV({ ...old, date, amount: Math.round(fiatAmount * 100) / 100, currency: pk.currency, fx: rates[pk.currency] || 1, pocketId, coinAmount, walletId: wid, note: note || "" });
+            update({ crypto: list, transactions: transactions.map((t) => (t.id === txId ? ntx : t)) });
+            notify(tr("Операцію оновлено"));
+        };
         const addLoan = (loan, sourcePocketId, amount, currency, note) => {
             const isDebt = loan.direction === "in";
             const newLoan = { id: uid("loan"), status: "active", returned: 0, direction: loan.direction || "out", ...loan };
@@ -4391,7 +4444,7 @@ window.__K3_START = function () {
                 list = [{ id: uid("cx"), note: "", coinId: toCoin.id, symbol: toCoin.symbol, name: toCoin.name, walletId: wid, amount: Math.round(toAmount * 1e8) / 1e8 }, ...list];
             return { list: list.filter((cc) => !(cc.id === src.id && cc.amount <= 1e-9 && !(cc.note || "").trim())), src };
         };
-        const swapCrypto = (walletId, fromCoinId, fromAmount, toCoin, toAmount, fxGainBase, date, editingId) => {
+        const swapCrypto = (walletId, fromCoinId, fromAmount, toCoin, toAmount, fxGainBase, date, editingId, valBase) => {
             if (!(fromAmount > 0) || !(toAmount > 0) || !toCoin || !toCoin.id || toCoin.id === fromCoinId)
                 return;
             const wid = walletId || null;
@@ -4407,6 +4460,12 @@ window.__K3_START = function () {
             if (fxGainBase != null && Math.abs(fxGainBase) >= 0.005) {
                 txRec.fxGainBase = Math.round(fxGainBase * 100) / 100;
                 txRec.fxGainBaseCur = baseCurrency;
+            }
+            // Вартість отриманого в базовій валюті на момент угоди: з неї
+            // успадковується собівартість, коли віддана монета була без базису
+            if (valBase != null && valBase > 0) {
+                txRec.valBase = Math.round(valBase * 100) / 100;
+                txRec.valBaseCur = baseCurrency;
             }
             update({ crypto: res.list, transactions: prev ? transactions.map((t) => (t.id === prev.id ? txRec : t)) : [txRec, ...transactions] });
             notify(prev ? tr("Своп оновлено") : tr("Своп виконано"));
@@ -5102,7 +5161,7 @@ window.__K3_START = function () {
                 React.createElement(Check, { size: 15, color: "var(--accent)" }),
                 " ",
                 toast)),
-            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, balanceAfterTx: balanceAfterTx, defaultPocketId: state.defaultPocketId || null, setDefaultPocket: setDefaultPocket, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoanReturn: editLoanReturn, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, state: state, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, planned: planned, addPlanned: addPlanned, editPlanned: editPlanned, deletePlanned: deletePlanned, markPlannedDone: markPlannedDone, plannedOverdue: plannedOverdue, plannedUpcomingFor: plannedUpcomingFor, reportTemplates: reportTemplates, applyReportTemplate: applyReportTemplate, renameReportTemplate: renameReportTemplate, deleteReportTemplate: deleteReportTemplate, transferCrypto: transferCrypto, swapCrypto: swapCrypto, cryptoRealized: cryptoRealized, replaceTransaction: replaceTransaction, createPocketQuick: createPocketQuick, dupDismissed: dupDismissed, dismissDupPair: dismissDupPair, toggleTxFlag: toggleTxFlag, recSort: recSort, setRecSort: setRecSort, plnSort: plnSort, setPlnSort: setPlnSort })),
+            modal && (React.createElement(ModalRouter, { modal: modal, setModal: setModal, balanceAfterTx: balanceAfterTx, defaultPocketId: state.defaultPocketId || null, setDefaultPocket: setDefaultPocket, accounts: accounts, pockets: pockets, categories: categories, rates: rates, baseCurrency: baseCurrency, currencies: currencyList, addAccountWithPocket: addAccountWithPocket, editAccount: editAccount, addPocket: addPocket, editPocket: editPocket, archivePocket: archivePocket, deleteAccount: deleteAccount, deletePocket: deletePocket, movePocket: movePocket, addCategory: addCategory, editCategory: editCategory, addTransaction: addTransaction, editTransaction: editTransaction, addLoan: addLoan, restoreLoanOrigin: restoreLoanOrigin, registerLoanReturn: registerLoanReturn, editLoanReturn: editLoanReturn, editCryptoTrade: editCryptoTrade, editLoan: editLoan, loans: loans, loanRemaining: loanRemaining, getPocket: getPocket, pocketBalance: pocketBalance, pocketLabel: pocketLabel, transactions: transactions, deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, reminders: reminders, addReminder: addReminder, editReminder: editReminder, deleteReminder: deleteReminder, toggleReminderDone: toggleReminderDone, addGoal: addGoal, editGoal: editGoal, deleteGoal: deleteGoal, contributeGoal: contributeGoal, startTour: startTour, addCrypto: addCrypto, editCrypto: editCrypto, deleteCrypto: deleteCrypto, renameBank: renameBank, importTransactions: importTransactions, crypto: crypto, cryptoPrices: cryptoPrices, tradeCrypto: tradeCrypto, setCategoryBudgets: setCategoryBudgets, setBreakdownCats: setBreakdownCats, breakdownCats: state.breakdownCats || null, recurring: recurring, addRecurring: addRecurring, editRecurring: editRecurring, deleteRecurring: deleteRecurring, markRecurringDone: markRecurringDone, addTransactionRecurring: addTransactionRecurring, projects: projects, addProject: addProject, editProject: editProject, deleteProject: deleteProject, reorderProjects: reorderProjects, state: state, setView: setView, setHistoryPreset: setHistoryPreset, creditWarnings: creditWarnings, updateRepayAmount: updateRepayAmount, cryptoWallets: cryptoWallets, renameCryptoWallet: renameCryptoWallet, deleteCryptoWallet: deleteCryptoWallet, graceInfo: graceInfo, graceWarnings: graceWarnings, customEmojis: customEmojis, addCustomEmoji: addCustomEmoji, planned: planned, addPlanned: addPlanned, editPlanned: editPlanned, deletePlanned: deletePlanned, markPlannedDone: markPlannedDone, plannedOverdue: plannedOverdue, plannedUpcomingFor: plannedUpcomingFor, reportTemplates: reportTemplates, applyReportTemplate: applyReportTemplate, renameReportTemplate: renameReportTemplate, deleteReportTemplate: deleteReportTemplate, transferCrypto: transferCrypto, swapCrypto: swapCrypto, cryptoRealized: cryptoRealized, replaceTransaction: replaceTransaction, createPocketQuick: createPocketQuick, dupDismissed: dupDismissed, dismissDupPair: dismissDupPair, toggleTxFlag: toggleTxFlag, recSort: recSort, setRecSort: setRecSort, plnSort: plnSort, setPlnSort: setPlnSort })),
             locked && pin && React.createElement(LockScreen, { pin: pin, onUnlock: () => setLocked(false) }),
             splash && (React.createElement("div", { className: "fixed inset-0 z-[110] flex items-center justify-center animate-in", style: { background: "var(--bg)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } },
                 React.createElement(SplashLogo, null))),
@@ -5944,7 +6003,7 @@ window.__K3_START = function () {
                 React.createElement("p", { className: "text-[0.6875rem]", style: { color: "var(--text-dim)" } }, fmtDate(tx.date)))));
     }
     /* Tap on a transaction anywhere → full details */
-    function TxDetailModal({ onClose, tx, realizedBase, balanceAfterTx, toggleTxFlag, openRepayEdit, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring, projects, rates, baseCurrency, updateRepayAmount }) {
+    function TxDetailModal({ onClose, tx, realizedBase, balanceAfterTx, toggleTxFlag, openRepayEdit, cryptoWallets, openTradeEdit, categories, pocketLabel, setModal, deleteTransaction, duplicateTransaction, recurring, editRecurring, projects, rates, baseCurrency, updateRepayAmount }) {
         const [confirmDel, setConfirmDel] = useState(false);
         const [repayEdit, setRepayEdit] = useState(false);
         const [receiptOpen, setReceiptOpen] = useState(null); // index of the expanded photo
@@ -5979,6 +6038,7 @@ window.__K3_START = function () {
                 tx.fee > 0 ? React.createElement(Row, { k: tr("Комісія"), v: fmtMoney(tx.fee, tx.fromCurrency || tx.currency) }) : null,
                 cat ? React.createElement(Row, { k: tr("Категорія"), v: tr(cat.name) }) : null,
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount ? React.createElement(Row, { k: tr("Монета"), v: `${tx.coinAmount} ${tx.coinSymbol || ""}` }) : null,
+                (tx.type === "crypto_buy" || tx.type === "crypto_sell" || ((tx.type === "loan_return" || tx.type === "debt_repay") && tx.coinId)) ? React.createElement(Row, { k: tr("Гаманець"), v: tx.walletId === undefined ? "\u2014" : (tx.walletId ? (((cryptoWallets || []).find((w) => w.id === tx.walletId) || {}).name || tr("Гаманець")) : tr("Основний")) }) : null,
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount > 0 ? React.createElement(Row, { k: tr("Курс"), v: `1 ${tx.coinSymbol || ""} = ${(tx.amount / tx.coinAmount).toFixed(4)} ${tx.currency}` }) : null,
                 tx.projectId && (() => { const pj = (projects || []).find((x) => x.id === tx.projectId); return pj ? React.createElement(Row, { k: tr("Проєкт"), v: tr(pj.name) }) : null; })(),
                 tx.comment && React.createElement(Row, { k: tr("Коментар"), v: tr(tx.comment) }),
@@ -6033,6 +6093,10 @@ window.__K3_START = function () {
                     " ",
                     tr("Редагувати"))),
                 (tx.type === "transfer" || tx.type === "exchange") && (React.createElement(Button, { variant: "secondary", className: "flex-1", onClick: () => setModal({ type: tx.type, payload: { editing: tx } }) },
+                    React.createElement(Edit3, { size: 14 }),
+                    " ",
+                    tr("Редагувати"))),
+                (tx.type === "crypto_buy" || tx.type === "crypto_sell") && openTradeEdit && (React.createElement(Button, { variant: "secondary", className: "flex-1", "data-tradeedit": "1", onClick: () => openTradeEdit(tx) },
                     React.createElement(Edit3, { size: 14 }),
                     " ",
                     tr("Редагувати"))),
@@ -7317,6 +7381,7 @@ window.__K3_START = function () {
                 applyPrice(priceStr);
         }, [fromAmt]);
         const gainBase = marketTo != null && ta > 0 && pt > 0 ? convert((ta - marketTo) * pt, "USD", baseCurrency, rates) : null;
+        const dealValBase = ta > 0 && pt > 0 ? convert(ta * pt, "USD", baseCurrency, rates) : null;
         const submit = () => {
             if (!src)
                 return setError(tr("Оберіть монету"));
@@ -7332,7 +7397,7 @@ window.__K3_START = function () {
             }
             if (!(ta > 0))
                 return setError(tr("Вкажіть отриману кількість"));
-            swapCrypto(wal || null, src.coinId, fa, toCoin, ta, gainBase, date, editing ? editing.id : null);
+            swapCrypto(wal || null, src.coinId, fa, toCoin, ta, gainBase, date, editing ? editing.id : null, dealValBase);
             onClose();
         };
         return (React.createElement(Modal, { title: editing ? tr("Редагувати своп") : tr("Своп крипти"), onClose: onClose },
@@ -8020,17 +8085,18 @@ window.__K3_START = function () {
                 " \u00B7 ",
                 tr("різниця — ручні правки кількості або записи в інших гаманцях."))));
     }
-    function CryptoTradeModal({ onClose, payload, accounts, pockets, crypto, cryptoWallets, cryptoPrices, rates, tradeCrypto, pocketBalance }) {
+    function CryptoTradeModal({ onClose, payload, editingTx, editCryptoTrade, accounts, pockets, crypto, cryptoWallets, cryptoPrices, rates, tradeCrypto, pocketBalance }) {
         const held = crypto || [];
-        const [mode, setMode] = useState((payload && payload.mode) || "buy");
-        const [coin, setCoin] = useState(() => (held[0] ? { id: held[0].coinId, symbol: held[0].symbol, name: held[0].name } : { id: "tether", symbol: "USDT", name: "Tether" }));
+        const ed = editingTx || null;
+        const [mode, setMode] = useState(ed ? (ed.type === "crypto_buy" ? "buy" : "sell") : ((payload && payload.mode) || "buy"));
+        const [coin, setCoin] = useState(() => (ed ? { id: ed.coinId, symbol: ed.coinSymbol || "", name: ed.coinSymbol || ed.coinId } : (held[0] ? { id: held[0].coinId, symbol: held[0].symbol, name: held[0].name } : { id: "tether", symbol: "USDT", name: "Tether" })));
         const [picker, setPicker] = useState(false);
         const activeP = pockets.filter((p) => !p.archived);
-        const [pocketId, setPocketId] = useState(activeP[0]?.id || "");
-        const [fiat, setFiat] = useState("");
-        const [coins, setCoins] = useState("");
-        const [date, setDate] = useState(localISODate(new Date()));
-        const [note, setNote] = useState("");
+        const [pocketId, setPocketId] = useState(ed ? (ed.pocketId || "") : (activeP[0]?.id || ""));
+        const [fiat, setFiat] = useState(ed ? String(ed.amount) : "");
+        const [coins, setCoins] = useState(ed ? String(ed.coinAmount) : "");
+        const [date, setDate] = useState(ed ? (ed.date || localISODate(new Date())) : localISODate(new Date()));
+        const [note, setNote] = useState(ed ? (ed.note || "") : "");
         const [error, setError] = useState("");
         const pk = pockets.find((p) => p.id === pocketId);
         const fiatNum = parseFloat(String(fiat).replace(",", ".")) || 0;
@@ -8041,8 +8107,8 @@ window.__K3_START = function () {
         const locations = held.filter((x) => x.coinId === coin.id);
         const heldAmt = locations.reduce((s0, h) => s0 + (h.amount || 0), 0);
         const bestWid = () => { let b = null, ba = -1; locations.forEach((h) => { if ((h.amount || 0) > ba) { ba = h.amount || 0; b = h.walletId || null; } }); return b; };
-        const [walletSel, setWalletSel] = useState(bestWid);
-        useEffect(() => { setWalletSel(bestWid()); }, [coin.id, mode]);
+        const [walletSel, setWalletSel] = useState(ed ? (ed.walletId || null) : bestWid);
+        useEffect(() => { if (ed) return; setWalletSel(bestWid()); }, [coin.id, mode]);
         const heldWalletAmt = (locations.find((h) => (h.walletId || null) === (walletSel || null)) || {}).amount || 0;
         useEffect(() => {
             if (mode === "sell" && !held.find((x) => x.coinId === coin.id) && held[0]) {
@@ -8056,8 +8122,14 @@ window.__K3_START = function () {
                 return setError(tr("Введіть коректну суму"));
             if (!(coinNum > 0))
                 return setError(tr("Вкажіть кількість"));
-            if (mode === "sell" && coinNum > heldWalletAmt + 1e-9)
-                return setError(tr("Недостатньо монет у цьому гаманці") + " (" + heldWalletAmt + " " + (coin ? coin.symbol : "") + ")");
+            const backEd = ed && ed.type === "crypto_sell" && (ed.walletId === undefined || (ed.walletId || null) === (walletSel || null)) ? (ed.coinAmount || 0) : 0;
+            if (mode === "sell" && coinNum > heldWalletAmt + backEd + 1e-9)
+                return setError(tr("Недостатньо монет у цьому гаманці") + " (" + Math.round((heldWalletAmt + backEd) * 1e8) / 1e8 + " " + (coin ? coin.symbol : "") + ")");
+            if (ed) {
+                editCryptoTrade(ed.id, pocketId, Math.round(fiatNum * 100) / 100, coinNum, date, note.trim(), walletSel || null);
+                onClose();
+                return;
+            }
             tradeCrypto(mode, pocketId, Math.round(fiatNum * 100) / 100, coin, coinNum, date, note.trim(), walletSel || null);
             onClose();
         };
@@ -8065,19 +8137,19 @@ window.__K3_START = function () {
         const market = coin && cryptoPrices && cryptoPrices[coin.id] > 0 && pk ? convert(cryptoPrices[coin.id], "USD", pk.currency, rates) : 0;
         const diff = implied > 0 && market > 0 ? (implied / market - 1) * 100 : null;
         const seg = (on) => ({ background: on ? "var(--surface)" : "transparent", color: on ? "var(--text)" : "var(--text-dim)" });
-        return (React.createElement(Modal, { title: tr("Купити / Продати крипто"), onClose: onClose },
-            React.createElement("div", { className: "flex gap-1.5 p-1 rounded-xl mb-3", style: { background: "var(--surface2)" } },
+        return (React.createElement(Modal, { title: ed ? (ed.type === "crypto_buy" ? tr("Редагувати купівлю") : tr("Редагувати продаж")) : tr("Купити / Продати крипто"), onClose: onClose },
+            !ed && React.createElement("div", { className: "flex gap-1.5 p-1 rounded-xl mb-3", style: { background: "var(--surface2)" } },
                 React.createElement("button", { onClick: () => { setMode("buy"); setError(""); }, className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: seg(mode === "buy") }, tr("Купити")),
                 React.createElement("button", { onClick: () => { setMode("sell"); setError(""); }, className: "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition", style: seg(mode === "sell") }, tr("Продати"))),
             React.createElement(Field, { label: tr("Криптовалюта") },
-                React.createElement("button", { type: "button", "data-coinbtn": "1", onClick: () => setPicker(true), className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left", style: { background: "var(--surface2)", border: "1px solid var(--border)" } },
+                React.createElement("button", { type: "button", "data-coinbtn": "1", onClick: () => { if (!ed) setPicker(true); }, className: "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left", style: { background: "var(--surface2)", border: "1px solid var(--border)", opacity: ed ? 0.85 : 1 } },
                     React.createElement("span", { className: "w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-display font-bold text-[0.625rem]", style: { background: "var(--surface)", color: "var(--accent)" } }, coin ? coin.symbol.slice(0, 5) : "—"),
                     React.createElement("span", { className: "min-w-0 flex-1" },
                         React.createElement("span", { className: "block text-sm font-semibold truncate" }, coin ? coin.name : tr("Оберіть монету")),
                         React.createElement("span", { className: "block text-xs", style: { color: "var(--text-dim)" } }, mode === "sell" ? tr("У портфелі:") + " " + heldAmt + " " + (coin ? coin.symbol : "") : (coin ? coin.symbol : ""))),
                     React.createElement(ChevronRight, { size: 17, style: { color: "var(--text-dim)", flexShrink: 0 } }))),
-            (mode === "sell" ? (locations.length > 1 || (locations[0] && (locations[0].walletId || null))) : wallets.length > 0) ? React.createElement(Field, { label: tr("Гаманець") },
-                React.createElement(Select, { "data-twallet": "1", value: walletSel || "", onChange: (e) => { setWalletSel(e.target.value || null); setError(""); } }, mode === "sell"
+            (ed ? (wallets.length > 0 || (ed.walletId || null)) : (mode === "sell" ? (locations.length > 1 || (locations[0] && (locations[0].walletId || null))) : wallets.length > 0)) ? React.createElement(Field, { label: tr("Гаманець") },
+                React.createElement(Select, { "data-twallet": "1", value: walletSel || "", onChange: (e) => { setWalletSel(e.target.value || null); setError(""); } }, (!ed && mode === "sell")
                     ? locations.map((h) => React.createElement("option", { key: h.id, value: h.walletId || "" }, wName(h.walletId) + " \u00B7 " + h.amount + " " + (coin ? coin.symbol : "")))
                     : [React.createElement("option", { key: "__main", value: "" }, tr("Основний"))].concat(wallets.map((w) => React.createElement("option", { key: w.id, value: w.id }, w.name))))) : null,
             React.createElement(Field, { label: mode === "buy" ? tr("Рахунок списання") : tr("Рахунок зарахування") },
@@ -8108,7 +8180,7 @@ window.__K3_START = function () {
                 React.createElement(Input, { type: "date", value: date, onChange: (e) => setDate(e.target.value) })),
             React.createElement(Field, { label: tr("Нотатка (необовʼязково)") },
                 React.createElement(Input, { clearable: true, value: note, onChange: (e) => setNote(e.target.value) })),
-            React.createElement(Button, { className: "w-full mt-2", onClick: submit }, mode === "buy" ? tr("Купити") : tr("Продати")),
+            React.createElement(Button, { className: "w-full mt-2", onClick: submit }, ed ? tr("Зберегти зміни") : (mode === "buy" ? tr("Купити") : tr("Продати"))),
             picker && React.createElement(CoinPicker, { selected: coin, onPick: (x) => { setCoin(x); setPicker(false); setError(""); }, onClose: () => setPicker(false) })));
     }
     function WalletDetailModal({ onClose, walletId, cryptoWallets, crypto, cryptoPrices, rates, baseCurrency, setModal, renameCryptoWallet, deleteCryptoWallet }) {
@@ -9872,7 +9944,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             error && React.createElement("p", { className: "text-xs mb-2", style: { color: "var(--danger)" } }, error),
             React.createElement(Button, { className: "w-full", onClick: save }, tr("Зберегти"))));
     }
-    function ModalRouter({ modal, setModal, restoreLoanOrigin, balanceAfterTx, defaultPocketId, setDefaultPocket, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoanReturn, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, state, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings, customEmojis, addCustomEmoji, planned, addPlanned, editPlanned, deletePlanned, markPlannedDone, plannedOverdue, plannedUpcomingFor, reportTemplates, applyReportTemplate, renameReportTemplate, deleteReportTemplate, transferCrypto, swapCrypto, cryptoRealized, replaceTransaction, createPocketQuick, dupDismissed, dismissDupPair, toggleTxFlag, recSort, setRecSort, plnSort, setPlnSort }) {
+    function ModalRouter({ modal, setModal, restoreLoanOrigin, balanceAfterTx, defaultPocketId, setDefaultPocket, accounts, pockets, categories, rates, baseCurrency, currencies, addAccountWithPocket, editAccount, addPocket, editPocket, archivePocket, deleteAccount, deletePocket, movePocket, addCategory, editCategory, addTransaction, editTransaction, addLoan, registerLoanReturn, editLoanReturn, editCryptoTrade, editLoan, loans, loanRemaining, getPocket, pocketBalance, pocketLabel, transactions, deleteTransaction, duplicateTransaction, reminders, addReminder, editReminder, deleteReminder, toggleReminderDone, addGoal, editGoal, deleteGoal, contributeGoal, startTour, addCrypto, editCrypto, deleteCrypto, renameBank, importTransactions, crypto, cryptoPrices, tradeCrypto, setCategoryBudgets, setBreakdownCats, breakdownCats, recurring, addRecurring, editRecurring, deleteRecurring, markRecurringDone, addTransactionRecurring, projects, addProject, editProject, deleteProject, reorderProjects, state, setView, setHistoryPreset, creditWarnings, updateRepayAmount, cryptoWallets, renameCryptoWallet, deleteCryptoWallet, graceInfo, graceWarnings, customEmojis, addCustomEmoji, planned, addPlanned, editPlanned, deletePlanned, markPlannedDone, plannedOverdue, plannedUpcomingFor, reportTemplates, applyReportTemplate, renameReportTemplate, deleteReportTemplate, transferCrypto, swapCrypto, cryptoRealized, replaceTransaction, createPocketQuick, dupDismissed, dismissDupPair, toggleTxFlag, recSort, setRecSort, plnSort, setPlnSort }) {
             const txToKind = (t) => {
                 const ed = modal.payload && modal.payload.editing;
                 if (!ed)
@@ -9906,7 +9978,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             if (modal.type === "loanRepays")
                 return React.createElement(LoanRepaysModal, { onClose: close, setModal: setModal, returnToSelf: { type: "loanRepays", payload: modal.payload, returnTo: modal.returnTo || null }, loan: modal.payload, transactions: transactions, updateRepayAmount: updateRepayAmount, deleteTransaction: deleteTransaction, pocketLabel: pocketLabel });
             if (modal.type === "txDetail")
-                return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, openRepayEdit: (tx0) => { const ln0 = loans.find((l) => l.id === tx0.loanId); if (ln0) setModal({ type: "loanReturn", payload: ln0, editTx: tx0, returnTo: modal.returnTo || null }); }, balanceAfterTx: balanceAfterTx, toggleTxFlag: toggleTxFlag, realizedBase: (cryptoRealized || {})[modal.payload && modal.payload.id], categories: categories, pocketLabel: pocketLabel, setModal: (m) => setModal(m && typeof m === "object" && !m.returnTo && modal.returnTo ? { ...m, returnTo: modal.returnTo } : m), deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency, updateRepayAmount: updateRepayAmount });
+                return React.createElement(TxDetailModal, { onClose: close, tx: modal.payload, cryptoWallets: cryptoWallets, openTradeEdit: (tx0) => setModal({ type: "cryptoTrade", editTx: tx0, returnTo: modal.returnTo || null }), openRepayEdit: (tx0) => { const ln0 = loans.find((l) => l.id === tx0.loanId); if (ln0) setModal({ type: "loanReturn", payload: ln0, editTx: tx0, returnTo: modal.returnTo || null }); }, balanceAfterTx: balanceAfterTx, toggleTxFlag: toggleTxFlag, realizedBase: (cryptoRealized || {})[modal.payload && modal.payload.id], categories: categories, pocketLabel: pocketLabel, setModal: (m) => setModal(m && typeof m === "object" && !m.returnTo && modal.returnTo ? { ...m, returnTo: modal.returnTo } : m), deleteTransaction: deleteTransaction, duplicateTransaction: duplicateTransaction, recurring: recurring, editRecurring: editRecurring, projects: projects, rates: rates, baseCurrency: baseCurrency, updateRepayAmount: updateRepayAmount });
             if (modal.type === "statementImport")
                 return React.createElement(StatementImportModal, { onClose: close, onBack: modal.returnTo ? close : undefined, accounts: accounts, pockets: pockets, categories: categories, transactions: transactions, importTransactions: importTransactions, pocketBalance: pocketBalance, addCategory: addCategory, projects: projects, addProject: addProject, payload: modal.payload , rates: rates, baseCurrency: baseCurrency });
             if (modal.type === "cryptoMove")
@@ -9920,7 +9992,7 @@ React.createElement(Button, { className: "w-full", onClick: submit }, tr("Збе
             if (modal.type === "cryptoLots")
                 return React.createElement(CryptoLotsModal, { onClose: close, payload: modal.payload, transactions: transactions, cryptoWallets: cryptoWallets, setModal: setModal });
             if (modal.type === "cryptoTrade")
-                return React.createElement(CryptoTradeModal, { onClose: close, payload: modal.payload, accounts: accounts, pockets: pockets, crypto: crypto, cryptoWallets: cryptoWallets, cryptoPrices: cryptoPrices, rates: rates, tradeCrypto: tradeCrypto, pocketBalance: pocketBalance });
+                return React.createElement(CryptoTradeModal, { onClose: close, payload: modal.payload, editingTx: modal.editTx || null, editCryptoTrade: editCryptoTrade, accounts: accounts, pockets: pockets, crypto: crypto, cryptoWallets: cryptoWallets, cryptoPrices: cryptoPrices, rates: rates, tradeCrypto: tradeCrypto, pocketBalance: pocketBalance });
             if (modal.type === "catBudgets")
                 return React.createElement(CategoryBudgetsModal, { onClose: close, categories: categories, setCategoryBudgets: setCategoryBudgets, baseCurrency: baseCurrency });
             if (modal.type === "catReport")
