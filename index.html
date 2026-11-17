@@ -352,7 +352,7 @@ window.__K3_START = function () {
     const TYPE_CHIP = { cash: "Готівка", bank: "Банківські", card: "Картки", deposit: "Депозити", invest: "Інвестиції", other: "Інше" };
     // On touch screens the native HTML5 drag (long-press on a draggable element) hijacks the
     // gesture and fires touchcancel, killing our custom reorder — so draggable is desktop-only.
-    const K3_BUILD = "2026-11-17.2"; // bump on every release; shown in Settings footer
+    const K3_BUILD = "2026-11-17.4"; // bump on every release; shown in Settings footer
     const TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || ((typeof navigator !== "undefined" && navigator.maxTouchPoints) || 0) > 0);
     /* Hold-to-drag reordering (touch + mouse), shared by the home carousel, categories and projects.
        Same approach as the type-chip reordering in AccountsView: a long press "arms" the drag
@@ -928,9 +928,40 @@ window.__K3_START = function () {
     function cryptoRealizedMap(transactions, base, ratesToUAH) {
         const out = {};
         const pos = {}; // coinId -> { qty, cost (in base) }
-        const txs = (transactions || []).filter((t) => t && (t.type === "crypto_buy" || t.type === "crypto_sell" || t.type === "crypto_swap"))
+        const txs = (transactions || []).filter((t) => t && (t.type === "crypto_buy" || t.type === "crypto_sell" || t.type === "crypto_swap" || ((t.type === "loan_return" || t.type === "debt_take" || t.type === "debt_repay" || t.type === "loan_out") && t.coinId && (t.coinAmount || 0) > 0)))
             .slice().sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.createdAt || "").localeCompare(b.createdAt || ""));
         txs.forEach((t) => {
+            // Монети, що ПРИЙШЛИ борговим заліком (повернення позики / отримання
+            // боргу), мають відому вартість: погашену суму боргу. Це і є їхня
+            // собівартість — рівно як купівля.
+            if ((t.type === "loan_return" || t.type === "debt_take") && t.coinId) {
+                const p = pos[t.coinId] || (pos[t.coinId] = { qty: 0, cost: 0 });
+                p.qty += t.coinAmount || 0;
+                p.cost += txToBase(t, base, ratesToUAH);
+                return;
+            }
+            // Монети, що ПІШЛИ на погашення боргу, — реалізація за середньою:
+            // «виручка» = закрита сума боргу в базовій валюті.
+            if ((t.type === "debt_repay" || t.type === "loan_out") && t.coinId) {
+                const p = pos[t.coinId];
+                const q = t.coinAmount || 0;
+                if (!p || p.qty <= 0 || q > p.qty + 1e-9 || p.dirty) {
+                    out[t.id] = null;
+                    if (p) {
+                        const avg0 = p.qty > 0 ? p.cost / p.qty : 0;
+                        p.qty = Math.max(0, p.qty - q);
+                        p.cost = Math.max(0, p.cost - avg0 * q);
+                        if (p.qty <= 1e-9) { p.qty = 0; p.cost = 0; p.dirty = false; }
+                    }
+                    return;
+                }
+                const avg = p.cost / p.qty;
+                out[t.id] = Math.round((txToBase(t, base, ratesToUAH) - avg * q) * 100) / 100;
+                p.qty -= q;
+                p.cost -= avg * q;
+                if (p.qty <= 1e-9) { p.qty = 0; p.cost = 0; }
+                return;
+            }
             if (t.type === "crypto_buy") {
                 const p = pos[t.coinId] || (pos[t.coinId] = { qty: 0, cost: 0 });
                 p.qty += t.coinAmount || 0;
@@ -1641,6 +1672,7 @@ window.__K3_START = function () {
         "Акаунт створено": "Account created",
         "Актив видалено": "Asset deleted",
         "Актив додано": "Asset added",
+        "Початковий залишок · оцінка за біржею": "Opening balance · exchange valuation",
         "Актив.": "Restore",
         "Активна": "Active",
         "Активні": "Active",
@@ -4505,7 +4537,20 @@ window.__K3_START = function () {
             update({ cryptoWallets: cryptoWallets.filter((w) => w.id !== id) });
             notify(tr("Гаманець видалено"));
         };
-        const addCrypto = (data) => { update({ crypto: [{ id: uid("cx"), note: "", ...data }, ...crypto] }); notify(tr("Актив додано")); };
+        const addCrypto = (data) => {
+            const patch = { crypto: [{ id: uid("cx"), note: "", ...data }, ...crypto] };
+            // Монета, введена вручну, отримує собівартість за біржовою ціною на
+            // момент введення: створюється запис-придбання без руху грошей. Інакше
+            // вона назавжди лишалася б «без собівартості» для результатів продажу.
+            const px = data && data.coinId && data.amount > 0 && cryptoPrices && cryptoPrices[data.coinId] > 0 ? cryptoPrices[data.coinId] : 0;
+            if (px > 0) {
+                const val = convert(data.amount * px, "USD", baseCurrency, rates);
+                if (val > 0)
+                    patch.transactions = [stampBV({ id: uid("tx"), createdAt: new Date().toISOString(), type: "crypto_buy", date: localISODate(new Date()), amount: Math.round(val * 100) / 100, currency: baseCurrency, fx: rates[baseCurrency] || 1, pocketId: null, coinId: data.coinId, coinSymbol: data.symbol || "", coinAmount: data.amount, walletId: data.walletId || null, note: tr("Початковий залишок · оцінка за біржею") }), ...transactions];
+            }
+            update(patch);
+            notify(tr("Актив додано"));
+        };
         const editCrypto = (id, patch) => update({ crypto: crypto.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
         const deleteCrypto = (id) => { update({ crypto: crypto.filter((c) => c.id !== id) }); notify(tr("Актив видалено")); };
         const refreshCryptoPrices = async () => {
@@ -6042,7 +6087,7 @@ window.__K3_START = function () {
                 (tx.type === "crypto_buy" || tx.type === "crypto_sell") && tx.coinAmount > 0 ? React.createElement(Row, { k: tr("Курс"), v: `1 ${tx.coinSymbol || ""} = ${(tx.amount / tx.coinAmount).toFixed(4)} ${tx.currency}` }) : null,
                 tx.projectId && (() => { const pj = (projects || []).find((x) => x.id === tx.projectId); return pj ? React.createElement(Row, { k: tr("Проєкт"), v: tr(pj.name) }) : null; })(),
                 tx.comment && React.createElement(Row, { k: tr("Коментар"), v: tr(tx.comment) }),
-                tx.type === "crypto_sell" && React.createElement("div", { "data-rzrow": "1", className: "flex items-center justify-between gap-3 py-2", style: { borderBottom: "1px solid var(--border)" } },
+                (tx.type === "crypto_sell" || ((tx.type === "debt_repay" || tx.type === "loan_out") && tx.coinId)) && React.createElement("div", { "data-rzrow": "1", className: "flex items-center justify-between gap-3 py-2", style: { borderBottom: "1px solid var(--border)" } },
                     React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("Реалізований результат")),
                     realizedBase == null ? React.createElement("span", { className: "text-xs", style: { color: "var(--text-dim)" } }, tr("без собівартості")) : React.createElement("span", { className: "text-sm font-semibold tabular", style: { color: realizedBase >= 0 ? "var(--income, #2F8F5B)" : "var(--danger)" } },
                         realizedBase >= 0 ? "+" : "\u2212",
